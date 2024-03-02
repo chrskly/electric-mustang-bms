@@ -71,6 +71,41 @@ The car will also have precharge and main contactors in the HVJB. These are cont
 9. CHARGE_INHIBIT output signal
 10. DRIVE_INHIBIT output signal
 
+## Pinout
+
+```
+|                                               |
+| A7 A8 A9 A10 A11 A12     B1  B2  B3  B4 B5 B6 |
+| A6 A5 A4 A3  A2  A1      B12 B11 B10 B9 B8 B7 |
++-----------------------------------------------+
+```
+
+- A1 : IN_3
+- A2 : IN_1
+- A3 : CHARGE_ENABLE_IN
+- A4 : DRIVE_INHIBIT / OUT_3
+- A5 : CHARGE_INHIBIT / OUT1
+- A6 : BATT_2_INHIBIT
+- A7 : BATT_1_INHIBIT
+- A8 : HEATER_ENABLE / OUT_2
+- A9 : OUT_4
+- A10 : IGNITION_ON_IN
+- A11 : IN_2
+- A12 : IN_4
+
+- B1 : BATT_2_CAN_H
+- B2 : BATT_1_CAN_H
+- B3 : MAIN_CAN_H
+- B4 : GND
+- B5 : 12V
+- B6 : GND
+- B7 : 5V
+- B8 : 5V
+- B9 : GND
+- B10 : MAIN_CAN_L
+- B11 : BATT_1_CAN_L
+- B12 : BATT_2_CAN_L
+
 ## CAN messages consumed by BMS
 
 1. kWh, Ah, current, voltage data from ISA shunt to calculate SoC.
@@ -96,17 +131,17 @@ The car will also have precharge and main contactors in the HVJB. These are cont
 
 ## To Do
 
-- [X] Fetch SoC from shunt and store in memory
+- [x] Fetch SoC from shunt and store in memory
 - [ ] Broadcast BMS mode
 - [x] CHARGE_ENABLE input
 - [x] IGNITION_ON input
-- [ ] DRIVE_INHIBIT output
+- [x] DRIVE_INHIBIT output
 - [ ] Use other core for comms?
 - [ ] Implement balancing
 - [ ] Implement watchdog
 - [ ] On startup, properly detect the state we should start in and immediately switch to that state
-- [X] Emulate SimpBMS output CAN messages
-- [X] Reset ISA Shunt when battery charged to 100%
+- [x] Emulate SimpBMS output CAN messages
+- [x] Reset ISA Shunt when battery charged to 100%
 - [ ] ISA shunt heartbeat
 - [ ] Warn/alarm flags
 
