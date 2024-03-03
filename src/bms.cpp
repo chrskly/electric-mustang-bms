@@ -21,15 +21,6 @@
 
 EV Mustang BMS
 
-Pins
-GPIO0  (1)  uart rx  - to ftdi tx
-GPIO1  (2)  uart tx  - to ftdi rx
-GPIO16 (21) SPI0 RX  - to MISO on both mcp2515 boards (via level converter)
-GPIO18 (24) SPI0 SCK - to SCK on both mcp2515 boards (via level converter)
-GPIO19 (25) SPI0 TX  - to MOSI on both mcp2515 boards (via level converter)
-GPIO17 (22) SPI0 CS0 - to CS on mcp2515 board 0 (via level converter)
-SPIO15 (20) SPI0 CS1 - to CS on mcp2515 board 1 (vai level converter)
-
 ------------------------------------------------------------------------------*/
 
 

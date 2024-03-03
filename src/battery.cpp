@@ -73,10 +73,29 @@ int Battery::print() {
     return 0;
 }
 
+//// ----
+//
+// Communication
+//
+//// ----
+
 void Battery::request_data() {
     for ( int p = 0; p < numPacks; p++ ) {
         packs[p].request_data();
     }
+}
+
+struct repeating_timer pollModuleTimer;
+
+// Send request to each pack to ask for a data update
+bool poll_packs_for_data(struct repeating_timer *t) {
+    extern Battery battery;
+    battery.request_data();
+    return true;
+}
+
+void enable_module_polling() {
+    add_repeating_timer_ms(1000, poll_packs_for_data, NULL, &pollModuleTimer);
 }
 
 void Battery::read_message() {

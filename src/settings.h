@@ -40,6 +40,10 @@
                                                    // PACK_ALIVE_TIMEOUT seconds, then mark the pack
                                                    // as dead.
 
+#define MODULE_TTL 5                               // If we have not seen an update from a module in
+                                                   // MODULE_TTL seconds, them mark the module as
+                                                   // dead.
+
 #define SAFE_VOLTAGE_DELTA_BETWEEN_PACKS 0.01      // When closing contactors, the voltage difference between the packs shall not
                                                    // be greater than this voltage, in volts.
 

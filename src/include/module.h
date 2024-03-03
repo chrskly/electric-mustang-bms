@@ -32,6 +32,7 @@ class BatteryModule {
     float cellVoltage[CELLS_PER_MODULE];      // Voltages of each cell
     float cellTemperature[TEMPS_PER_MODULE];  // Temperatures of each cell
     bool allModuleDataPopulated;              // True when we have voltage/temp information for all cells
+    clock_t lastHeartbeat;                    // Time when we last got an update from this module
     BatteryPack* pack;                        // The parent BatteryPack that contains this module
 
  public:
@@ -47,8 +48,11 @@ class BatteryModule {
     bool has_empty_cell();
     bool has_full_cell();
 
+    // Module status
     bool all_module_data_populated();
     void check_if_module_data_is_populated();
+    bool is_alive();
+    void heartbeat();
 
     // Temperature
     void update_temperature(int tempSensorId, float newTemperature);

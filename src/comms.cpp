@@ -33,27 +33,6 @@ extern Battery battery;
 
 //// ----
 //
-// Polling the modules for voltage and temperature readings
-//
-//// ----
-
-// struct can_frame pollModuleFrame;
-
-struct repeating_timer pollModuleTimer;
-
-// Send request to each pack to ask for a data update
-bool poll_packs_for_data(struct repeating_timer *t) {
-    battery.request_data();
-    return true;
-}
-
-void enable_module_polling() {
-    add_repeating_timer_ms(1000, poll_packs_for_data, NULL, &pollModuleTimer);
-}
-
-
-//// ----
-//
 // Outbound status messages
 //
 //// ----
@@ -77,6 +56,68 @@ void send_ISA_reset_message() {
     mainCAN.sendMessage(&ISAResetFrame);
 }
 
+/*
+ * BMS status message 0x350
+ *
+ * Custom message format (not in SimpBMS)
+ *
+ * byte 0 = bms status
+ *   00 = standby
+ *   01 = drive
+ *   02 = charging
+ *   03 = batteryEmpty
+ *   04 = overTempFault
+ *   05 = illegalStateTransitionFault
+ *   FF = Undefined error
+ * byte 1 = modules 0-7 heartbeat status (0 alive, 1 dead)
+ * byte 2 = modules 8-15 hearbeat status (0 alive, 1 dead)
+ * byte 3 = modules 16-23 heartbeat status (0 alive, 1 dead)
+ * byte 4 = modules 24-31 heartbeat status (0 alive, 1 dead)
+ * byte 5 = modules 32-39 heartbeat status (0 alive, 1 dead)
+ * byte 6
+ * byte 7
+ */
+
+struct can_frame bmsStateFrame;
+
+struct repeating_timer bmsStateTimer;
+
+bool send_bms_state_message(struct repeating_timer *t) {
+    extern State state;
+
+    bmsStateFrame.can_id = 0x350;
+    bmsStateFrame.can_dlc = 8;
+
+    if ( state == &state_standby ) {
+        bmsStateFrame.data[0] = 0x00;
+    } else if ( state == &state_drive ) {
+        bmsStateFrame.data[0] = 0x01;
+    } else if ( state == &state_charging ) {
+        bmsStateFrame.data[0] = 0x02;
+    } else if ( state == &state_batteryEmpty ) {
+        bmsStateFrame.data[0] = 0x03;
+    } else if ( state == &state_overTempFault ) {
+        bmsStateFrame.data[0] = 0x04;
+    } else if ( state == &state_illegalStateTransitionFault ) {
+        bmsStateFrame.data[0] = 0x05;
+    } else {
+        bmsStateFrame.data[0] = 0xFF;
+    }
+
+    bmsStateFrame.data[1] = 0x00;
+    bmsStateFrame.data[2] = 0x00;
+    bmsStateFrame.data[3] = 0x00;
+    bmsStateFrame.data[4] = 0x00;
+    bmsStateFrame.data[5] = 0x00;
+    bmsStateFrame.data[6] = 0x00;
+    bmsStateFrame.data[7] = 0x00;
+    mainCAN.sendMessage(&bmsStateFrame);
+    return true;
+}
+
+void enable_bms_state_messages() {
+    add_repeating_timer_ms(1000, send_bms_state_message, NULL, &bmsStateTimer);
+}
 
 /*
  * Limits message 0x351
@@ -143,12 +184,12 @@ struct repeating_timer socMessageTimer;
 bool send_soc_message(struct repeating_timer *t) {
     socFrame.can_id = BMS_SOC_MSG_ID;
     socFrame.can_dlc = 8;
-    socFrame.data[0] = (uint8_t)battery.get_soc() && 0xFF;            //
-    socFrame.data[1] = (uint8_t)battery.get_soc() >> 8;               //
-    socFrame.data[2] = 0x00;                                          // not implemented
-    socFrame.data[3] = 0x00;                                          // not implemented
-    socFrame.data[4] = (uint8_t)( battery.get_soc() * 100 ) && 0xFF;  //
-    socFrame.data[5] = (uint8_t)( battery.get_soc() * 100 ) >> 8;     //
+    socFrame.data[0] = (uint8_t)battery.get_soc() && 0xFF;            // SoC LSB
+    socFrame.data[1] = (uint8_t)battery.get_soc() >> 8;               // SoC MSB
+    socFrame.data[2] = 0x00;                                          // SoH, not implemented
+    socFrame.data[3] = 0x00;                                          // SoH, not implemented
+    socFrame.data[4] = (uint8_t)( battery.get_soc() * 100 ) && 0xFF;  // SoC LSB, scaled
+    socFrame.data[5] = (uint8_t)( battery.get_soc() * 100 ) >> 8;     // SoC MSB, scaled
     socFrame.data[6] = 0x00;                                          // unused
     socFrame.data[7] = 0x00;                                          // unused
     mainCAN.sendMessage(&socFrame);

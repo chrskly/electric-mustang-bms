@@ -46,7 +46,7 @@ class BatteryPack {
     void request_data();
     void read_message();
 
-    bool pack_is_alive();
+    //bool pack_is_alive();
 
     // void send_message(can_frame *frame) { (*this->CAN).sendMessage(frame); }
     void send_message(can_frame *frame);

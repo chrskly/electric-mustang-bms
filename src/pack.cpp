@@ -168,15 +168,6 @@ void BatteryPack::read_message() {
     }
 }
 
-bool BatteryPack::pack_is_alive() {
-    absolute_time_t now = get_absolute_time();
-    int64_t timeSinceLastUpdate = absolute_time_diff_us(lastUpdate, now);
-    if ( timeSinceLastUpdate >= PACK_ALIVE_TIMEOUT ) {
-        return false;
-    }
-    return true;
-}
-
 void BatteryPack::send_message(can_frame *frame) {
     /*
     printf("SEND :: id:%02X  [", frame->can_id);
@@ -310,6 +301,8 @@ void BatteryPack::decode_voltages(can_frame *frame) {
     int messageId = (frame->can_id & 0x0F0);
     int moduleId = (frame->can_id & 0x00F);
 
+    modules[moduleId].heartbeat();
+
     switch (messageId) {
         case 0x000:
             // error = msg.buf[0] + (msg.buf[1] << 8) + (msg.buf[2] << 16) + (msg.buf[3] << 24);
@@ -400,6 +393,7 @@ float BatteryPack::get_lowest_temperature() {
 // Extract temperature sensor readings from CAN frame and update stored values
 void BatteryPack::decode_temperatures(can_frame *temperatureMessageFrame) {
     int moduleId = (temperatureMessageFrame->can_id & 0x00F) + 1;
+    modules[moduleId].heartbeat();
     for ( int t = 0; t < numTemperatureSensorsPerModule; t++ ) {
         modules[moduleId].update_temperature(t, temperatureMessageFrame->data[t] - 40);
     }

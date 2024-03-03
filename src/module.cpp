@@ -24,9 +24,11 @@
 */
 
 #include <stdio.h>
+#include <time.h>
 
 #include "include/module.h"
 #include "include/pack.h"
+#include "include/util.h"
 
 
 BatteryModule::BatteryModule() {}
@@ -130,6 +132,12 @@ bool BatteryModule::has_full_cell() {
     return false;
 }
 
+//// ----
+//
+// Status
+//
+//// ----
+
 // Return true if we have voltage/temp information for all cells
 bool BatteryModule::all_module_data_populated() {
     return allModuleDataPopulated;
@@ -151,6 +159,13 @@ void BatteryModule::check_if_module_data_is_populated() {
     allModuleDataPopulated = voltageMissing && temperatureMissing;
 }
 
+bool BatteryModule::is_alive() {
+    return ( ((double)(get_clock() - lastHeartbeat) / CLOCKS_PER_SEC) < MODULE_TTL );
+}
+
+void BatteryModule::heartbeat() {
+    lastHeartbeat = get_clock();
+}
 
 //// ----
 //
