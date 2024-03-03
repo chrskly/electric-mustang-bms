@@ -13,6 +13,7 @@ pico_sdk_init()
 
 add_executable(bms
         settings.h
+        util.cpp
         mcp2515/mcp2515.cpp
         module.cpp
         pack.cpp
