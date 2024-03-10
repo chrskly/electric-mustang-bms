@@ -41,6 +41,7 @@ EV Mustang BMS
 #include "include/comms.h"
 #include "include/led.h"
 #include "include/inputs.h"
+#include "include/isashunt.h"
 
 
 struct can_frame rx;
@@ -56,6 +57,8 @@ StatusLight statusLight;
 
 Battery battery(NUM_PACKS);
 MCP2515 mainCAN(SPI_PORT, MAIN_CAN_CS, SPI_MISO, SPI_MOSI, SPI_CLK, 500000);
+
+ISAShunt shunt;
 
 
 // Watchdog

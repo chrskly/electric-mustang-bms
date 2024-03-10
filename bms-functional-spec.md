@@ -142,7 +142,7 @@ The car will also have precharge and main contactors in the HVJB. These are cont
 - [ ] On startup, properly detect the state we should start in and immediately switch to that state
 - [x] Emulate SimpBMS output CAN messages
 - [x] Reset ISA Shunt when battery charged to 100%
-- [ ] ISA shunt heartbeat
+- [x] ISA shunt heartbeat
 - [ ] Warn/alarm flags
 - [x] Warn when modules are missing
 

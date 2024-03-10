@@ -25,6 +25,7 @@
 #include "include/statemachine.h"
 #include "include/battery.h"
 #include "include/pack.h"
+#include "include/isashunt.h"
 
 
 extern MCP2515 mainCAN;
@@ -335,39 +336,48 @@ struct repeating_timer handleMainCANMessageTimer;
 
 
 bool handle_main_CAN_messages(struct repeating_timer *t) {
+    extern ISAShunt shunt;
     if ( mainCAN.readMessage(&m) == MCP2515::ERROR_OK ) {
         switch ( m.can_id ) {
             // ISA shunt amps
             case 0x521:
                 battery.amps = (uint16_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) );
+                shunt.heartbeat();
                 break;
             // ISA shunt voltage 1
             case 0x522:
                 battery.shuntVoltage1 = (uint16_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 1000.0f;
+                shunt.heartbeat();
                 break;
             // ISA shunt voltage 2
             case 0x523:
                 battery.shuntVoltage2 = (uint16_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 1000.0f;
+                shunt.heartbeat();
                 break;
             // ISA shunt voltage 3
             case 0x524:
                 battery.shuntVoltage3 = (uint16_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 1000.0f;
+                shunt.heartbeat();
                 break;
             // ISA shunt temperature
             case 0x525:
                 battery.shuntTemperature = (uint16_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 10;
+                shunt.heartbeat();
                 break;
             // ISA shunt kilowatts
             case 0x526:
                 battery.watts = (uint16_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 1000.0f;
+                shunt.heartbeat();
                 break;
             // ISA shunt amp-hours
             case 0x527:
                 battery.ampSeconds = (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]);
+                shunt.heartbeat();
                 break;
             // ISA shunt kilowatt-hours
             case 0x528:
                 battery.wattHours = (uint16_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) );
+                shunt.heartbeat();
                 break;
             default:
                 break;

@@ -44,6 +44,10 @@
                                                    // MODULE_TTL seconds, them mark the module as
                                                    // dead.
 
+#define SHUNT_TTL 3                                // If we have not seen an update from the ISA
+                                                   // shunt in SHUNT_TTL seconds, then mark it as
+                                                   // dead.
+
 #define SAFE_VOLTAGE_DELTA_BETWEEN_PACKS 0.01      // When closing contactors, the voltage difference between the packs shall not
                                                    // be greater than this voltage, in volts.
 

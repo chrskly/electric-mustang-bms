@@ -24,6 +24,7 @@ add_executable(bms
         led.cpp
         CRC8.cpp
         inputs.cpp
+        isashunt.cpp
         )
 
 pico_add_extra_outputs(bms)
