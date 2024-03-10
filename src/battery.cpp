@@ -418,6 +418,10 @@ void Battery::disable_inhibit_charge() {
     gpio_put(CHARGE_INHIBIT_PIN, 0);
 }
 
+bool Battery::charge_is_inhibited() {
+    return inhibitCharge;
+}
+
 float Battery::get_max_charge_current() {
     return maxChargeCurrent;
 }

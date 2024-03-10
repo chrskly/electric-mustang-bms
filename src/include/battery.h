@@ -104,6 +104,7 @@ class Battery {
     void disable_heater();
     void enable_inhibit_charge();
     void disable_inhibit_charge();
+    bool charge_is_inhibited();
     float get_max_charge_current();
     float get_max_discharge_current();
     void enable_inhibit_drive();

@@ -50,6 +50,10 @@ void state_standby(Event event) {
                 state = state_overTempFault;
                 break;
             }
+            // We're not charging right now, but flag that it's too cold for later reference
+            if ( !battery.charge_is_inhibited() && battery.too_cold_to_charge() ) {
+                battery.enable_inhibit_charge();
+            }
         case E_CELL_VOLTAGE_UPDATE:
             // Battery is empty. Disallow driving.
             if ( battery.has_empty_cell() ) {
@@ -125,6 +129,10 @@ void state_drive(Event event) {
                 statusLight.led_set_mode(FAULT);
                 state = state_overTempFault;
                 break;
+            }
+            // We're not charging right now, but flag that it's too cold for later reference
+            if ( !battery.charge_is_inhibited() && battery.too_cold_to_charge() ) {
+                battery.enable_inhibit_charge();
             }
         case E_CELL_VOLTAGE_UPDATE:
             // Battery is full.
@@ -306,6 +314,9 @@ void state_batteryEmpty(Event event) {
                 statusLight.led_set_mode(FAULT);
                 state = state_overTempFault;
                 break;
+            }
+            if ( battery.charge_is_inhibited() && battery.too_cold_to_charge() ) {
+                battery.enable_inhibit_charge();
             }
         case E_CELL_VOLTAGE_UPDATE:
             // After resting for a while, the voltage may rise again slightly.
