@@ -134,7 +134,7 @@ float Battery::get_soc() {
  *
  */
 void Battery::recalculate_soc() {
-    if ( CALCULATE_SOC_FROM == 0 ) {
+    if ( CALCULATE_SOC_FROM_AMP_SECONDS == 1 ) {
         soc = 100 * (BATTERY_CAPACITY_AS + ampSeconds) / BATTERY_CAPACITY_AS;
     } else {
         soc = 100 * (BATTERY_CAPACITY_WH + wattHours) / BATTERY_CAPACITY_WH;

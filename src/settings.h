@@ -77,9 +77,10 @@ const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallo
 #define CAN_CLK_PIN     21  // pin 27
 
 // The capacity of the battery pack
-#define BATTERY_CAPACITY_WH 14800    // 7.4kWh usable per pack, x2 packs
-#define BATTERY_CAPACITY_AS 187200   // 26Ah per pack (93,600 As), x2 packs
-#define CALCULATE_SOC_FROM 0         // Should we calculate SoC from amp seconds or kWh? 0 = As, else kWh
+#define BATTERY_CAPACITY_WH 14800         // 7.4kWh usable per pack, x2 packs
+#define BATTERY_CAPACITY_AS 187200        // 26Ah per pack (93,600 As), x2 packs
+#define CALCULATE_SOC_FROM_AMP_SECONDS 1  // Should we calculate SoC from amp seconds (value = 1) or
+                                          // kWh (value = 0)? 
 
 // Official min pack voltage = 269V. 269 / 6 / 16 = 2.8020833333V
 #define CELL_EMPTY_VOLTAGE 2.9
