@@ -44,7 +44,7 @@ class BatteryModule {
     float get_voltage();
     float get_lowest_cell_voltage();
     float get_highest_cell_voltage();
-    void update_cell_voltage(int cellIndex, float newCellVoltage);
+    void set_cell_voltage(int cellIndex, float newCellVoltage);
     bool has_empty_cell();
     bool has_full_cell();
 

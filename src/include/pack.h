@@ -60,18 +60,18 @@ class BatteryPack {
 
     // Voltage
     float get_voltage();
-    void update_voltage();
+    void recalculate_total_voltage();
     float get_max_voltage();
     float get_min_voltage();
     float get_lowest_cell_voltage();
-    void update_cell_delta();
     bool has_empty_cell();
     float get_highest_cell_voltage();
     bool has_full_cell();
-    void update_cell_voltage(int moduleIndex, int cellIndex, float newCellVoltage);
+    void set_cell_voltage(int moduleIndex, int cellIndex, float newCellVoltage);
     int get_index_of_high_pack();
     int get_index_of_low_pack();
     void decode_voltages(can_frame *frame);
+    void process_voltage_update();
 
     // Temperature
     bool has_temperature_sensor_over_max();

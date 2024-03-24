@@ -36,6 +36,7 @@ Battery::Battery(int _numPacks) {
     numPacks = _numPacks;
 }
 
+// Create all batteries and modules
 void Battery::initialise() {
     printf("Initialising battery with %d packs\n", numPacks);
 
@@ -62,6 +63,7 @@ void Battery::initialise() {
     disable_inhibit_charge();
 }
 
+//
 int Battery::print() {
     extern State state;
     printf("--------------------------------------------------------------------------------\n");
@@ -79,6 +81,7 @@ int Battery::print() {
 //
 //// ----
 
+// Send messages to all packs/modules to request voltage/temperature data
 void Battery::request_data() {
     for ( int p = 0; p < numPacks; p++ ) {
         packs[p].request_data();
@@ -94,16 +97,21 @@ bool poll_packs_for_data(struct repeating_timer *t) {
     return true;
 }
 
+//
 void enable_module_polling() {
     add_repeating_timer_ms(1000, poll_packs_for_data, NULL, &pollModuleTimer);
 }
 
+/*
+ * Check for and read messages from each pack
+ */
 void Battery::read_message() {
     for ( int p = 0; p < numPacks; p++ ) {
         packs[p].read_message();
     }
 }
 
+//
 void Battery::send_test_message() {
     for ( int p = 0; p < numPacks; p++ ) {
         // printf("Sending test message to pack %d\n", p);
@@ -123,6 +131,7 @@ void Battery::send_test_message() {
 //
 //// ----
 
+//
 float Battery::get_soc() {
     return soc;
 }
@@ -154,7 +163,7 @@ float Battery::get_voltage() {
 }
 
 // Recompute and store the battery voltage based on current cell voltages
-void Battery::update_voltage() {
+void Battery::recalculate_voltage() {
     float newVoltage = 0;
     for ( int p = 0; p < numPacks; p++ ) {
         if ( packs[p].get_voltage() > newVoltage ) {
@@ -162,6 +171,10 @@ void Battery::update_voltage() {
         }
     }
     voltage = newVoltage;
+}
+
+void Battery::recalculate_cell_delta() {
+    cellDelta = highestCellVoltage - lowestCellVoltage;
 }
 
 // Return the maximum allowed voltage of the pack(s)
@@ -184,11 +197,6 @@ float Battery::get_min_voltage() {
         }
     }
     return min_voltage;
-}
-
-// Update the value we have stored for an individual cell in the pack
-void Battery::update_cell_voltage(int packIndex, int moduleIndex, int cellIndex, float newCellVoltage) {
-    packs[packIndex].update_cell_voltage(moduleIndex, cellIndex, newCellVoltage);
 }
 
 // Return the id of the pack that has the highest voltage
@@ -217,24 +225,31 @@ int Battery::get_index_of_low_pack() {
     return low_pack_index;
 }
 
-
+/*
+ * We have new cell voltage data. Process it.
+ */
+void Battery::process_voltage_update() {
+    // Do processing for each pack
+    for ( int p = 0; p < numPacks; p++ ) {
+        packs[p].process_voltage_update();
+    }
+    // Do processing for overall battery
+    recalculate_voltage();
+    recalculate_cell_delta();
+}
 
 
 // Low cells
 
-// Return the voltage of the lowest cell in the battery
-float Battery::get_lowest_cell_voltage() {
-    return lowestCellVoltage;
-}
-
-// Recompute the lowest cell voltage
-void Battery::update_lowest_cell_voltage() {
+// Recompute the lowest cell voltage across the whole battery
+void Battery::recalculate_lowest_cell_voltage() {
     float newLowestCellVoltage = 1000;
     for ( int p = 1; p < numPacks; p++ ) {
         if ( packs[p].get_lowest_cell_voltage() < newLowestCellVoltage ) {
             newLowestCellVoltage = packs[p].get_lowest_cell_voltage();
         }
     }
+    // FIXME bounds check here
     lowestCellVoltage = newLowestCellVoltage;
 }
 
@@ -253,13 +268,8 @@ bool Battery::has_empty_cell() {
 
 // High cells
 
-// Return the voltage of the highest cell in the battery
-float Battery::get_highest_cell_voltage() {
-    return highestCellVoltage;
-}
-
 // Recompute the highest cell voltage
-void Battery::update_highest_cell_voltage() {
+void Battery::recalculate_highest_cell_voltage() {
     float newHighestCellVoltage = 0;
     for ( int p = 0; p < numPacks; p++ ) {
         if ( packs[p].get_highest_cell_voltage() < newHighestCellVoltage ) {
@@ -279,7 +289,9 @@ bool Battery::has_full_cell() {
     return false;
 }
 
-// Return the largest voltage difference between any two packs in this battery.
+/*
+ * Return the largest voltage difference between any two packs in this battery.
+ */
 float Battery::voltage_delta_between_packs() {
     float highestPackVoltage = -10000;
     float lowestPackVoltage = 10000;

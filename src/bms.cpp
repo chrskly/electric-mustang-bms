@@ -84,6 +84,7 @@ bool status_print(struct repeating_timer *t) {
     return true;
 }
 
+//
 void enable_status_print() {
     add_repeating_timer_ms(5000, status_print, NULL, &statusPrintTimer);
 }
@@ -103,6 +104,7 @@ bool update_soc(struct repeating_timer *t) {
     return true;
 }
 
+//
 void enable_update_soc() {
     add_repeating_timer_ms(5000, update_soc, NULL, &socUpdateTimer);
 }

@@ -26,15 +26,16 @@
 class Battery {
  private:
     BatteryPack packs[NUM_PACKS];
-    int numPacks;
-    float voltage;
-    float lowestCellVoltage;
-    float highestCellVoltage;
-    float lowestCellTemperature;
-    float highestCellTemperature;
+    int numPacks;                  // Number of battery packs in this battery
+    float voltage;                 // Total voltage of whole battery
+    float lowestCellVoltage;       // Voltage of cell with lowest voltage across whole battery
+    float highestCellVoltage;      // Voltage of cell with highest voltage across whole battery
+    int cellDelta;                 // FIXME todo
+    float lowestCellTemperature;   //
+    float highestCellTemperature;  //
 
-    float maxChargeCurrent;
-    float maxDischargeCurrent;
+    float maxChargeCurrent;        //
+    float maxDischargeCurrent;     //
 
     // Outputs
     bool heaterEnabled;            // Indicates that the battery heater is currently enabled
@@ -72,18 +73,20 @@ class Battery {
     // Voltage
     float get_voltage();
     void set_voltage(float voltage) { this->voltage = voltage; }
-    void update_voltage();
+    void recalculate_voltage();
+    void recalculate_cell_delta();
     float get_max_voltage();
     float get_min_voltage();
 
     void update_cell_voltage(int packIndex, int moduleIndex, int cellIndex, float newCellVoltage);
     int get_index_of_high_pack();
     int get_index_of_low_pack();
+    void process_voltage_update();
     float get_lowest_cell_voltage();
-    void update_lowest_cell_voltage();
+    void recalculate_lowest_cell_voltage();
     bool has_empty_cell();
     float get_highest_cell_voltage();
-    void update_highest_cell_voltage();
+    void recalculate_highest_cell_voltage();
     bool has_full_cell();
     float voltage_delta_between_packs();
     BatteryPack* get_pack_with_highest_voltage();

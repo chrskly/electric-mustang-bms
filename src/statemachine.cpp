@@ -55,6 +55,7 @@ void state_standby(Event event) {
                 battery.enable_inhibit_charge();
             }
         case E_CELL_VOLTAGE_UPDATE:
+            battery.process_voltage_update();
             // Battery is empty. Disallow driving.
             if ( battery.has_empty_cell() ) {
                 battery.enable_inhibit_drive();
@@ -135,6 +136,7 @@ void state_drive(Event event) {
                 battery.enable_inhibit_charge();
             }
         case E_CELL_VOLTAGE_UPDATE:
+            battery.process_voltage_update();
             // Battery is full.
             // Can we disable regen?
             // if ( battery.has_full_cell() ) { }
@@ -201,6 +203,71 @@ void state_drive(Event event) {
 }
 
 /*
+ * State          : batteryHeating
+ * Ignition       : on or off
+ * Contactors     : closed
+ * Charging       : no
+ * heater         : on
+ * drive inhibit  : off
+ * charge inhibit : off
+ */
+void state_batteryHeating(Event event) {
+    switch (event) {
+        case E_TEMPERATURE_UPDATE:
+            /* Important to catch overheating first. We don't want to heat the
+             * battery all the way into an overheat situation */
+            if ( battery.has_temperature_sensor_over_max() ) {
+                battery.enable_inhibit_drive();
+                battery.enable_inhibit_charge();
+                printf("Switching to state : overTempFault, reason : battery too hot\n");
+                statusLight.led_set_mode(FAULT);
+                state = state_overTempFault;
+                break;
+            }
+            // If no longer too cold to charge, start charging
+            if ( !battery.too_cold_to_charge() ) {
+                //
+            }
+        case E_CELL_VOLTAGE_UPDATE:
+            battery.process_voltage_update();
+            break;
+        case E_IGNITION_ON:
+            break;
+        case E_IGNITION_OFF:
+            break;
+        case E_CHARGING_INITIATED:
+            break;
+        case E_CHARGING_TERMINATED:
+            // We're no longer seeking to charge. No need to continue heating.
+            battery.disable_heater();
+            // Drive mode
+            if ( battery.ignition_is_on() ) {
+                if ( battery.one_or_more_contactors_inhibited() ) {
+                    battery.disable_inhibit_for_drive();
+                }
+                battery.disable_inhibit_charge();
+                battery.disable_inhibit_drive();
+                printf("Switching to state : drive, reason : charging request was cancelled\n");
+                statusLight.led_set_mode(DRIVE);
+                state = state_drive;
+                break;
+            }
+            // Standby mode
+            battery.disable_inhibit_drive();
+            battery.disable_inhibit_charge();
+            printf("Switching to state : standby, reason : battery has cooled\n");
+            statusLight.led_set_mode(STANDBY);
+            state = state_standby;
+            break;
+        case E_EMERGENCY_SHUTDOWN:
+            break;
+        default:
+            printf("Received unknown event\n");
+
+    }
+}
+
+/*
  * State          : charging
  * Ignition       : on or off
  * Contactors     : closed
@@ -237,6 +304,7 @@ void state_charging(Event event) {
             battery.update_max_charge_current();
             break;
         case E_CELL_VOLTAGE_UPDATE:
+            battery.process_voltage_update();
             /* Prevent cells from getting over-charged */
             if ( battery.has_full_cell() ) {
                 battery.enable_inhibit_charge();
@@ -319,6 +387,7 @@ void state_batteryEmpty(Event event) {
                 battery.enable_inhibit_charge();
             }
         case E_CELL_VOLTAGE_UPDATE:
+            battery.process_voltage_update();
             // After resting for a while, the voltage may rise again slightly.
             if ( !battery.has_empty_cell() ) {
                 // allow driving again
@@ -416,6 +485,7 @@ void state_overTempFault(Event event) {
             }
             break;
         case E_CELL_VOLTAGE_UPDATE:
+            battery.process_voltage_update();
             break;
         case E_IGNITION_ON:
             break;
@@ -450,6 +520,7 @@ void state_illegalStateTransitionFault(Event event) {
         case E_TEMPERATURE_UPDATE:
             break;
         case E_CELL_VOLTAGE_UPDATE:
+            battery.process_voltage_update();
             break;
         case E_IGNITION_ON:
             break;

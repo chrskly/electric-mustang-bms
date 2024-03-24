@@ -33,6 +33,7 @@
 
 BatteryModule::BatteryModule() {}
 
+//
 BatteryModule::BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _numTemperatureSensors) {
     // printf("Creating module (id:%d, pack:%d, cpm:%d, t:%d)\n", _id, _pack->id, _numCells, _numTemperatureSensors);
     id = _id;
@@ -107,7 +108,7 @@ float BatteryModule::get_highest_cell_voltage() {
 }
 
 // Update the voltage for a single cell
-void BatteryModule::update_cell_voltage(int cellIndex, float newCellVoltage) {
+void BatteryModule::set_cell_voltage(int cellIndex, float newCellVoltage) {
     // printf("module : update_cell_voltage : %d : %.4f\n", cellIndex, newCellVoltage);
     cellVoltage[cellIndex] = newCellVoltage;
 }
