@@ -48,6 +48,9 @@ class Battery {
 
     float soc;
 
+    // Something has gone wrong with the BMS
+    bool internalError = false;
+
  public:
     // Readings from ISA shunt
     uint16_t amps;

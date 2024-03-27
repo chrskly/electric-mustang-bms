@@ -249,7 +249,10 @@ void Battery::recalculate_lowest_cell_voltage() {
             newLowestCellVoltage = packs[p].get_lowest_cell_voltage();
         }
     }
-    // FIXME bounds check here
+    // Safety checks
+    if ( newLowestCellVoltage < CELL_EMPTY_VOLTAGE || newLowestCellVoltage > CELL_FULL_VOLTAGE ) {
+        internalError = true;
+    }
     lowestCellVoltage = newLowestCellVoltage;
 }
 
@@ -275,6 +278,10 @@ void Battery::recalculate_highest_cell_voltage() {
         if ( packs[p].get_highest_cell_voltage() < newHighestCellVoltage ) {
             newHighestCellVoltage = packs[p].get_highest_cell_voltage();
         }
+    }
+    // Safety checks
+    if ( newHighestCellVoltage < CELL_EMPTY_VOLTAGE || newHighestCellVoltage > CELL_FULL_VOLTAGE ) {
+        internalError = true;
     }
     highestCellVoltage = newHighestCellVoltage;
 }
@@ -380,6 +387,10 @@ float Battery::get_lowest_temperature() {
             lowestTemperature = packs[p].get_lowest_temperature();
         }
     }
+    // Saftey check
+    if ( lowestTemperature < -20 || lowestTemperature > 50 ) {
+        internalError = true;
+    }
     return lowestTemperature;
 }
 
@@ -391,7 +402,7 @@ float Battery::get_lowest_temperature() {
 //// ----
 
 bool Battery::too_cold_to_charge() {
-    if ( get_lowest_temperature() < CELL_UNDER_TEMPERATURE_FAULT_THRESHOLD ) {
+    if ( get_lowest_temperature() < MINIMUM_CHARGING_TEMPERATURE ) {
         return true;
     }
     return false;

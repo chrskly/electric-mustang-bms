@@ -62,7 +62,16 @@ void send_ISA_reset_message() {
  *
  * Custom message format (not in SimpBMS)
  *
- * byte 0 = bms status
+ * byte 0 = error bits
+ *   bit 0 = internalError
+ *   bit 1 = 
+ *   bit 2 =
+ *   bit 3 = 
+ *   bit 4 =
+ *   bit 5 =
+ *   bit 6 =
+ *   bit 7 =
+ * byte 1 = bms status
  *   00 = standby
  *   01 = drive
  *   02 = charging
@@ -70,12 +79,11 @@ void send_ISA_reset_message() {
  *   04 = overTempFault
  *   05 = illegalStateTransitionFault
  *   FF = Undefined error
- * byte 1 = modules 0-7 heartbeat status (0 alive, 1 dead)
- * byte 2 = modules 8-15 hearbeat status (0 alive, 1 dead)
- * byte 3 = modules 16-23 heartbeat status (0 alive, 1 dead)
- * byte 4 = modules 24-31 heartbeat status (0 alive, 1 dead)
- * byte 5 = modules 32-39 heartbeat status (0 alive, 1 dead)
- * byte 6
+ * byte 2 = modules 0-7 heartbeat status (0 alive, 1 dead)
+ * byte 3 = modules 8-15 hearbeat status (0 alive, 1 dead)
+ * byte 4 = modules 16-23 heartbeat status (0 alive, 1 dead)
+ * byte 5 = modules 24-31 heartbeat status (0 alive, 1 dead)
+ * byte 6 = modules 32-39 heartbeat status (0 alive, 1 dead)
  * byte 7
  */
 
@@ -85,27 +93,29 @@ struct repeating_timer bmsStateTimer;
 
 bool send_bms_state_message(struct repeating_timer *t) {
     extern State state;
+    extern bool internalError;
 
     bmsStateFrame.can_id = 0x350;
     bmsStateFrame.can_dlc = 8;
 
+    bmsStateFrame.data[0] = 0x00 && internalError;
+
     if ( state == &state_standby ) {
-        bmsStateFrame.data[0] = 0x00;
+        bmsStateFrame.data[1] = 0x00;
     } else if ( state == &state_drive ) {
-        bmsStateFrame.data[0] = 0x01;
+        bmsStateFrame.data[1] = 0x01;
     } else if ( state == &state_charging ) {
-        bmsStateFrame.data[0] = 0x02;
+        bmsStateFrame.data[1] = 0x02;
     } else if ( state == &state_batteryEmpty ) {
-        bmsStateFrame.data[0] = 0x03;
+        bmsStateFrame.data[1] = 0x03;
     } else if ( state == &state_overTempFault ) {
-        bmsStateFrame.data[0] = 0x04;
+        bmsStateFrame.data[1] = 0x04;
     } else if ( state == &state_illegalStateTransitionFault ) {
-        bmsStateFrame.data[0] = 0x05;
+        bmsStateFrame.data[1] = 0x05;
     } else {
-        bmsStateFrame.data[0] = 0xFF;
+        bmsStateFrame.data[1] = 0xFF;
     }
 
-    bmsStateFrame.data[1] = 0x00;
     bmsStateFrame.data[2] = 0x00;
     bmsStateFrame.data[3] = 0x00;
     bmsStateFrame.data[4] = 0x00;

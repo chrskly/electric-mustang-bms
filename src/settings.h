@@ -92,12 +92,13 @@ const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallo
 // Official max pack voltage = 398V. 398 / 6 / 16 = 4.1458333333V
 #define CELL_FULL_VOLTAGE 4.0
 
-#define CELL_UNDER_TEMPERATURE_FAULT_THRESHOLD 0    // degrees
-#define CELL_OVER_TEMPERATURE_WARNING_THRESHOLD 55  // degrees
-#define CELL_OVER_TEMPERATURE_FAULT_THRESHOLD 65    // degrees
+#define MINIMUM_TEMPERATURE -20          // 
+#define MINIMUM_CHARGING_TEMPERATURE 0   // Disallow charging below this temperature
+#define WARNING_TEMPERATURE 30           // 
+#define MAXIMUM_TEMPERATURE 50           // Stop everything if the battery is above this temperature
 
-#define CHARGE_THROTTLE_TEMP_LOW  45                // Start throttling charge current when battery sensors above this temperature
-#define CHARGE_THROTTLE_TEMP_HIGH 65                // Top of the throttling scale. Limit current to CHARGE_CURRENT_MIN at and above this temperature
+#define CHARGE_THROTTLE_TEMP_LOW  20                // Start throttling charge current when battery sensors above this temperature
+#define CHARGE_THROTTLE_TEMP_HIGH 30                // Top of the throttling scale. Limit current to CHARGE_CURRENT_MIN at and above this temperature
 #define CHARGE_CURRENT_MAX 125                      // ~50kw
 #define CHARGE_CURRENT_MIN 8                        // ~3.3kw
 

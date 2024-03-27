@@ -110,7 +110,6 @@ void enable_update_soc() {
 }
 
 
-
 int main() {
     stdio_init_all();
 

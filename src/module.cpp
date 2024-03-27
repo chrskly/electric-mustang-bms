@@ -203,7 +203,7 @@ float BatteryModule::get_highest_temperature() {
 
 // Return true if any temperature sensor is over the max temperature
 bool BatteryModule::has_temperature_sensor_over_max() {
-    return ( get_highest_temperature() > CELL_OVER_TEMPERATURE_FAULT_THRESHOLD );
+    return ( get_highest_temperature() > MAXIMUM_TEMPERATURE );
 }
 
 
@@ -212,8 +212,7 @@ bool BatteryModule::has_temperature_sensor_over_max() {
 // level, but below the critical level.
 bool BatteryModule::temperature_at_warning_level() {
     for ( int c = 0; c < numCells; c++ ) {
-        if ( cellTemperature[c] >= CELL_OVER_TEMPERATURE_WARNING_THRESHOLD &&
-            cellTemperature[c] < CELL_OVER_TEMPERATURE_FAULT_THRESHOLD ) {
+        if ( cellTemperature[c] >= WARNING_TEMPERATURE && cellTemperature[c] < MAXIMUM_TEMPERATURE ) {
             return true;
         }
     }
