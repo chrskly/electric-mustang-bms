@@ -80,7 +80,12 @@ int Battery::print() {
 
 // Combine error bits into error byte to send out in status CAN message
 uint8_t Battery::get_error_byte() {
-    return ( 0x0 | internalError | packsAreImbalanced << 1 );
+    return ( 0x00 | internalError | packsAreImbalanced << 1 );
+}
+
+// Combine status bits into status byte to send out in status CAN message
+uint8_t Battery::get_status_byte() {
+    return ( 0x00 | inhibitCharge | inhibitDrive << 1 | heaterEnabled << 2 | ignitionOn << 3 | chargeEnable << 4 );
 }
 
 //// ----
