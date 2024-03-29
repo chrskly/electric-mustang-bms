@@ -36,7 +36,7 @@ Battery::Battery(int _numPacks) {
     numPacks = _numPacks;
 }
 
-// Create all batteries and modules
+// Create all battery packs and modules
 void Battery::initialise() {
     printf("Initialising battery with %d packs\n", numPacks);
 
@@ -61,6 +61,9 @@ void Battery::initialise() {
     gpio_init(CHARGE_INHIBIT_PIN);
     gpio_set_dir(CHARGE_INHIBIT_PIN, GPIO_OUT);
     disable_inhibit_charge();
+
+    internalError = false;
+    packsAreImbalanced = false;
 }
 
 //
@@ -73,6 +76,11 @@ int Battery::print() {
     }
     printf("--------------------------------------------------------------------------------\n");
     return 0;
+}
+
+// Combine error bits into error byte to send out in status CAN message
+uint8_t Battery::get_error_byte() {
+    return ( 0x0 | internalError | packsAreImbalanced << 1 );
 }
 
 //// ----
@@ -328,7 +336,8 @@ BatteryPack* Battery::get_pack_with_highest_voltage() {
 // Return true if the voltage difference between any two packs is too high and
 // therefore it's unstafe to close the contactors.
 bool Battery::packs_are_imbalanced() {
-    return ( voltage_delta_between_packs() >= SAFE_VOLTAGE_DELTA_BETWEEN_PACKS );
+    packsAreImbalanced = voltage_delta_between_packs() >= SAFE_VOLTAGE_DELTA_BETWEEN_PACKS;
+    return packsAreImbalanced;
 }
 
 //// ----

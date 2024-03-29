@@ -63,22 +63,22 @@ void send_ISA_reset_message() {
  * Custom message format (not in SimpBMS)
  *
  * byte 0 = error bits
- *   bit 0 = internalError
- *   bit 1 = 
+ *   bit 0 = internalError   - something has gone wrong in the BMS
+ *   bit 1 = packsImbalanced - the voltage between two or more packs varies by an unsafe amount
  *   bit 2 =
  *   bit 3 = 
  *   bit 4 =
  *   bit 5 =
  *   bit 6 =
  *   bit 7 =
- * byte 1 = bms status
- *   00 = standby
- *   01 = drive
- *   02 = charging
- *   03 = batteryEmpty
- *   04 = overTempFault
- *   05 = illegalStateTransitionFault
- *   FF = Undefined error
+ * byte 1 = bms state
+ *   0 = standby
+ *   1 = drive
+ *   2 = charging
+ *   3 = batteryEmpty
+ *   4 = overTempFault
+ *   5 = illegalStateTransitionFault
+ *   F = Undefined error
  * byte 2 = modules 0-7 heartbeat status (0 alive, 1 dead)
  * byte 3 = modules 8-15 hearbeat status (0 alive, 1 dead)
  * byte 4 = modules 16-23 heartbeat status (0 alive, 1 dead)
@@ -98,7 +98,7 @@ bool send_bms_state_message(struct repeating_timer *t) {
     bmsStateFrame.can_id = 0x350;
     bmsStateFrame.can_dlc = 8;
 
-    bmsStateFrame.data[0] = 0x00 && internalError;
+    bmsStateFrame.data[0] = battery.get_error_byte();
 
     if ( state == &state_standby ) {
         bmsStateFrame.data[1] = 0x00;

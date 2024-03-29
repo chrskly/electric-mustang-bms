@@ -49,7 +49,10 @@ class Battery {
     float soc;
 
     // Something has gone wrong with the BMS
-    bool internalError = false;
+    bool internalError;
+
+    // The voltage between the two packs
+    bool packsAreImbalanced;
 
  public:
     // Readings from ISA shunt
@@ -65,6 +68,7 @@ class Battery {
     Battery(int _numPacks);
     void initialise();
     int print();
+    uint8_t get_error_byte();
 
     void request_data();
     void read_message();
