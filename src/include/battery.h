@@ -1,7 +1,7 @@
 /*
  * This file is part of the ev mustang bms project.
  *
- * Copyright (C) 2022 Christian Kelly <chrskly@chrskly.com>
+ * Copyright (C) 2024 Christian Kelly <chrskly@chrskly.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,6 +69,7 @@ class Battery {
     void initialise();
     int print();
     uint8_t get_error_byte();
+    uint8_t get_status_byte();
 
     void request_data();
     void read_message();

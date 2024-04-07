@@ -1,7 +1,7 @@
 /*
  * This file is part of the ev mustang bms project.
  *
- * Copyright (C) 2022 Christian Kelly <chrskly@chrskly.com>
+ * Copyright (C) 2024 Christian Kelly <chrskly@chrskly.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -96,6 +96,10 @@ void state_standby(Event event) {
             if ( battery.too_cold_to_charge() ) {
                 battery.enable_heater();
                 battery.enable_inhibit_charge();
+                printf("Switching to state : state_batteryHeating, reason : charge requested, but too cold to charge\n");
+                statusLight.led_set_mode(CHARGING);
+                state = state_batteryHeating;
+                break;
             }
             printf("Switching to state : charging\n");
             statusLight.led_set_mode(CHARGING);
@@ -206,10 +210,10 @@ void state_drive(Event event) {
  * State          : batteryHeating
  * Ignition       : on or off
  * Contactors     : closed
- * Charging       : no
+ * Charging       : no (but CHARGE_ENABLE is on, so waiting to charge)
  * heater         : on
  * drive inhibit  : off
- * charge inhibit : off
+ * charge inhibit : on
  */
 void state_batteryHeating(Event event) {
     switch (event) {
@@ -224,10 +228,16 @@ void state_batteryHeating(Event event) {
                 state = state_overTempFault;
                 break;
             }
-            // If no longer too cold to charge, start charging
-            if ( !battery.too_cold_to_charge() ) {
-                //
+            // If no longer too cold to charge, allow charging
+            if ( !battery.too_cold_to_charge() && !battery.has_full_cell() ) {
+                battery.disable_heater();
+                battery.disable_inhibit_charge();
+                printf("Switching to state : charging, reason : battery warmed to minimum charging temperature\n");
+                statusLight.led_set_mode(CHARGING);
+                state = state_charging;
+                break;
             }
+            break;
         case E_CELL_VOLTAGE_UPDATE:
             battery.process_voltage_update();
             break;
