@@ -1,3 +1,4 @@
+
 # Testing framework for BMS
 
 ## Connections between BMS and test harness
@@ -16,10 +17,10 @@
 --------------------------------------------------------------------------------
 
 
-## Test Cases : Battery empty/full
+## Test Cases : [0xx] : Battery empty/full
 
 
-### Test Case 01
+### Test Case 001
 
 Description : Ensure car cannot be driven when battery is empty
 
@@ -36,7 +37,7 @@ Event : Any cell is empty
 Result : DRIVE_INHIBIT signal activates
 
 
-### Test Case xx
+### Test Case 002
 
 Description : Ensure battery cannot be charged when battery is full
 
@@ -56,10 +57,10 @@ Result : CHARGE_INHIBIT signal activates
 --------------------------------------------------------------------------------
 
 
-## Test Cases : Pack-level voltage safety
+## Test Cases : [1xx] : Pack-level voltage safety
 
 
-### Test Case xx
+### Test Case 101
 
 Description : Inhibit battery contactor close when pack voltages differ
 
@@ -215,7 +216,7 @@ Result : DRIVE_INHIBIT and CHARGE_INHIBIT signals should activate.
 --------------------------------------------------------------------------------
 
 
-## Test Cases : Temperature
+## Test Cases : [2xx] : Temperature
 
 
 ### Test Case xx
