@@ -18,6 +18,7 @@ add_executable(bms
         pack.cpp
         battery.cpp
         bmstest.cpp
+        include/comms.h
         comms.cpp
         )
 

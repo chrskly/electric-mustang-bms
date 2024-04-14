@@ -37,6 +37,7 @@ class BatteryModule {
  public:
     BatteryModule();
     BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _numTemperatureSensors);
+    float get_cell_voltage(int cellId);
 };
 
 #endif  // BMS_SRC_INCLUDE_MODULE_H_

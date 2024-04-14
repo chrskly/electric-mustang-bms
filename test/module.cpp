@@ -38,3 +38,7 @@ BatteryModule::BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _nu
         cellTemperature[t] = 0.000f;
     }
 }
+
+float BatteryModule::get_cell_voltage(int cellId) {
+    return cellVoltage[cellId];
+}

@@ -57,6 +57,7 @@ class Battery {
  public:
     Battery(int _numPacks);
     void initialise();
+    void read_message();
     
 
 };

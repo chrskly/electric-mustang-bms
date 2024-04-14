@@ -40,3 +40,11 @@ void Battery::initialise() {
         packs[p].set_battery(this);
     }
 }
+
+
+// Check for and read messages from each pack 
+void Battery::read_message() {
+    for ( int p = 0; p < numPacks; p++ ) {
+        packs[p].read_message();
+    }
+}

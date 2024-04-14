@@ -61,7 +61,7 @@ int main() {
     printf("Enabling handling of inbound CAN messages on main bus\n");
     enable_handle_main_CAN_messages();
 
-    printf("Enabling handling of inbound CAN messages from batteries\n");
+    printf("Enabling handling of inbound CAN messages to the mock batteries\n");
     enable_handle_battery_CAN_messages();
 
     while (true) {

@@ -52,3 +52,16 @@ bool handle_main_CAN_messages(struct repeating_timer *t) {
 void enable_handle_main_CAN_messages() {
     add_repeating_timer_ms(10, handle_main_CAN_messages, NULL, &handleMainCANMessageTimer);
 }
+
+// Handle the CAN messages that come in from the BMS to the mock batteries
+
+struct repeating_timer handleBatteryCANMessagesTimer;
+
+bool handle_battery_CAN_messages(struct repeating_timer *t) {
+    battery.read_message();
+    return true;
+}
+
+void enable_handle_battery_CAN_messages() {
+    add_repeating_timer_ms(10, handle_battery_CAN_messages, NULL, &handleBatteryCANMessagesTimer);
+}
