@@ -135,6 +135,16 @@ void BatteryPack::send_module_voltages(uint8_t moduleId) {
     send_message(&voltage_frame);
 }
 
+void BatteryPack::send_module_temperatures(uint8_t moduleId) {
+    can_frame temperature_frame;
+    temperature_frame.can_dlc = 8;
+    temperature_frame.can_id = (0x180 | moduleId);
+    temperature_frame.data[0] = modules[moduleId].get_cell_temperature(0) + 40;
+    temperature_frame.data[1] = modules[moduleId].get_cell_temperature(1) + 40;
+    temperature_frame.data[2] = modules[moduleId].get_cell_temperature(2) + 40;
+    temperature_frame.data[3] = modules[moduleId].get_cell_temperature(3) + 40;
+    send_message(&temperature_frame);
+}
 
 // Check for message from BMS for battery
 
@@ -149,8 +159,8 @@ void BatteryPack::read_message() {
         */
         for ( int m=0; m < numModules; m++ ) {
             send_module_voltages(m);
+            send_module_temperatures(m);
         }
-
     }
 }
 
