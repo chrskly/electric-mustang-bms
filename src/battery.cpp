@@ -70,7 +70,7 @@ void Battery::initialise() {
 int Battery::print() {
     extern State state;
     printf("--------------------------------------------------------------------------------\n");
-    printf("BMS status : %s\n", state);
+    printf("BMS status : %s\n", get_state_name());
     for ( int p = 0; p < numPacks; p++ ) {
         packs[p].print();
     }

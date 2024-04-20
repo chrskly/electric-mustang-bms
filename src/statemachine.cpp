@@ -554,3 +554,27 @@ void state_illegalStateTransitionFault(Event event) {
             printf("Received unknown event\n");
     }
 }
+
+typedef struct stateName {
+    State state;
+    const char * stateName;
+} stateName;
+
+struct stateName stateNames[7] = {
+    {state_standby, "standby"},
+    {state_drive, "drive"},
+    {state_batteryHeating, "batteryHeating"},
+    {state_charging, "charging"},
+    {state_batteryEmpty, "batteryEmpty"},
+    {state_overTempFault, "overTempFault"},
+    {state_illegalStateTransitionFault, "illegalStateTransistionFault"}
+};
+
+const char* get_state_name() {
+    for ( int i=0; i < 8; i++ ) {
+        if ( state == stateNames[i].state ) {
+            return stateNames[i].stateName;
+        }
+    }
+    return "unknownState";
+}
