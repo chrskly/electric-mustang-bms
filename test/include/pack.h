@@ -34,6 +34,7 @@ class BatteryPack {
     BatteryPack(int _id, int CANCSPin, int _contactorPin, int _numModules, int _numCellsPerModule, int _numTemperatureSensorsPerModule);
     void set_battery(Battery* battery) { this->battery = battery; }
     void send_module_voltages(uint8_t moduleId);
+    void send_module_temperatures(uint8_t moduleId);
     void read_message();
     void send_message(can_frame *frame);
 

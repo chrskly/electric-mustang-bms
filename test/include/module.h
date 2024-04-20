@@ -38,6 +38,7 @@ class BatteryModule {
     BatteryModule();
     BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _numTemperatureSensors);
     uint16_t get_cell_voltage(int cellId);
+    uint8_t get_cell_temperature(int cellId);
 };
 
 #endif  // BMS_SRC_INCLUDE_MODULE_H_
