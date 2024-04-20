@@ -171,13 +171,13 @@ void Battery::recalculate_soc() {
 //// ----
 
 // Return the voltage of the whole battery
-float Battery::get_voltage() {
+uint32_t Battery::get_voltage() {
     return voltage;
 }
 
 // Recompute and store the battery voltage based on current cell voltages
 void Battery::recalculate_voltage() {
-    float newVoltage = 0;
+    uint32_t newVoltage = 0;
     for ( int p = 0; p < numPacks; p++ ) {
         if ( packs[p].get_voltage() > newVoltage ) {
             newVoltage = packs[p].get_voltage();
@@ -191,8 +191,8 @@ void Battery::recalculate_cell_delta() {
 }
 
 // Return the maximum allowed voltage of the pack(s)
-float Battery::get_max_voltage() {
-    float max_voltage = packs[0].get_max_voltage();
+uint32_t Battery::get_max_voltage() {
+    uint32_t max_voltage = packs[0].get_max_voltage();
     for ( int p = 1; p < numPacks; p++ ) {
         if ( packs[p].get_max_voltage() < max_voltage ) {
             max_voltage = packs[p].get_max_voltage();
@@ -202,8 +202,8 @@ float Battery::get_max_voltage() {
 }
 
 // Return the minimum allowed voltage of the pack(s)
-float Battery::get_min_voltage() {
-    float min_voltage = packs[0].get_min_voltage();
+uint32_t Battery::get_min_voltage() {
+    uint32_t min_voltage = packs[0].get_min_voltage();
     for ( int p = 1; p < numPacks; p++ ) {
         if ( packs[p].get_min_voltage() > min_voltage ) {
             min_voltage = packs[p].get_min_voltage();
@@ -228,7 +228,7 @@ int Battery::get_index_of_high_pack() {
 // Return the id of the pack that has the lowest voltage
 int Battery::get_index_of_low_pack() {
     int low_pack_index = 0;
-    float low_pack_voltage = 1000.0f;
+    uint32_t low_pack_voltage = 1000;
     for ( int p = 0; p < numPacks; p++ ) {
         if ( packs[0].get_voltage() < low_pack_voltage ) {
             low_pack_index = p;
@@ -256,7 +256,7 @@ void Battery::process_voltage_update() {
 
 // Recompute the lowest cell voltage across the whole battery
 void Battery::recalculate_lowest_cell_voltage() {
-    float newLowestCellVoltage = 1000;
+    uint16_t newLowestCellVoltage = 10000;
     for ( int p = 1; p < numPacks; p++ ) {
         if ( packs[p].get_lowest_cell_voltage() < newLowestCellVoltage ) {
             newLowestCellVoltage = packs[p].get_lowest_cell_voltage();
@@ -286,7 +286,7 @@ bool Battery::has_empty_cell() {
 
 // Recompute the highest cell voltage
 void Battery::recalculate_highest_cell_voltage() {
-    float newHighestCellVoltage = 0;
+    uint16_t newHighestCellVoltage = 0;
     for ( int p = 0; p < numPacks; p++ ) {
         if ( packs[p].get_highest_cell_voltage() < newHighestCellVoltage ) {
             newHighestCellVoltage = packs[p].get_highest_cell_voltage();
@@ -312,9 +312,9 @@ bool Battery::has_full_cell() {
 /*
  * Return the largest voltage difference between any two packs in this battery.
  */
-float Battery::voltage_delta_between_packs() {
-    float highestPackVoltage = -10000;
-    float lowestPackVoltage = 10000;
+uint32_t Battery::voltage_delta_between_packs() {
+    uint32_t highestPackVoltage = 0;
+    uint32_t lowestPackVoltage = 1000000; // 1000V
     for ( int p = 0; p < numPacks; p++ ) {
         float packVoltage = packs[p].get_voltage();
         if ( packVoltage > highestPackVoltage ) {
@@ -493,8 +493,8 @@ bool Battery::drive_is_inhibited() {
 // within SAFE_VOLTAGE_DELTA_BETWEEN_PACKS volts.
 void Battery::disable_inhibit_for_drive() {
     int highPackId = get_index_of_high_pack();
-    float highPackVoltage = packs[highPackId].get_voltage();
-    float targetVoltage = highPackVoltage - SAFE_VOLTAGE_DELTA_BETWEEN_PACKS;
+    uint32_t highPackVoltage = packs[highPackId].get_voltage();
+    uint32_t targetVoltage = highPackVoltage - SAFE_VOLTAGE_DELTA_BETWEEN_PACKS;
     for ( int p = 0; p < numPacks; p++ ) {
         if ( p == highPackId ) {
             packs[p].disable_inhibit_contactor_close();
@@ -510,8 +510,8 @@ void Battery::disable_inhibit_for_drive() {
 // within SAFE_VOLTAGE_DELTA_BETWEEN_PACKS volts.
 void Battery::disable_inhibit_for_charge() {
     int lowPackId = get_index_of_low_pack();
-    float lowPackVoltage = packs[lowPackId].get_voltage();
-    float targetVoltage = lowPackVoltage + SAFE_VOLTAGE_DELTA_BETWEEN_PACKS;
+    uint32_t lowPackVoltage = packs[lowPackId].get_voltage();
+    uint32_t targetVoltage = lowPackVoltage + SAFE_VOLTAGE_DELTA_BETWEEN_PACKS;
     for ( int p = 0; p < numPacks; p++ ) {
         if ( p == lowPackId ) {
             packs[p].disable_inhibit_contactor_close();

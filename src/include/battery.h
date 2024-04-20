@@ -27,9 +27,9 @@ class Battery {
  private:
     BatteryPack packs[NUM_PACKS];
     int numPacks;                  // Number of battery packs in this battery
-    float voltage;                 // Total voltage of whole battery
-    float lowestCellVoltage;       // Voltage of cell with lowest voltage across whole battery
-    float highestCellVoltage;      // Voltage of cell with highest voltage across whole battery
+    uint32_t voltage;                 // Total voltage of whole battery
+    uint16_t lowestCellVoltage;       // Voltage of cell with lowest voltage across whole battery
+    uint16_t highestCellVoltage;      // Voltage of cell with highest voltage across whole battery
     int cellDelta;                 // FIXME todo
     float lowestCellTemperature;   //
     float highestCellTemperature;  //
@@ -79,24 +79,24 @@ class Battery {
     void recalculate_soc();
 
     // Voltage
-    float get_voltage();
-    void set_voltage(float voltage) { this->voltage = voltage; }
+    uint32_t get_voltage();
+    void set_voltage(uint32_t voltage) { this->voltage = voltage; }
     void recalculate_voltage();
     void recalculate_cell_delta();
-    float get_max_voltage();
-    float get_min_voltage();
+    uint32_t get_max_voltage();
+    uint32_t get_min_voltage();
 
     void update_cell_voltage(int packIndex, int moduleIndex, int cellIndex, float newCellVoltage);
     int get_index_of_high_pack();
     int get_index_of_low_pack();
     void process_voltage_update();
-    float get_lowest_cell_voltage();
+    uint16_t get_lowest_cell_voltage();
     void recalculate_lowest_cell_voltage();
     bool has_empty_cell();
-    float get_highest_cell_voltage();
+    uint16_t get_highest_cell_voltage();
     void recalculate_highest_cell_voltage();
     bool has_full_cell();
-    float voltage_delta_between_packs();
+    uint32_t voltage_delta_between_packs();
     BatteryPack* get_pack_with_highest_voltage();
     bool packs_are_imbalanced();
     uint16_t get_amps();

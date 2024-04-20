@@ -40,10 +40,9 @@ BatteryModule::BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _nu
     // Point back to parent pack
     pack = _pack;
     // Initialise all cell voltages to zero
-    // numCells = _numCells;
-    numCells = 16;
+    numCells = _numCells;
     for ( int c = 0; c < numCells; c++ ) {
-        cellVoltage[c] = 0.000f;
+        cellVoltage[c] = 0;
     }
     // Initialise temperature sensor readings to zero
     numTemperatureSensors = _numTemperatureSensors;
@@ -57,7 +56,7 @@ void BatteryModule::print() {
     printf("    Module id : %d (numCells : %d)\n", id, numCells);
     printf("        Cell Voltages : ");
     for ( int c = 0; c < numCells; c++ ) {
-        printf("%d:%1.3fV ", c, cellVoltage[c]);
+        printf("%d:%umV ", c, cellVoltage[c]);
     }
     printf("\n");
     printf("        Temperatures : ");
@@ -75,8 +74,8 @@ void BatteryModule::print() {
 //// ----
 
 // Return total module voltage by summing the cell voltages
-float BatteryModule::get_voltage() {
-    float voltage = 0;
+uint32_t BatteryModule::get_voltage() {
+    uint32_t voltage = 0;
     for ( int c = 0; c < numCells; c++ ) {
         voltage += cellVoltage[c];
     }
@@ -84,8 +83,8 @@ float BatteryModule::get_voltage() {
 }
 
 // Return the voltage of the lowest cell voltage in the module
-float BatteryModule::get_lowest_cell_voltage() {
-    float lowestCellVoltage = 10.0000f;
+uint16_t BatteryModule::get_lowest_cell_voltage() {
+    uint16_t lowestCellVoltage = 10000;
     for ( int c = 0; c < numCells; c++ ) {
         // printf("Comparing %3.3f and %3.3f\n", cellVoltage[c], lowestCellVoltage);
         if ( cellVoltage[c] < lowestCellVoltage ) {
@@ -96,8 +95,8 @@ float BatteryModule::get_lowest_cell_voltage() {
 }
 
 // Return the voltage of the highest cell in the module
-float BatteryModule::get_highest_cell_voltage() {
-    float highestCellVoltage = 0.000f;
+uint16_t BatteryModule::get_highest_cell_voltage() {
+    uint16_t highestCellVoltage = 0;
     for ( int c = 0; c < numCells; c++ ) {
         // printf("module : comparing : %.4f to %.4f\n", cellVoltage[c], highestCellVoltage);
         if ( cellVoltage[c] > highestCellVoltage ) {
@@ -108,7 +107,7 @@ float BatteryModule::get_highest_cell_voltage() {
 }
 
 // Update the voltage for a single cell
-void BatteryModule::set_cell_voltage(int cellIndex, float newCellVoltage) {
+void BatteryModule::set_cell_voltage(int cellIndex, uint16_t newCellVoltage) {
     // printf("module : update_cell_voltage : %d : %.4f\n", cellIndex, newCellVoltage);
     cellVoltage[cellIndex] = newCellVoltage;
 }
@@ -147,13 +146,13 @@ bool BatteryModule::all_module_data_populated() {
 void BatteryModule::check_if_module_data_is_populated() {
     bool voltageMissing = false;
     for ( int c = 0; c < numCells; c++ ) {
-        if ( cellVoltage[c] == 0.000f ) {
+        if ( cellVoltage[c] == 0 ) {
             voltageMissing = true;
         }
     }
     bool temperatureMissing = false;
     for ( int t = 0; t < numTemperatureSensors; t++ ) {
-        if ( cellTemperature[t] == 0.000f ) {
+        if ( cellTemperature[t] == 0.00f ) {
             temperatureMissing = true;
         }
     }

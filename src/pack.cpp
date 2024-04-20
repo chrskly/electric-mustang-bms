@@ -83,7 +83,10 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _n
 }
 
 void BatteryPack::print() {
-    printf("Pack %d : %3.2fV : %dmV\n", id, voltage, cellDelta);
+    printf("Pack %d : %3.2fV : %dmV\n", id, (voltage/1000), cellDelta);
+    for ( int m = 0; m < numModules; m++ ) {
+        modules[m].print();
+    }
 }
 
 
@@ -152,6 +155,7 @@ void BatteryPack::read_message() {
     extern State state;
     can_frame frame;
     if ( CAN.readMessage(&frame) == MCP2515::ERROR_OK ) {
+
         /*
         printf("Pack %d received message : id:%02X : ", id, frame.can_id);
         for ( int i = 0; i < frame.can_dlc; i++ ) {
@@ -159,6 +163,7 @@ void BatteryPack::read_message() {
         }
         printf("\n");
         */
+
         // Temperature messages
         if ( (frame.can_id & 0xFF0) == 0x180 ) {
             decode_temperatures(&frame);
@@ -310,32 +315,32 @@ void BatteryPack::decode_voltages(can_frame *frame) {
             set_pack_balance_status((frame->data[5] << 8) + frame->data[4]);
             break;
         case 0x020:
-            modules[moduleId].set_cell_voltage(0, static_cast<float>((frame->data[0] + (frame->data[1] & 0x3F) * 256) / 1000));
-            modules[moduleId].set_cell_voltage(1, static_cast<float>((frame->data[2] + (frame->data[3] & 0x3F) * 256) / 1000));
-            modules[moduleId].set_cell_voltage(2, static_cast<float>((frame->data[4] + (frame->data[5] & 0x3F) * 256) / 1000));
+            modules[moduleId].set_cell_voltage(0, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
+            modules[moduleId].set_cell_voltage(1, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
+            modules[moduleId].set_cell_voltage(2, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
             break;
         case 0x30:
-            modules[moduleId].set_cell_voltage(3, static_cast<float>((frame->data[0] + (frame->data[1] & 0x3F) * 256) / 1000));
-            modules[moduleId].set_cell_voltage(4, static_cast<float>((frame->data[2] + (frame->data[3] & 0x3F) * 256) / 1000));
-            modules[moduleId].set_cell_voltage(5, static_cast<float>((frame->data[4] + (frame->data[5] & 0x3F) * 256) / 1000));
+            modules[moduleId].set_cell_voltage(3, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
+            modules[moduleId].set_cell_voltage(4, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
+            modules[moduleId].set_cell_voltage(5, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
             break;
         case 0x40:
-            modules[moduleId].set_cell_voltage(6, static_cast<float>((frame->data[0] + (frame->data[1] & 0x3F) * 256) / 1000));
-            modules[moduleId].set_cell_voltage(7, static_cast<float>((frame->data[2] + (frame->data[3] & 0x3F) * 256) / 1000));
-            modules[moduleId].set_cell_voltage(8, static_cast<float>((frame->data[4] + (frame->data[5] & 0x3F) * 256) / 1000));
+            modules[moduleId].set_cell_voltage(6, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
+            modules[moduleId].set_cell_voltage(7, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
+            modules[moduleId].set_cell_voltage(8, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
             break;
         case 0x50:
-            modules[moduleId].set_cell_voltage(9, static_cast<float>((frame->data[0] + (frame->data[1] & 0x3F) * 256) / 1000));
-            modules[moduleId].set_cell_voltage(10, static_cast<float>((frame->data[2] + (frame->data[3] & 0x3F) * 256) / 1000));
-            modules[moduleId].set_cell_voltage(11, static_cast<float>((frame->data[4] + (frame->data[5] & 0x3F) * 256) / 1000));
+            modules[moduleId].set_cell_voltage(9, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
+            modules[moduleId].set_cell_voltage(10, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
+            modules[moduleId].set_cell_voltage(11, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
             break;
         case 0x60:
-            modules[moduleId].set_cell_voltage(12, static_cast<float>((frame->data[0] + (frame->data[1] & 0x3F) * 256) / 1000));
-            modules[moduleId].set_cell_voltage(13, static_cast<float>((frame->data[2] + (frame->data[3] & 0x3F) * 256) / 1000));
-            modules[moduleId].set_cell_voltage(14, static_cast<float>((frame->data[4] + (frame->data[5] & 0x3F) * 256) / 1000));
+            modules[moduleId].set_cell_voltage(12, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
+            modules[moduleId].set_cell_voltage(13, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
+            modules[moduleId].set_cell_voltage(14, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
             break;
         case 0x70:
-            modules[moduleId].set_cell_voltage(15, static_cast<float>((frame->data[0] + (frame->data[1] & 0x3F) * 256) / 1000));
+            modules[moduleId].set_cell_voltage(15, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
             break;
         default:
             break;

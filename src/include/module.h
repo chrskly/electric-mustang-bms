@@ -29,7 +29,7 @@ class BatteryModule {
     int id;
     int numCells;                             // Number of cells in this module
     int numTemperatureSensors;                // Number of temperature sensors in this module
-    float cellVoltage[CELLS_PER_MODULE];      // Voltages of each cell
+    uint16_t cellVoltage[CELLS_PER_MODULE];   // Voltages of each cell
     float cellTemperature[TEMPS_PER_MODULE];  // Temperatures of each cell
     bool allModuleDataPopulated;              // True when we have voltage/temp information for all cells
     clock_t lastHeartbeat;                    // Time when we last got an update from this module
@@ -41,10 +41,10 @@ class BatteryModule {
     void print();
 
     // Voltage
-    float get_voltage();
-    float get_lowest_cell_voltage();
-    float get_highest_cell_voltage();
-    void set_cell_voltage(int cellIndex, float newCellVoltage);
+    uint32_t get_voltage();
+    uint16_t get_lowest_cell_voltage();
+    uint16_t get_highest_cell_voltage();
+    void set_cell_voltage(int cellIndex, uint16_t newCellVoltage);
     bool has_empty_cell();
     bool has_full_cell();
 

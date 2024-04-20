@@ -48,8 +48,8 @@
                                                    // shunt in SHUNT_TTL seconds, then mark it as
                                                    // dead.
 
-#define SAFE_VOLTAGE_DELTA_BETWEEN_PACKS 0.01      // When closing contactors, the voltage difference between the packs shall not
-                                                   // be greater than this voltage, in volts.
+#define SAFE_VOLTAGE_DELTA_BETWEEN_PACKS 10        // When closing contactors, the voltage difference between the packs shall not
+                                                   // be greater than this voltage, in millivolts.
 
 // const int CS_PINS[2] = { 20, 15 };               // Chip select pins for the CAN controllers for each battery pack.
 // const int CS_PINS[2] = { 15, 15 };
@@ -87,10 +87,10 @@ const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallo
                                           // kWh (value = 0)? 
 
 // Official min pack voltage = 269V. 269 / 6 / 16 = 2.8020833333V
-#define CELL_EMPTY_VOLTAGE 2.9
+#define CELL_EMPTY_VOLTAGE 2900
 
 // Official max pack voltage = 398V. 398 / 6 / 16 = 4.1458333333V
-#define CELL_FULL_VOLTAGE 4.0
+#define CELL_FULL_VOLTAGE 4000
 
 #define MINIMUM_TEMPERATURE -20          // 
 #define MINIMUM_CHARGING_TEMPERATURE 0   // Disallow charging below this temperature
