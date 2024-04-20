@@ -71,7 +71,7 @@ bool watchdog_keepalive(struct repeating_timer *t) {
 }
 
 void enable_watchdog_keepalive() {
-    add_repeating_timer_ms(5000, watchdog_keepalive, NULL, &watchdogKeepaliveTimer);
+    add_repeating_timer_ms(1000, watchdog_keepalive, NULL, &watchdogKeepaliveTimer);
 }
 
 
@@ -147,11 +147,10 @@ int main() {
         printf("Rebooted by Watchdog!\n");
         // errorFame.can_id = ;
         // mainCAN.sendMessage();
-        return 0;
     } else {
         printf("Clean boot\n");
     }
-    watchdog_enable(100, 1);
+    watchdog_enable(5000, 1);
     enable_watchdog_keepalive();
 
     battery.print();
