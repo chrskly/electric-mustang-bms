@@ -55,60 +55,84 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _n
     printf("Pack %d setup complete\n", id);
 }
 
+
 // Send voltage and temp data from mock battery
 
 void BatteryPack::send_module_voltages(uint8_t moduleId) {
     can_frame voltage_frame;
-    voltage_frame.dlc = 8;
+    voltage_frame.can_dlc = 8;
     // Send voltages for this module
 
-    voltage_frame.can_id = 0x020 | moduleId;
+    voltage_frame.can_id = 0x120 | moduleId;
     // cell 0
-    voltage_frame.data[0] = ( modules[moduleId].get_cell_voltage[0] * 1000 / 256 ) >> 8;
-    voltage_frame.data[1] = ( modules[moduleId].get_cell_voltage[0] * 1000 / 256 ) && 0x0F0;
+    voltage_frame.data[0] = modules[moduleId].get_cell_voltage(0) & 0xFF;
+    voltage_frame.data[1] = modules[moduleId].get_cell_voltage(0) >> 8;
     // cell 1
-    voltage_frame.data[2] = ( modules[moduleId].get_cell_voltage[1] * 1000 / 256 ) >> 8;
-    voltage_frame.data[3] = ( modules[moduleId].get_cell_voltage[1] * 1000 / 256 ) && 0x0F0;
+    voltage_frame.data[2] = modules[moduleId].get_cell_voltage(1) & 0xFF;
+    voltage_frame.data[3] = modules[moduleId].get_cell_voltage(1) >> 8;
     // cell 2
-    voltage_frame.data[4] = ( modules[moduleId].get_cell_voltage[2] * 1000 / 256 ) >> 8;
-    voltage_frame.data[5] = ( modules[moduleId].get_cell_voltage[2] * 1000 / 256 ) && 0x0F0;
-    send_message(&can_frame);
+    voltage_frame.data[4] = modules[moduleId].get_cell_voltage(2) & 0xFF;
+    voltage_frame.data[5] = modules[moduleId].get_cell_voltage(2) >> 8;
+    send_message(&voltage_frame);
 
 
-    voltage_frame.can_id = 0x030 | moduleId;
+    voltage_frame.can_id = 0x130 | moduleId;
     // cell 3
-    voltage_frame.data[0] = ( modules[moduleId].get_cell_voltage[3] * 1000 / 256 ) >> 8;
-    voltage_frame.data[1] = ( modules[moduleId].get_cell_voltage[3] * 1000 / 256 ) && 0x0F0;
+    voltage_frame.data[0] = modules[moduleId].get_cell_voltage(3) & 0xFF;
+    voltage_frame.data[1] = modules[moduleId].get_cell_voltage(3) >> 8;
     // cell 4
-    voltage_frame.data[2] = ( modules[moduleId].get_cell_voltage[4] * 1000 / 256 ) >> 8;
-    voltage_frame.data[3] = ( modules[moduleId].get_cell_voltage[4] * 1000 / 256 ) && 0x0F0;
+    voltage_frame.data[2] = modules[moduleId].get_cell_voltage(4) & 0xFF;
+    voltage_frame.data[3] = modules[moduleId].get_cell_voltage(4) >> 8;
     // cell 5
-    voltage_frame.data[4] = ( modules[moduleId].get_cell_voltage[5] * 1000 / 256 ) >> 8;
-    voltage_frame.data[5] = ( modules[moduleId].get_cell_voltage[5] * 1000 / 256 ) && 0x0F0;
-    send_message(&can_frame);
+    voltage_frame.data[4] = modules[moduleId].get_cell_voltage(5) & 0xFF;
+    voltage_frame.data[5] = modules[moduleId].get_cell_voltage(5) >> 8;
+    send_message(&voltage_frame);
 
-    voltage_frame.can_id = 0x040 | moduleId;
+    voltage_frame.can_id = 0x140 | moduleId;
     // cell 6
+    voltage_frame.data[0] = modules[moduleId].get_cell_voltage(6) & 0xFF;
+    voltage_frame.data[1] = modules[moduleId].get_cell_voltage(6) >> 8;
     // cell 7
+    voltage_frame.data[2] = modules[moduleId].get_cell_voltage(7) & 0xFF;
+    voltage_frame.data[3] = modules[moduleId].get_cell_voltage(7) >> 8;
     // cell 8
-    send_message(&can_frame);
+    voltage_frame.data[4] = modules[moduleId].get_cell_voltage(8) & 0xFF;
+    voltage_frame.data[5] = modules[moduleId].get_cell_voltage(8) >> 8;
+    send_message(&voltage_frame);
 
-    voltage_frame.can_id = 0x050 | moduleId;
+    voltage_frame.can_id = 0x150 | moduleId;
     // cell 9
+    voltage_frame.data[0] = modules[moduleId].get_cell_voltage(9) & 0xFF;
+    voltage_frame.data[1] = modules[moduleId].get_cell_voltage(9) >> 8;
     // cell 10
+    voltage_frame.data[2] = modules[moduleId].get_cell_voltage(10) & 0xFF;
+    voltage_frame.data[3] = modules[moduleId].get_cell_voltage(10) >> 8;
     // cell 11
-    send_message(&can_frame);
+    voltage_frame.data[4] = modules[moduleId].get_cell_voltage(11) & 0xFF;
+    voltage_frame.data[5] = modules[moduleId].get_cell_voltage(11) >> 8;
+    send_message(&voltage_frame);
 
-    voltage_frame.can_id = 0x060 | moduleId;
+    voltage_frame.can_id = 0x160 | moduleId;
     // cell 12
+    voltage_frame.data[0] = modules[moduleId].get_cell_voltage(12) & 0xFF;
+    voltage_frame.data[1] = modules[moduleId].get_cell_voltage(12) >> 8;
     // cell 13
+    voltage_frame.data[2] = modules[moduleId].get_cell_voltage(13) & 0xFF;
+    voltage_frame.data[3] = modules[moduleId].get_cell_voltage(13) >> 8;
     // cell 14
-    send_message(&can_frame);
+    voltage_frame.data[4] = modules[moduleId].get_cell_voltage(14) & 0xFF;
+    voltage_frame.data[5] = modules[moduleId].get_cell_voltage(14) >> 8;
+    send_message(&voltage_frame);
 
-
-    voltage_frame.can_id = 0x070 | moduleId;
+    voltage_frame.can_id = 0x170 | moduleId;
     // cell 15
-    send_message(&can_frame);
+    voltage_frame.data[0] = modules[moduleId].get_cell_voltage(15) & 0xFF;
+    voltage_frame.data[1] = modules[moduleId].get_cell_voltage(15) >> 8;
+    voltage_frame.data[2] = 0x00;
+    voltage_frame.data[3] = 0x00;
+    voltage_frame.data[4] = 0x00;
+    voltage_frame.data[5] = 0x00;
+    send_message(&voltage_frame);
 }
 
 
@@ -118,9 +142,20 @@ void BatteryPack::read_message() {
     can_frame frame;
     if ( CAN.readMessage(&frame) == MCP2515::ERROR_OK ) {
         // This is a module polling request from the BMS
-        if ( (frame.can_id & 0xFF0) == 0x080 ) {
+        /*if ( (frame.can_id & 0xFF0) == 0x080 ) {
             uint8_t moduleId = (frame.can_id & 0x00F);
             send_module_voltages(moduleId);
         }
+        */
+        for ( int m=0; m < numModules; m++ ) {
+            send_module_voltages(m);
+        }
+
     }
+}
+
+// Send CAN message to BMS on private battery network
+
+void BatteryPack::send_message(can_frame *frame) {
+    CAN.sendMessage(frame);
 }

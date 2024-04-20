@@ -30,15 +30,15 @@ BatteryModule::BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _nu
     // numCells = _numCells;
     numCells = 16;
     for ( int c = 0; c < numCells; c++ ) {
-        cellVoltage[c] = 0.000f;
+        cellVoltage[c] = 3456;
     }
     // Initialise temperature sensor readings to zero
     numTemperatureSensors = _numTemperatureSensors;
     for ( int t = 0; t < numTemperatureSensors; t++ ) {
-        cellTemperature[t] = 0.000f;
+        cellTemperature[t] = 32;
     }
 }
 
-float BatteryModule::get_cell_voltage(int cellId) {
+uint16_t BatteryModule::get_cell_voltage(int cellId) {
     return cellVoltage[cellId];
 }

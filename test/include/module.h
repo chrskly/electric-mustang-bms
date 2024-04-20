@@ -20,6 +20,7 @@
 #ifndef BMS_SRC_INCLUDE_MODULE_H_
 #define BMS_SRC_INCLUDE_MODULE_H_
 
+#include <stdio.h>
 #include "settings.h"
 
 class BatteryPack;
@@ -27,17 +28,16 @@ class BatteryPack;
 class BatteryModule {
  private:
     int id;
-    int numCells;                             // Number of cells in this module
-    int numTemperatureSensors;                // Number of temperature sensors in this module
-    float cellVoltage[CELLS_PER_MODULE];      // Voltages of each cell
-    float cellTemperature[TEMPS_PER_MODULE];  // Temperatures of each cell
-
-    BatteryPack* pack;                        // The parent BatteryPack that contains this module
+    int numCells;                              // Number of cells in this module
+    int numTemperatureSensors;                 // Number of temperature sensors in this module
+    uint16_t cellVoltage[CELLS_PER_MODULE];    // Voltages of each cell
+    uint8_t cellTemperature[TEMPS_PER_MODULE]; // Temperatures of each cell
+    BatteryPack* pack;                         // The parent BatteryPack that contains this module
 
  public:
     BatteryModule();
     BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _numTemperatureSensors);
-    float get_cell_voltage(int cellId);
+    uint16_t get_cell_voltage(int cellId);
 };
 
 #endif  // BMS_SRC_INCLUDE_MODULE_H_

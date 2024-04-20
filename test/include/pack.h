@@ -20,8 +20,8 @@
 #ifndef BMS_SRC_INCLUDE_PACK_H_
 #define BMS_SRC_INCLUDE_PACK_H_
 
+#include <stdio.h>
 #include "mcp2515/mcp2515.h"
-
 #include "include/module.h"
 
 class Battery;
@@ -33,7 +33,9 @@ class BatteryPack {
     BatteryPack();
     BatteryPack(int _id, int CANCSPin, int _contactorPin, int _numModules, int _numCellsPerModule, int _numTemperatureSensorsPerModule);
     void set_battery(Battery* battery) { this->battery = battery; }
+    void send_module_voltages(uint8_t moduleId);
     void read_message();
+    void send_message(can_frame *frame);
 
  private:
     MCP2515 CAN;                                     // CAN bus connection to this pack
