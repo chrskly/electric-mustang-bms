@@ -83,7 +83,7 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _n
 }
 
 void BatteryPack::print() {
-    printf("Pack %d : %3.2fV : %dmV\n", id, (voltage/1000), cellDelta);
+    printf("Pack %d : %3.2fV : Hi %d : Lo %d : %dmV\n", id, (voltage/1000), get_lowest_cell_voltage(), get_highest_cell_voltage(), cellDelta);
     for ( int m = 0; m < numModules; m++ ) {
         modules[m].print();
     }
@@ -248,8 +248,8 @@ float BatteryPack::get_min_voltage() {
 }
 
 // Return the voltage of the lowest cell in the pack
-float BatteryPack::get_lowest_cell_voltage() {
-    float lowestCellVoltage = 10.0000f;
+uint16_t BatteryPack::get_lowest_cell_voltage() {
+    uint16_t lowestCellVoltage = 10;
     for ( int m = 0; m < numModules; m++ ) {
         // skip modules with incomplete cell data
         if ( !modules[m].all_module_data_populated() ) {
@@ -273,8 +273,8 @@ bool BatteryPack::has_empty_cell() {
 }
 
 // Return the voltage of the highest cell in the pack
-float BatteryPack::get_highest_cell_voltage() {
-    float highestCellVoltage = 0.0000f;
+uint16_t BatteryPack::get_highest_cell_voltage() {
+    uint16_t highestCellVoltage = 0;
     for ( int m = 0; m < numModules; m++ ) {
         // skip modules with incomplete cell data
         if ( !modules[m].all_module_data_populated() ) {
@@ -298,7 +298,7 @@ bool BatteryPack::has_full_cell() {
 }
 
 // Update the value for the voltage of an individual cell in a pack
-void BatteryPack::set_cell_voltage(int moduleId, int cellIndex, float newCellVoltage) {
+void BatteryPack::set_cell_voltage(int moduleId, int cellIndex, uint32_t newCellVoltage) {
     modules[moduleId].set_cell_voltage(cellIndex, newCellVoltage);
 }
 
@@ -354,11 +354,17 @@ void BatteryPack::decode_voltages(can_frame *frame) {
     modules[moduleId].heartbeat();
 }
 
+// Update the cellDelta
+void BatteryPack::recalculate_cell_delta() {
+    cellDelta = get_highest_cell_voltage() - get_lowest_cell_voltage();
+}
+
 /*
  * We have new cell voltage data. Recalculate.
  */
 void BatteryPack::process_voltage_update() {
     recalculate_total_voltage();
+    recalculate_cell_delta();
 }
 
 
@@ -390,9 +396,12 @@ int BatteryPack::get_max_charge_current() {
 }
 
 // return the temperature of the lowest sensor in the pack
-float BatteryPack::get_lowest_temperature() {
-    float lowestModuleTemperature = 1000;
+int8_t BatteryPack::get_lowest_temperature() {
+    int8_t lowestModuleTemperature = 127;
     for ( int m = 0; m < numModules; m++ ) {
+        if ( ! modules[m].all_module_data_populated() ) {
+            continue;
+        }
         if ( modules[m].get_lowest_temperature() < lowestModuleTemperature ) {
             lowestModuleTemperature = modules[m].get_lowest_temperature();
         }
@@ -402,7 +411,7 @@ float BatteryPack::get_lowest_temperature() {
 
 // Extract temperature sensor readings from CAN frame and update stored values
 void BatteryPack::decode_temperatures(can_frame *temperatureMessageFrame) {
-    int moduleId = (temperatureMessageFrame->can_id & 0x00F) + 1;
+    int moduleId = (temperatureMessageFrame->can_id & 0x00F);
     modules[moduleId].heartbeat();
     for ( int t = 0; t < numTemperatureSensorsPerModule; t++ ) {
         modules[moduleId].update_temperature(t, temperatureMessageFrame->data[t] - 40);

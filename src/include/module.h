@@ -30,7 +30,7 @@ class BatteryModule {
     int numCells;                             // Number of cells in this module
     int numTemperatureSensors;                // Number of temperature sensors in this module
     uint16_t cellVoltage[CELLS_PER_MODULE];   // Voltages of each cell
-    float cellTemperature[TEMPS_PER_MODULE];  // Temperatures of each cell
+    int8_t cellTemperature[TEMPS_PER_MODULE]; // Temperatures of each cell
     bool allModuleDataPopulated;              // True when we have voltage/temp information for all cells
     clock_t lastHeartbeat;                    // Time when we last got an update from this module
     BatteryPack* pack;                        // The parent BatteryPack that contains this module
@@ -55,9 +55,9 @@ class BatteryModule {
     void heartbeat();
 
     // Temperature
-    void update_temperature(int tempSensorId, float newTemperature);
-    float get_lowest_temperature();
-    float get_highest_temperature();
+    void update_temperature(int tempSensorId, uint8_t newTemperature);
+    int8_t get_lowest_temperature();
+    int8_t get_highest_temperature();
     bool has_temperature_sensor_over_max();
     bool temperature_at_warning_level();
 

@@ -30,7 +30,7 @@ class Battery {
     uint32_t voltage;                 // Total voltage of whole battery
     uint16_t lowestCellVoltage;       // Voltage of cell with lowest voltage across whole battery
     uint16_t highestCellVoltage;      // Voltage of cell with highest voltage across whole battery
-    int cellDelta;                 // FIXME todo
+    uint8_t cellDelta;                // FIXME todo
     float lowestCellTemperature;   //
     float highestCellTemperature;  //
 

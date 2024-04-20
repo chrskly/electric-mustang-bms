@@ -47,7 +47,7 @@ BatteryModule::BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _nu
     // Initialise temperature sensor readings to zero
     numTemperatureSensors = _numTemperatureSensors;
     for ( int t = 0; t < numTemperatureSensors; t++ ) {
-        cellTemperature[t] = 0.000f;
+        cellTemperature[t] = -128;
     }
     allModuleDataPopulated = false;
 }
@@ -61,7 +61,7 @@ void BatteryModule::print() {
     printf("\n");
     printf("        Temperatures : ");
     for ( int t = 0; t < numTemperatureSensors; t++ ) {
-        printf("%d:%3.2fC ", t, cellTemperature[t]);
+        printf("%d:%dC ", t, cellTemperature[t]);
     }
     printf("\n");
 }
@@ -152,7 +152,7 @@ void BatteryModule::check_if_module_data_is_populated() {
     }
     bool temperatureMissing = false;
     for ( int t = 0; t < numTemperatureSensors; t++ ) {
-        if ( cellTemperature[t] == 0.00f ) {
+        if ( cellTemperature[t] == 0 ) {
             temperatureMissing = true;
         }
     }
@@ -174,14 +174,18 @@ void BatteryModule::heartbeat() {
 //// ----
 
 // Update the value for one of the temperature sensors
-void BatteryModule::update_temperature(int tempSensorId, float newTemperature) {
+void BatteryModule::update_temperature(int tempSensorId, uint8_t newTemperature) {
     cellTemperature[tempSensorId] = newTemperature;
 }
 
 // Return the temperature of the coldest sensor in the module
-float BatteryModule::get_lowest_temperature() {
-    float lowestTemperature = 1000.0f;
+int8_t BatteryModule::get_lowest_temperature() {
+    uint8_t lowestTemperature = 255;
     for ( int t = 0; t < numTemperatureSensors; t++ ) {
+        // Skip uninitialised readings
+        if ( cellTemperature[t] < -127 ) {
+            continue;
+        }
         if ( cellTemperature[t] < lowestTemperature ) {
             lowestTemperature = cellTemperature[t];
         }
@@ -190,9 +194,13 @@ float BatteryModule::get_lowest_temperature() {
 }
 
 // Return the temperature of the hottest sensor in the module
-float BatteryModule::get_highest_temperature() {
-    float highestTemperature = -50;
+int8_t BatteryModule::get_highest_temperature() {
+    int8_t highestTemperature = -40;
     for ( int t = 0; t < numTemperatureSensors; t++ ) {
+        // Skip uninitialised readings
+        if ( cellTemperature[t] < -127 ) {
+            continue;
+        }
         if ( cellTemperature[t] > highestTemperature ) {
             highestTemperature = cellTemperature[t];
         }
