@@ -1,4 +1,6 @@
-# Functional Spec for BMS
+# Electric Mustang BMS
+
+This repo contains the hardware design and software for the custom BMS for my EV conversion project.
 
 ## Overview
 
@@ -17,9 +19,11 @@ The car will also have precharge and main contactors in the HVJB. These are cont
 ### States
 * standby
 * drive
+* batteryHeating
 * charging
 * batteryEmpty
-* fault
+* overTempFault
+* illegalStateTransitionFault
 
 ### Events
 * E_TEMPERATURE_UPDATE  - the readings from the battery temperature sensors have
