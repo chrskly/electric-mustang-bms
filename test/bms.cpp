@@ -18,7 +18,7 @@
  */
 
 #include <stdio.h>
-
+#include <cstdint>
 #include "include/bms.h"
 
 Bms::Bms() {}

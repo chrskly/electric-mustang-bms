@@ -21,6 +21,7 @@
 #define BMS_TEST_INCLUDE_MODULE_H_
 
 #include <stdio.h>
+#include <cstdint>
 #include "settings.h"
 
 class BatteryPack;
