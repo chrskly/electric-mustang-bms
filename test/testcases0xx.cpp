@@ -17,33 +17,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty() {
+#include "include/battery.h"
+#include "include/testcaseutils.h"
+
+bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* battery) {
+    Bms* bms = battery->get_bms();
     /*
       Preconditions
         1. All cells are above Vmin
         2. DRIVE_INHIBIT signal is not active
      */
-    set_battery_to_50_percent_soc();
-    wait_for_50_percent_soc();
+    bms->set_soc(50);
+    wait_for_50_percent_soc(bms, 5000);
 
     if ( drive_inhibit_is_active() ) {
         // check state and fix?
     }
 
     // Execute test - drop cell voltage below Vmin
-    set_battery_to_0_percent_soc();
+    bms->set_soc(0);
 
     // Make sure DRIVE_INHIBIT goes high
     wait_for_drive_inhibit_to_activate();
+
+    // Make sure CAN messages show the car has switched to batteryEmpty state
+    wait_for_bms_state_to_change_to_batteryEmpty();
 }
 
-bool test_case_002_ensure_battery_cannot_be_charged_when_full() {
+bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery) {
+    Bms* bms = battery->get_bms();
     /*
       Preconditions
         1. All cells are below Vmax
         2. CHARGE_INHIBIT signal is not active
     */
-    set_battery_to_50_percent_soc();
+    bms->set_soc(50);
     wait_for_50_percent_soc();
 
     if ( charge_inhibit_is_active() ) {
@@ -51,7 +59,7 @@ bool test_case_002_ensure_battery_cannot_be_charged_when_full() {
     }
 
     // Execute test - raise cell voltage to Vmax
-    set_battery_to_100_percent_soc();
+    bms->set_soc(0);
 
     // Make sure CHARGE_INHIBIT goes high
     wait_for_charge_inhibit_to_activate();

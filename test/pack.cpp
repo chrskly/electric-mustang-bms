@@ -21,6 +21,7 @@
 
 #include "include/pack.h"
 #include "include/module.h"
+#include "include/battery.h"
 
 BatteryPack::BatteryPack() {}
 
@@ -150,6 +151,7 @@ void BatteryPack::send_module_temperatures(uint8_t moduleId) {
 
 void BatteryPack::read_message() {
     can_frame frame;
+    Bms* bms = battery->get_bms();
     if ( CAN.readMessage(&frame) == MCP2515::ERROR_OK ) {
         // This is a module polling request from the BMS
         /*if ( (frame.can_id & 0xFF0) == 0x080 ) {
@@ -160,6 +162,60 @@ void BatteryPack::read_message() {
         for ( int m=0; m < numModules; m++ ) {
             send_module_voltages(m);
             send_module_temperatures(m);
+        }
+
+        // BMS dis/charge limits message
+        if ( frame.can_id == 0x351 ) {
+            bms->set_maxVoltage((frame.data[0] + (frame.data[1] << 8)) / 10);
+            bms->set_maxChargeCurrent((frame.data[2] + (frame.data[3] << 8)) / 10);
+            bms->set_maxDischargeCurrent((frame.data[4] + (frame.data[5] << 8)) / 10);
+            bms->set_minVoltage((frame.data[6] + (frame.data[7] << 8)) / 10);
+        }
+
+        // BMS state message
+        if ( frame.can_id == 0x352 ) {
+            // State
+            bms->set_state(frame.data[0]);
+            // Error bits
+            bms->set_internalError(frame.data[1] & 0x01);
+            bms->set_packsImbalanced((frame.data[1] > 1) & 0x02);
+            // Status bits
+            bms->set_inhibitCharge(frame.data[2] & 0x01);
+            bms->set_inhibitDrive((frame.data[2] > 1) & 0x01);
+            bms->set_heaterEnabled((frame.data[2] > 2)  & 0x01);
+            bms->set_ignitionOn((frame.data[2] > 3) & 0x01);
+            bms->set_chargeEnable((frame.data[2] > 4) & 0x01);
+        }
+
+        // Module liveness message
+        if ( frame.can_id == 0x353 ) {
+            bms->set_moduleLiveness(
+                ((int64_t)frame.data[0]) | 
+                ((int64_t)frame.data[1] << 8) | 
+                ((int64_t)frame.data[2] << 16) |
+                ((int64_t)frame.data[3] << 24) | 
+                ((int64_t)frame.data[4] << 32) |
+                ((int64_t)frame.data[5] << 40) |
+                ((int64_t)frame.data[6] << 48) |
+                ((int64_t)frame.data[7] << 56)
+            );
+        }
+
+        // SoC message
+        if ( frame.can_id == 0x355 ) {
+            bms->set_soc(frame.data[0] + (frame.data[1] << 8));
+        }
+
+        // Status message
+        if ( frame.can_id == 0x356 ) {
+            bms->set_voltage((frame.data[0] + (frame.data[1] << 8)) / 100);
+            bms->set_amps((frame.data[2] + (frame.data[3] << 8)) / 10);
+            bms->set_temperature(frame.data[4] + (frame.data[5] << 8));
+        }
+
+        // Alarms message
+        if ( frame.can_id == 0x35A ) {
+            //
         }
     }
 }

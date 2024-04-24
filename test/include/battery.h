@@ -17,49 +17,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BMS_SRC_INCLUDE_BATTERY_H_
-#define BMS_SRC_INCLUDE_BATTERY_H_
+#ifndef BMS_TEST_INCLUDE_BATTERY_H_
+#define BMS_TEST_INCLUDE_BATTERY_H_
 
-#include "include/pack.h"
 #include "settings.h"
+#include "include/pack.h"
+#include "include/bms.h"
 
 class Battery {
- private:
-    BatteryPack packs[NUM_PACKS];
-    int numPacks;                  // Number of battery packs in this battery
-    float voltage;                 // Total voltage of whole battery
-    float lowestCellVoltage;       // Voltage of cell with lowest voltage across whole battery
-    float highestCellVoltage;      // Voltage of cell with highest voltage across whole battery
-    int cellDelta;                 // FIXME todo
-    float lowestCellTemperature;   //
-    float highestCellTemperature;  //
+   private:
+      int numPacks;                  // Number of battery packs in this battery
+      float voltage;                 // Total voltage of whole battery
+      float lowestCellVoltage;       // Voltage of cell with lowest voltage across whole battery
+      float highestCellVoltage;      // Voltage of cell with highest voltage across whole battery
+      int cellDelta;                 // FIXME todo
+      float lowestCellTemperature;   //
+      float highestCellTemperature;  //
+      float maxChargeCurrent;        //
+      float maxDischargeCurrent;     //
+      int8_t soc;
+      bool ignitionOn;
+      BatteryPack packs[NUM_PACKS];
+      Bms bms;
 
-    float maxChargeCurrent;        //
-    float maxDischargeCurrent;     //
-
-    // Outputs
-    bool heaterEnabled;            // Indicates that the battery heater is currently enabled
-    bool inhibitCharge;            // Indicates that the BMS INHIBIT_CHARGE signal is enabled
-    bool inhibitDrive;             // Indicates that the BMS INHIBIT_DRIVE signal is enabled
-
-    // Inputs
-    bool ignitionOn;
-    bool chargeEnable;             // Charger is asking to charge
-
-    float soc;
-
-    // Something has gone wrong with the BMS
-    bool internalError;
-
-    // The voltage between the two packs
-    bool packsAreImbalanced;
-
- public:
-    Battery(int _numPacks);
-    void initialise();
-    void read_message();
-    
-
+   public:
+      Battery(int _numPacks);
+      void initialise();
+      void read_message();
+      Bms* get_bms();
 };
 
-#endif  // BMS_SRC_INCLUDE_BATTERY_H_
+#endif  // BMS_TEST_INCLUDE_BATTERY_H_

@@ -17,8 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BMS_SRC_INCLUDE_PACK_H_
-#define BMS_SRC_INCLUDE_PACK_H_
+#ifndef BMS_TEST_INCLUDE_PACK_H_
+#define BMS_TEST_INCLUDE_PACK_H_
 
 #include <stdio.h>
 #include "mcp2515/mcp2515.h"
@@ -26,29 +26,30 @@
 
 class Battery;
 
+class BatteryModule;
+
 class BatteryPack {
- public:
-    int id;
+   public:
+      int id;
+      BatteryPack();
+      BatteryPack(int _id, int CANCSPin, int _contactorPin, int _numModules, int _numCellsPerModule, int _numTemperatureSensorsPerModule);
+      void set_battery(Battery* battery) { this->battery = battery; }
+      void send_module_voltages(uint8_t moduleId);
+      void send_module_temperatures(uint8_t moduleId);
+      void read_message();
+      void send_message(can_frame *frame);
 
-    BatteryPack();
-    BatteryPack(int _id, int CANCSPin, int _contactorPin, int _numModules, int _numCellsPerModule, int _numTemperatureSensorsPerModule);
-    void set_battery(Battery* battery) { this->battery = battery; }
-    void send_module_voltages(uint8_t moduleId);
-    void send_module_temperatures(uint8_t moduleId);
-    void read_message();
-    void send_message(can_frame *frame);
+   private:
+      MCP2515 CAN;                                     // CAN bus connection to this pack
+      int numModules;                                  //
+      int numCellsPerModule;                           //
+      int numTemperatureSensorsPerModule;              //
 
- private:
-    MCP2515 CAN;                                     // CAN bus connection to this pack
-    int numModules;                                  //
-    int numCellsPerModule;                           //
-    int numTemperatureSensorsPerModule;              //
-
-    // contactors
-    int contactorInhibitPin;                         // Pin on the pico which controls contactors for this pack
-    bool contactorsAreInhibited;                     // Is the
-    Battery* battery;                                // The parent Battery that contains this BatteryPack
-    BatteryModule modules[MODULES_PER_PACK];         // The child modules that make up this BatteryPack
+      // contactors
+      int contactorInhibitPin;                         // Pin on the pico which controls contactors for this pack
+      bool contactorsAreInhibited;                     // Is the
+      Battery* battery;                                // The parent Battery that contains this BatteryPack
+      BatteryModule modules[MODULES_PER_PACK];         // The child modules that make up this BatteryPack
 };
 
-#endif  // BMS_SRC_INCLUDE_PACK_H_
+#endif  // BMS_TEST_INCLUDE_PACK_H_

@@ -27,7 +27,6 @@
 #include "hardware/watchdog.h"
 
 #include "mcp2515/mcp2515.h"
-
 #include "include/bmstest.h"
 #include "include/battery.h"
 #include "include/comms.h"
@@ -65,6 +64,9 @@ int main() {
     enable_handle_battery_CAN_messages();
 
     while (true) {
+        if ( ! test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(&battery) ) {
+            printf("Test case 001 failed\n");
+        }
     }
 
     return 0;

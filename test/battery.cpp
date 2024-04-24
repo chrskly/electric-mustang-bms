@@ -48,3 +48,7 @@ void Battery::read_message() {
         packs[p].read_message();
     }
 }
+
+Bms* Battery::get_bms() {
+    return &bms;
+}

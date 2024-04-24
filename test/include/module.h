@@ -17,8 +17,8 @@
   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
   */
 
-#ifndef BMS_SRC_INCLUDE_MODULE_H_
-#define BMS_SRC_INCLUDE_MODULE_H_
+#ifndef BMS_TEST_INCLUDE_MODULE_H_
+#define BMS_TEST_INCLUDE_MODULE_H_
 
 #include <stdio.h>
 #include "settings.h"
@@ -26,19 +26,19 @@
 class BatteryPack;
 
 class BatteryModule {
- private:
-    int id;
-    int numCells;                              // Number of cells in this module
-    int numTemperatureSensors;                 // Number of temperature sensors in this module
-    uint16_t cellVoltage[CELLS_PER_MODULE];    // Voltages of each cell
-    uint8_t cellTemperature[TEMPS_PER_MODULE]; // Temperatures of each cell
-    BatteryPack* pack;                         // The parent BatteryPack that contains this module
+   private:
+      int id;
+      int numCells;                              // Number of cells in this module
+      int numTemperatureSensors;                 // Number of temperature sensors in this module
+      uint16_t cellVoltage[CELLS_PER_MODULE];    // Voltages of each cell
+      uint8_t cellTemperature[TEMPS_PER_MODULE]; // Temperatures of each cell
+      BatteryPack* pack;                         // The parent BatteryPack that contains this module
 
- public:
-    BatteryModule();
-    BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _numTemperatureSensors);
-    uint16_t get_cell_voltage(int cellId);
-    uint8_t get_cell_temperature(int cellId);
+   public:
+      BatteryModule();
+      BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _numTemperatureSensors);
+      uint16_t get_cell_voltage(int cellId);
+      uint8_t get_cell_temperature(int cellId);
 };
 
-#endif  // BMS_SRC_INCLUDE_MODULE_H_
+#endif  // BMS_TEST_INCLUDE_MODULE_H_

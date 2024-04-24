@@ -17,7 +17,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "include/battery.h"
 
-bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* battery);
-bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery);
+#include <time.h>
+
+#include "include/util.h"
+#include "include/bms.h"
+
+bool wait_for_50_percent_soc(Bms* bms, int timeout) {
+    clock_t startTime = get_clock();
+    while (bms->get_soc() < 50) {
+        if (get_clock() - startTime > timeout) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool wait_for_drive_inhibit_to_activate() {
+    //
+}
+
+bool wait_for_bms_state_to_change_to_batteryEmpty() {
+    //
+}
+
+bool wait_for_charge_inhibit_to_activate() {
+    //
+}

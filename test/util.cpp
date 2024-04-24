@@ -1,5 +1,5 @@
 /*
- * This file is part of the ev mustang bms project.
+ * This file is part of the ev mustang charge controller project.
  *
  * Copyright (C) 2024 Christian Kelly <chrskly@chrskly.com>
  *
@@ -17,7 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "include/battery.h"
 
-bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* battery);
-bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery);
+#include <time.h>
+#include <stdio.h>
+#include <pico/stdlib.h>
+
+clock_t get_clock() {
+    return (clock_t) time_us_64() / 10000;
+}
+

@@ -17,7 +17,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "include/battery.h"
+#ifndef BMS_TEST_INCLUDE_SHUNT_H_
+#define BMS_TEST_INCLUDE_SHUNT_H_
 
-bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* battery);
-bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery);
+#include "mcp2515/mcp2515.h"
+
+class Shunt {
+   
+   private:
+      int32_t amps;
+      int32_t shuntVoltage1;
+      int32_t shuntVoltage2;
+      int32_t shuntVoltage3;
+      int32_t shuntTemperature;
+      int32_t watts;
+      int32_t ampSeconds;
+      int32_t wattHours;
+      struct can_frame frame;
+      MCP2515* CAN;
+
+   public:
+      Shunt(MCP2515* CAN);
+      void set_ampSeconds(int32_t newAmpSeconds);
+      void send_ampSeconds();
+      void set_wattHours(int32_t newWattHours);
+      void send_wattHours();
+
+};
+
+#endif  // BMS_SRC_INCLUDE_SHUNT_H_

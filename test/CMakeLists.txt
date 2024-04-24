@@ -20,6 +20,12 @@ add_executable(bms
         bmstest.cpp
         include/comms.h
         comms.cpp
+        bms.cpp
+        bmstest.cpp
+        shunt.cpp
+        testcaseutils.cpp
+        util.cpp
+        testcases0xx.cpp
         )
 
 pico_add_extra_outputs(bms)
