@@ -56,14 +56,14 @@ class Battery {
 
  public:
     // Readings from ISA shunt
-    uint16_t amps;
-    uint16_t shuntVoltage1;
-    uint16_t shuntVoltage2;
-    uint16_t shuntVoltage3;
-    uint16_t shuntTemperature;
-    uint16_t watts;
-    uint16_t ampSeconds;
-    uint16_t wattHours;
+    int32_t amps;
+    int32_t shuntVoltage1;
+    int32_t shuntVoltage2;
+    int32_t shuntVoltage3;
+    int32_t shuntTemperature;
+    int32_t watts;
+    int32_t ampSeconds;
+    int32_t wattHours;
 
     Battery(int _numPacks);
     void initialise();
