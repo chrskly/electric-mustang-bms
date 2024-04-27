@@ -19,7 +19,7 @@
 
 #include "include/bms.h"
 
-bool wait_for_50_percent_soc(Bms* bms, int timeout);
-bool wait_for_drive_inhibit_to_activate();
-bool wait_for_bms_state_to_change_to_batteryEmpty();
-bool wait_for_charge_inhibit_to_activate();
+bool wait_for_soc(Bms* bms, int soc, int timeout);
+bool wait_for_drive_inhibit_state(Bms* bms, bool state, int timeout);
+bool wait_for_charge_inhibit_state(Bms* bms, bool state, int timeout);
+bool wait_for_bms_state(Bms* bms, BmsState state, int timeout);

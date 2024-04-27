@@ -43,6 +43,16 @@ uint16_t BatteryModule::get_cell_voltage(int cellId) {
     return cellVoltage[cellId];
 }
 
+void BatteryModule::set_all_cell_voltages(uint16_t newVoltage) {
+    for ( int c = 0; c < numCells; c++ ) {
+        cellVoltage[c] = newVoltage;
+    }
+}
+
 uint8_t BatteryModule::get_cell_temperature(int cellId) {
     return cellTemperature[cellId];
+}
+
+void BatteryModule::set_cell_temperature(int cellId, uint8_t temperature) {
+    cellTemperature[cellId] = temperature;
 }

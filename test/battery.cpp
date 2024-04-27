@@ -41,6 +41,15 @@ void Battery::initialise() {
     }
 }
 
+void Battery::set_all_cell_voltages(uint16_t newCellVoltage) {
+    for ( int p = 0; p < numPacks; p++ ) {
+        packs[p].set_all_cell_voltages(newCellVoltage);
+    }
+}
+
+uint16_t Battery::get_voltage_from_soc(int8_t soc) {
+    return static_cast<uint16_t>(( CELL_EMPTY_VOLTAGE + (CELL_FULL_VOLTAGE - CELL_EMPTY_VOLTAGE ) / 2 ) * soc);
+}
 
 // Check for and read messages from each pack 
 void Battery::read_message() {

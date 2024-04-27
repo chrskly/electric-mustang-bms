@@ -57,6 +57,14 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _n
 }
 
 
+// Set specific cell voltage
+void BatteryPack::set_all_cell_voltages(uint16_t newVoltage) {
+    for ( int m = 0; m < numModules; m++ ) {
+        modules[m].set_all_cell_voltages(newVoltage);
+    }
+}
+
+
 // Send voltage and temp data from mock battery
 
 void BatteryPack::send_module_voltages(uint8_t moduleId) {
@@ -175,7 +183,7 @@ void BatteryPack::read_message() {
         // BMS state message
         if ( frame.can_id == 0x352 ) {
             // State
-            bms->set_state(frame.data[0]);
+            bms->set_state(static_cast<BmsState>(frame.data[0]));
             // Error bits
             bms->set_internalError(frame.data[1] & 0x01);
             bms->set_packsImbalanced((frame.data[1] > 1) & 0x02);

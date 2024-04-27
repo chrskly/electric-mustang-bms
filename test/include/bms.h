@@ -22,10 +22,20 @@
 
 //#include "include/battery.h"
 
+enum BmsState : uint8_t {
+    STATE_IDLE,
+    STATE_DRIVE,
+    STATE_BATTERY_HEATING,
+    STATE_CHARGING,
+    STATE_BATTERY_EMPTY,
+    STATE_OVER_TEMP_FAULT,
+    STATE_ILLEGAL_STATE_TRANSITION_FAULT,
+};
+
 class Bms {
     private:
         int8_t soc;
-        uint8_t state;                // Internal state of the BMS [ idle, drive, charge, etc.]
+        BmsState state;                // Internal state of the BMS [ idle, drive, charge, etc.]
         bool internalError;           // Something has gone wrong with the BMS
         bool packsAreImbalanced;      // The voltage between the two packs is too damn high
         bool inhibitCharge;           // Indicates that the BMS INHIBIT_CHARGE signal is enabled
@@ -45,11 +55,14 @@ class Bms {
     public:
         Bms();
         Bms(int _numPacks);
-        void set_state(uint8_t new_state);
+        void set_state(BmsState new_state);
+        BmsState get_state();
         void set_internalError(bool new_internalError);
         void set_packsImbalanced(bool new_packsImbalanced);
         void set_inhibitCharge(bool new_inhibitCharge);
+        bool get_inhibitCharge();
         void set_inhibitDrive(bool new_inhibitDrive);
+        bool get_inhibitDrive();
         void set_heaterEnabled(bool new_heaterEnabled);
         void set_ignitionOn(bool new_ignitionOn);
         void set_chargeEnable(bool new_chargeEnable);

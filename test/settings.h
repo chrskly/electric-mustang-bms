@@ -55,13 +55,13 @@
 // const int CS_PINS[2] = { 15, 15 };
 const int CS_PINS[1] = { 15, };
 
-// Outputs
-#define CHARGE_INHIBIT_PIN 4                       // Low-side switch to create CHARGE_INHIBIT signal. a.k.a OUT1
-#define HEATER_ENABLE_PIN 5                        // Low-side switch to turn on battery heaters. a.k.a. OUT2
-const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallow closing of battery box contactors
-#define DRIVE_INHIBIT_PIN 6                        // Low-side switch to disallow driving. a.k.a OUT3
-
 // Inputs
+#define CHARGE_INHIBIT_PIN 4                       // 
+#define HEATER_ENABLE_PIN 5                        // 
+const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // 
+#define DRIVE_INHIBIT_PIN 6                        // 
+
+// Outputs
 #define IGNITION_ENABLE_PIN 10  //
 #define CHARGE_ENABLE_PIN 9     //
 #define IN_1_PIN 11             // unused
@@ -70,7 +70,6 @@ const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallo
 #define IN_4_PIN 14             // unused
 
 #define SPI_PORT      spi0
-
 #define SPI_MISO        16  // pin 21
 #define SPI_CLK         18  // pin 24
 #define SPI_MOSI        19  // pin 25

@@ -23,9 +23,9 @@
 #include "include/util.h"
 #include "include/bms.h"
 
-bool wait_for_50_percent_soc(Bms* bms, int timeout) {
+bool wait_for_soc(Bms* bms, int soc, int timeout) {
     clock_t startTime = get_clock();
-    while (bms->get_soc() < 50) {
+    while (bms->get_soc() < soc) {
         if (get_clock() - startTime > timeout) {
             return false;
         }
@@ -33,14 +33,32 @@ bool wait_for_50_percent_soc(Bms* bms, int timeout) {
     return true;
 }
 
-bool wait_for_drive_inhibit_to_activate() {
-    //
+bool wait_for_drive_inhibit_state(Bms* bms, bool state, int timeout) {
+    clock_t startTime = get_clock();
+    while (bms->get_inhibitDrive() != state) {
+        if (get_clock() - startTime > timeout) {
+            return false;
+        }
+    }
+    return true;
 }
 
-bool wait_for_bms_state_to_change_to_batteryEmpty() {
-    //
+bool wait_for_charge_inhibit_state(Bms* bms, bool state, int timeout) {
+    clock_t startTime = get_clock();
+    while (bms->get_inhibitCharge() != state) {
+        if (get_clock() - startTime > timeout) {
+            return false;
+        }
+    }
+    return true;
 }
 
-bool wait_for_charge_inhibit_to_activate() {
-    //
+bool wait_for_bms_state(Bms* bms, BmsState state, int timeout) {
+    clock_t startTime = get_clock();
+    while (bms->get_state() != state) {
+        if (get_clock() - startTime > timeout) {
+            return false;
+        }
+    }
+    return true;
 }

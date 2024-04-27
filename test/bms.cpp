@@ -23,8 +23,12 @@
 
 Bms::Bms() {}
 
-void Bms::set_state(uint8_t new_state) {
+void Bms::set_state(BmsState new_state) {
     state = new_state;
+}
+
+BmsState Bms::get_state() {
+    return state;
 }
 
 void Bms::set_internalError(bool new_internalError) {
@@ -39,8 +43,16 @@ void Bms::set_inhibitCharge(bool new_inhibitCharge) {
     inhibitCharge = new_inhibitCharge;
 }
 
+bool Bms::get_inhibitCharge() {
+    return inhibitCharge;
+}
+
 void Bms::set_inhibitDrive(bool new_inhibitDrive) {
     inhibitDrive = new_inhibitDrive;
+}
+
+bool Bms::get_inhibitDrive() {
+    return inhibitDrive;
 }
 
 void Bms::set_heaterEnabled(bool new_heaterEnabled) {
