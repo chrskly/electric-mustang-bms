@@ -26,7 +26,7 @@ add_executable(bms
         testcaseutils.cpp
         util.cpp
         testcases0xx.cpp
-        inputs.cpp
+        io.cpp
         )
 
 pico_add_extra_outputs(bms)

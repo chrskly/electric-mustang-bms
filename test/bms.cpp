@@ -39,6 +39,10 @@ void Bms::set_packsImbalanced(bool new_packsImbalanced) {
     packsAreImbalanced = new_packsImbalanced;
 }
 
+bool Bms::get_packsImbalanced() {
+    return packsAreImbalanced;
+}
+
 void Bms::set_inhibitCharge(bool new_inhibitCharge) {
     inhibitCharge = new_inhibitCharge;
 }

@@ -233,3 +233,11 @@ void BatteryPack::read_message() {
 void BatteryPack::send_message(can_frame *frame) {
     CAN.sendMessage(frame);
 }
+
+bool BatteryPack::get_inhibit() {
+    return contactorsAreInhibited;
+}
+
+void BatteryPack::set_inhibit(bool inhibit) {
+    contactorsAreInhibited = inhibit;
+}

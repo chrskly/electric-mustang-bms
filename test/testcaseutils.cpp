@@ -22,6 +22,7 @@
 
 #include "include/util.h"
 #include "include/bms.h"
+#include "include/battery.h"
 
 bool wait_for_soc(Bms* bms, int soc, int timeout) {
     clock_t startTime = get_clock();
@@ -56,6 +57,26 @@ bool wait_for_charge_inhibit_state(Bms* bms, bool state, int timeout) {
 bool wait_for_bms_state(Bms* bms, BmsState state, int timeout) {
     clock_t startTime = get_clock();
     while (bms->get_state() != state) {
+        if (get_clock() - startTime > timeout) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool wait_for_batt_inhibit_state(Battery* battery, int packId, bool state, int timeout) {
+    clock_t startTime = get_clock();
+    while (battery->get_pack(packId).get_inhibit() != state) {
+        if (get_clock() - startTime > timeout) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool wait_for_packs_imbalanced_state(Bms* bms, bool state, int timeout) {
+    clock_t startTime = get_clock();
+    while (bms->get_packsImbalanced() != state) {
         if (get_clock() - startTime > timeout) {
             return false;
         }

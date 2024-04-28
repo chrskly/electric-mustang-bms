@@ -30,7 +30,7 @@
 #include "include/bmstest.h"
 #include "include/battery.h"
 #include "include/comms.h"
-#include "include/inputs.h"
+#include "include/io.h"
 
 #include "include/testcases0xx.h"
 
@@ -65,8 +65,7 @@ int main() {
     enable_handle_battery_CAN_messages();
 
     printf("Enable listening for inputs\n");
-    enable_listen_for_drive_inhibit_signal();
-    enable_listen_for_charge_inhibit_signal();
+    enable_listen_for_input_signals();
 
     while (true) {
         if ( ! test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(&battery) ) {

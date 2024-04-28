@@ -20,9 +20,11 @@
 #include <stdio.h>
 
 #include "hardware/gpio.h"
-#include "include/inputs.h"
+#include "include/io.h"
 #include "include/battery.h"
 #include "settings.h"
+
+// Input handlers
 
 void gpio_callback(uint gpio, uint32_t events) {
     extern Battery battery;
@@ -40,12 +42,36 @@ void gpio_callback(uint gpio, uint32_t events) {
             battery.get_bms()->set_inhibitCharge(false);
         }
     }
+    if ( gpio == INHIBIT_CONTACTOR_PINS[0] ) { // batt1 inhibit
+        if ( gpio_get(INHIBIT_CONTACTOR_PINS[0]) == 1 ) {
+            battery.get_pack(0).set_inhibit(true);
+        } else {
+            battery.get_pack(0).set_inhibit(false);
+        }
+    }
+    if ( gpio == INHIBIT_CONTACTOR_PINS[1] ) { // batt2 inhibit
+        if ( gpio_get(INHIBIT_CONTACTOR_PINS[1]) == 1 ) {
+            battery.get_pack(1).set_inhibit(true);
+        } else {
+            battery.get_pack(1).set_inhibit(false);
+        }
+    }
 }
 
-void enable_listen_for_drive_inhibit_signal() {
+void enable_listen_for_input_signals() {
     gpio_set_irq_enabled_with_callback(DRIVE_INHIBIT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
+    gpio_set_irq_enabled(CHARGE_INHIBIT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
+    gpio_set_irq_enabled(INHIBIT_CONTACTOR_PINS[0], GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
+    gpio_set_irq_enabled(INHIBIT_CONTACTOR_PINS[1], GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
 }
 
-void enable_listen_for_charge_inhibit_signal() {
-    gpio_set_irq_enabled(CHARGE_INHIBIT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
+
+// Outputs
+
+void set_ignition_state(bool state) {
+    gpio_put(IGNITION_ENABLE_PIN, state);
+}
+
+void set_charge_enable_state(bool state) {
+    gpio_put(CHARGE_ENABLE_PIN, state);
 }

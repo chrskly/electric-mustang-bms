@@ -41,6 +41,14 @@ void Battery::initialise() {
     }
 }
 
+int Battery::get_num_packs() {
+    return numPacks;
+}
+
+BatteryPack Battery::get_pack(int pack) {
+    return packs[pack];
+}
+
 void Battery::set_all_cell_voltages(uint16_t newCellVoltage) {
     for ( int p = 0; p < numPacks; p++ ) {
         packs[p].set_all_cell_voltages(newCellVoltage);

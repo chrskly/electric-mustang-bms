@@ -43,6 +43,8 @@ class Battery {
    public:
       Battery(int _numPacks);
       void initialise();
+      int get_num_packs();
+      BatteryPack get_pack(int pack);
       void set_all_cell_voltages(uint16_t newCellVoltage);
       uint16_t get_voltage_from_soc(int8_t soc);
       void read_message();

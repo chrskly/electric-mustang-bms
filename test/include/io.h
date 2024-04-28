@@ -20,7 +20,9 @@
 #ifndef BMS_TEST_INCLUDE_INPUTS_H_
 #define BMS_TEST_INCLUDE_INPUTS_H_
 
-void enable_listen_for_drive_inhibit_signal();
-void enable_listen_for_charge_inhibit_signal();
+void enable_listen_for_input_signals();
+
+void set_ignition_state(bool state);
+void set_charge_enable_state(bool state);
 
 #endif  // BMS_TEST_INCLUDE_INPUTS_H_

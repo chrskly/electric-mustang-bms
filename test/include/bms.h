@@ -59,6 +59,7 @@ class Bms {
         BmsState get_state();
         void set_internalError(bool new_internalError);
         void set_packsImbalanced(bool new_packsImbalanced);
+        bool get_packsImbalanced();
         void set_inhibitCharge(bool new_inhibitCharge);
         bool get_inhibitCharge();
         void set_inhibitDrive(bool new_inhibitDrive);

@@ -17,11 +17,5 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "include/bms.h"
+#include "include/battery.h"
 
-bool wait_for_soc(Bms* bms, int soc, int timeout);
-bool wait_for_drive_inhibit_state(Bms* bms, bool state, int timeout);
-bool wait_for_charge_inhibit_state(Bms* bms, bool state, int timeout);
-bool wait_for_bms_state(Bms* bms, BmsState state, int timeout);
-bool wait_for_batt_inhibit_state(Battery* battery, int packId, bool state, int timeout);
-bool wait_for_packs_imbalanced_state(Bms* bms, bool state, int timeout);
