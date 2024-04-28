@@ -280,7 +280,7 @@ void state_batteryHeating(Event event) {
 /*
  * State          : charging
  * Ignition       : on or off
- * Contactors     : closed
+ * Contactors     : closed / inhibited
  * Charging       : yes
  * heater         : off
  * drive inhibit  : off
