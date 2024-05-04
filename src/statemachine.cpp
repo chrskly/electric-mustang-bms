@@ -29,6 +29,19 @@ extern State state;
 extern StatusLight statusLight;
 
 
+--------------------------------------------------------------------------------
+/* 
+ * ~~ Note 1 ~~
+ *
+ * If we're driving around with some of the packs inhibited, and we want to go
+ * directly into charge mode, dealing with the contactors is too awkward. While
+ * driving, the high pack(s) will be enabled and the low pack(s) will be disabled.
+ * However, when charging we want that to be the other way around. There's no
+ * clean way to do this. So lets not try. Just go into fault mode. The same is
+ * the case if we're charging and want to go directly into drive mode.
+ */
+
+
 /*
  * State          : standby
  * Ignition       : off
@@ -96,6 +109,7 @@ void state_standby(Event event) {
             if ( battery.too_cold_to_charge() ) {
                 battery.enable_heater();
                 battery.enable_inhibit_charge();
+                battery.enable_inhibit_drive();
                 printf("Switching to state : state_batteryHeating, reason : charge requested, but too cold to charge\n");
                 statusLight.led_set_mode(CHARGING);
                 state = state_batteryHeating;
@@ -172,13 +186,8 @@ void state_drive(Event event) {
             state = state_standby;
             break;
         case E_CHARGING_INITIATED:
-            /* If we're driving around with some of the packs inhibited, and we
-             * want to go directly into charge mode, dealing with the contactors
-             * is too awkward. While driving, the high pack(s) will be enabled
-             * and the low pack(s) will be disabled. However, when charging we
-             * want that to be the other way around. There's no clean way to do
-             * this. So lets not try. Just go into fault mode.
-             */
+            /* Cannot go straight from drive mode to charge mode when packs are
+            * imbalanced. See note 1 above. */
             if ( battery.one_or_more_contactors_inhibited() ) {
                 battery.enable_inhibit_drive();
                 battery.enable_inhibit_charge();
@@ -212,7 +221,7 @@ void state_drive(Event event) {
  * Contactors     : closed
  * Charging       : no (but CHARGE_ENABLE is on, so waiting to charge)
  * heater         : on
- * drive inhibit  : off
+ * drive inhibit  : on
  * charge inhibit : on
  */
 void state_batteryHeating(Event event) {
@@ -240,6 +249,16 @@ void state_batteryHeating(Event event) {
             break;
         case E_CELL_VOLTAGE_UPDATE:
             battery.process_voltage_update();
+            /* There's no point in heating the battery to get it ready for charging if it's already full.
+             * Charger should pick up on this and stop requesting charge. */
+            if ( battery.has_full_cell() ) {
+                battery.enable_inhibit_charge();
+                battery.disable_heater();
+                printf("Switching to state : charging, reason : battery was heating, but is already full. No need to continue heating.\n");
+                statusLight.led_set_mode(CHARGING);
+                state = state_charging;
+                break;
+            }
             break;
         case E_IGNITION_ON:
             break;
@@ -250,14 +269,30 @@ void state_batteryHeating(Event event) {
         case E_CHARGING_TERMINATED:
             // We're no longer seeking to charge. No need to continue heating.
             battery.disable_heater();
+            /* Cannot go straight from drive mode to charge mode when packs are
+             * imbalanced. See note 1 above. */
+            if ( battery.one_or_more_contactors_inhibited() && battery.ignition_is_on() ) {
+                battery.enable_inhibit_drive();
+                battery.enable_inhibit_charge();
+                // FIXME do we need to set some sort of error flag here?
+                printf("Switching to state : illegalStateTransitionFault, reason : cannot switch directly from charge to drive with imbalanced packs\n");
+                statusLight.led_set_mode(FAULT);
+                state = state_illegalStateTransitionFault;
+                break;
+            }
+            // Battery empty
+            if ( battery.has_empty_cell() ) {
+                battery.enable_inhibit_drive();
+                printf("Switching to state : batteryEmpty, reason : charge terminated but battery still empty\n");
+                statusLight.led_set_mode(FAULT);
+                state = state_batteryEmpty;
+                break;
+            }
             // Drive mode
             if ( battery.ignition_is_on() ) {
-                if ( battery.one_or_more_contactors_inhibited() ) {
-                    battery.disable_inhibit_for_drive();
-                }
                 battery.disable_inhibit_charge();
                 battery.disable_inhibit_drive();
-                printf("Switching to state : drive, reason : charging request was cancelled\n");
+                printf("Switching to state : drive, reason : charging request has been terminated and ignition is on\n");
                 statusLight.led_set_mode(DRIVE);
                 state = state_drive;
                 break;
@@ -265,7 +300,7 @@ void state_batteryHeating(Event event) {
             // Standby mode
             battery.disable_inhibit_drive();
             battery.disable_inhibit_charge();
-            printf("Switching to state : standby, reason : battery has cooled\n");
+            printf("Switching to state : standby, reason : charge request has been terminated\n");
             statusLight.led_set_mode(STANDBY);
             state = state_standby;
             break;
@@ -283,7 +318,7 @@ void state_batteryHeating(Event event) {
  * Contactors     : closed / inhibited
  * Charging       : yes
  * heater         : off
- * drive inhibit  : off
+ * drive inhibit  : on
  * charge inhibit : off
  */
 void state_charging(Event event) {
@@ -333,10 +368,17 @@ void state_charging(Event event) {
             // We're already charging. Nothing to do.
             break;
         case E_CHARGING_TERMINATED:
-            // In case we were in the process of heating the battery
-            battery.disable_heater();
-            battery.disable_inhibit_charge();
-            battery.disable_inhibit_drive();
+            /* Cannot go straight from drive mode to charge mode when packs are
+             * imbalanced. See note 1 above. */
+            if ( battery.one_or_more_contactors_inhibited() && battery.ignition_is_on() ) {
+                battery.enable_inhibit_drive();
+                battery.enable_inhibit_charge();
+                // FIXME do we need to set some sort of error flag here?
+                printf("Switching to state : illegalStateTransitionFault, reason : cannot switch directly from charge to drive with imbalanced packs\n");
+                statusLight.led_set_mode(FAULT);
+                state = state_illegalStateTransitionFault;
+                break;
+            }
             /* Did we start charging with an empty battery, but cancel the
              * charge before actually putting any energy into the battery?
              */
