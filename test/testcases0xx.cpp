@@ -60,7 +60,9 @@ bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* ba
         return false;
     }
 
+    printf("    > Test passed\n");
     return true;
+
 }
 
 bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery) {
@@ -99,5 +101,6 @@ bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery) 
 
     // No need to check BMS state, as it does not need to be a specific state
 
+    printf("    > Test passed\n");
     return true;
 }

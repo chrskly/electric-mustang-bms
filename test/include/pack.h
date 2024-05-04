@@ -41,6 +41,7 @@ class BatteryPack {
       void send_message(can_frame *frame);
       bool get_inhibit();
       void set_inhibit(bool inhibit);
+      void set_all_temperatures(int8_t newTemperature);
 
    private:
       MCP2515 CAN;                                     // CAN bus connection to this pack

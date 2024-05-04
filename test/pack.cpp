@@ -241,3 +241,9 @@ bool BatteryPack::get_inhibit() {
 void BatteryPack::set_inhibit(bool inhibit) {
     contactorsAreInhibited = inhibit;
 }
+
+void BatteryPack::set_all_temperatures(int8_t newTemperature) {
+    for ( int m = 0; m < numModules; m++ ) {
+        modules[m].set_all_temperatures(newTemperature);
+    }
+}

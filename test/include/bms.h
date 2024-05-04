@@ -65,6 +65,7 @@ class Bms {
         void set_inhibitDrive(bool new_inhibitDrive);
         bool get_inhibitDrive();
         void set_heaterEnabled(bool new_heaterEnabled);
+        bool get_heaterEnabled();
         void set_ignitionOn(bool new_ignitionOn);
         void set_chargeEnable(bool new_chargeEnable);
         void set_soc(int16_t new_soc);

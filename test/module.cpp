@@ -53,6 +53,13 @@ uint8_t BatteryModule::get_cell_temperature(int cellId) {
     return cellTemperature[cellId];
 }
 
-void BatteryModule::set_cell_temperature(int cellId, uint8_t temperature) {
-    cellTemperature[cellId] = temperature;
+void BatteryModule::set_all_temperatures(uint8_t newTemperature) {
+    for ( int t = 0; t < numTemperatureSensors; t++ ) {
+        cellTemperature[t] = newTemperature;
+    }
+
+}
+
+void BatteryModule::set_temperature(int sensorId, uint8_t temperature) {
+    cellTemperature[sensorId] = temperature;
 }

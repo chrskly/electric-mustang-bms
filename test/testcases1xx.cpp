@@ -82,6 +82,7 @@ bool test_case_101_inhibit_battery_contactor_close_when_pack_voltages_differ(Bat
         return false;
     }
 
+    printf("    > Test passed\n");
     return true;
 }
 
@@ -136,6 +137,9 @@ bool test_case_102_do_not_inhibit_battery_contactor_close_when_pack_voltage_diff
         }
     }
 
+    printf("    > Test passed\n");
+    return true;
+
 }
 
 /*
@@ -158,8 +162,8 @@ bool test_case_103_ignition_turned_on_when_battery_contactors_are_inhibited(Batt
 
     // Set packs imbalanced (pack 0 low, pack 1 high)
     printf("    > Setting packs imbalanced\n");
-    battery->set_all_cell_voltages(battery->get_voltage_from_soc(50));
     battery->get_pack(0).set_all_cell_voltages(battery->get_voltage_from_soc(25));
+    battery->get_pack(1).set_all_cell_voltages(battery->get_voltage_from_soc(50));
 
     // Both packs should be inhibited
     printf("    > Waiting for BATT_INHIBIT to activate on both packs\n");
@@ -169,5 +173,423 @@ bool test_case_103_ignition_turned_on_when_battery_contactors_are_inhibited(Batt
             return false;
         }
     }
+
+    printf("    > Test passed\n");
+    return true;
+
+}
+
+
+bool test_case_104_ignition_turned_off_when_battery_contactors_are_inhibited(Battery* battery) {
+    printf("Running test [test_case_104_Ignition turned off when battery contactors are inhibited]\n");
+    Bms* bms = battery->get_bms();
+
+    // Start in idle state
+    printf("    > Moving to idle state\n");
+    set_ignition_state(false);
+    set_charge_enable_state(false);
+    if ( ! wait_for_bms_state(bms, STATE_IDLE, 2000) ) {
+        printf("    > BMS state did not change to 'idle' in time\n");
+        return false;
+    }
+
+    // Set packs imbalanced (pack 0 low, pack 1 high)
+    printf("    > Setting packs imbalanced\n");
+    battery->get_pack(0).set_all_cell_voltages(battery->get_voltage_from_soc(25));
+    battery->get_pack(1).set_all_cell_voltages(battery->get_voltage_from_soc(50));
+
+    // Both packs should be inhibited
+    printf("    > Waiting for BATT_INHIBIT to activate on both packs\n");
+    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
+        if ( ! wait_for_batt_inhibit_state(battery, p, true, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not activate in time\n", p+1);
+            return false;
+        }
+    }
+
+    // Turn ignition on
+    printf("    > Turning ignition on\n");
+    set_ignition_state(true);
+    if ( ! wait_for_bms_state(bms, STATE_DRIVE, 2000) ) {
+        printf("    > BMS state did not change to 'drive' in time\n");
+        return false;
+    }
+
+    // Pack 0 should still be inhibitited and pack 1 should not
+    printf("    > Ensuring BATT_INHIBIT is activated for pack 0\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 0, true, 2000) ) {
+        printf("    > BATT1_INHIBIT did not activate in time\n");
+        return false;
+    }
+
+    printf("    > Ensuring BATT_INHIBIT is deactivated for pack 1\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 1, false, 2000) ) {
+        printf("    > BATT2_INHIBIT did not deactivate in time\n");
+        return false;
+    }
+
+    // Turn ignition off
+    printf("    > Turning ignition off\n");
+    set_ignition_state(false);
+    if ( ! wait_for_bms_state(bms, STATE_IDLE, 2000) ) {
+        printf("    > BMS state did not change to 'idle' in time\n");
+        return false;
+    }
+
+    // Both packs should be inhibited
+    printf("    > Waiting for BATT_INHIBIT to activate on both packs\n");
+    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
+        if ( ! wait_for_batt_inhibit_state(battery, p, true, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not activate in time\n", p+1);
+            return false;
+        }
+    }
+
+    printf("    > Test passed\n");
+    return true;
+
+}
+
+bool test_case_105_start_charging_when_battery_contactors_are_inhibited(Battery* battery) {
+    printf("Running test [test_case_105_start_charging_when_battery_contactors_are_inhibited]\n");
+    Bms* bms = battery->get_bms();
+
+    // Start in idle state
+    printf("    > Moving to idle state\n");
+    set_ignition_state(false);
+    set_charge_enable_state(false);
+    if ( ! wait_for_bms_state(bms, STATE_IDLE, 2000) ) {
+        printf("    > BMS state did not change to 'idle' in time\n");
+        return false;
+    }
+
+    // Set packs imbalanced (pack 0 low, pack 1 high)
+    printf("    > Setting packs imbalanced\n");
+    battery->get_pack(0).set_all_cell_voltages(battery->get_voltage_from_soc(25));
+    battery->get_pack(1).set_all_cell_voltages(battery->get_voltage_from_soc(50));
+
+    // Both packs should be inhibited
+    printf("    > Waiting for BATT_INHIBIT to activate on both packs\n");
+    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
+        if ( ! wait_for_batt_inhibit_state(battery, p, true, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not activate in time\n", p+1);
+            return false;
+        }
+    }
+
+    // Start charging
+    printf("    > Start charging\n");
+    set_charge_enable_state(true);
+    if ( ! wait_for_bms_state(bms, STATE_CHARGING, 2000) ) {
+        printf("    > BMS state did not change to 'charging' in time\n");
+        return false;
+    }
+
+    // Pack 0 should NOT be inhibitited (low pack)
+    // Pack 1 should be inhibitied (high pack)
+    printf("    > Ensuring BATT_INHIBIT is deactivated for pack 0\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 0, false, 2000) ) {
+        printf("    > BATT1_INHIBIT did not deactivate in time\n");
+        return false;
+    }
+
+    printf("    > Ensuring BATT_INHIBIT is activated for pack 1\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 1, true, 2000) ) {
+        printf("    > BATT2_INHIBIT did not activate in time\n");
+        return false;
+    }
+
+    printf("    > Test passed\n");
+    return true;
+
+}
+
+bool test_case_106_stop_charging_when_battery_contactors_are_inhibited(Battery* battery) {
+    printf("Running test [test_case_106_stop_charging_when_battery_contactors_are_inhibited]\n");
+    Bms* bms = battery->get_bms();
+
+    // Start in idle state
+    printf("    > Moving to idle state\n");
+    set_ignition_state(false);
+    set_charge_enable_state(false);
+    if ( ! wait_for_bms_state(bms, STATE_IDLE, 2000) ) {
+        printf("    > BMS state did not change to 'idle' in time\n");
+        return false;
+    }
+
+    // Set packs imbalanced (pack 0 low, pack 1 high)
+    printf("    > Setting packs imbalanced\n");
+    battery->get_pack(0).set_all_cell_voltages(battery->get_voltage_from_soc(25));
+    battery->get_pack(1).set_all_cell_voltages(battery->get_voltage_from_soc(50));
+
+    // Both packs should be inhibited
+    printf("    > Waiting for BATT_INHIBIT to activate on both packs\n");
+    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
+        if ( ! wait_for_batt_inhibit_state(battery, p, true, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not activate in time\n", p+1);
+            return false;
+        }
+    }
+
+    // Start charging
+    printf("    > Start charging\n");
+    set_charge_enable_state(true);
+    if ( ! wait_for_bms_state(bms, STATE_CHARGING, 2000) ) {
+        printf("    > BMS state did not change to 'charging' in time\n");
+        return false;
+    }
+
+    // Pack 0 should NOT be inhibitited (low pack)
+    // Pack 1 should be inhibitied (high pack)
+    printf("    > Ensuring BATT_INHIBIT is deactivated for pack 0\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 0, false, 2000) ) {
+        printf("    > BATT1_INHIBIT did not deactivate in time\n");
+        return false;
+    }
+
+    printf("    > Ensuring BATT_INHIBIT is activated for pack 1\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 1, true, 2000) ) {
+        printf("    > BATT2_INHIBIT did not activate in time\n");
+        return false;
+    }
+
+    // Stop charging
+    printf("    > Stop charging\n");
+    set_charge_enable_state(false);
+    if ( ! wait_for_bms_state(bms, STATE_IDLE, 2000) ) {
+        printf("    > BMS state did not change to 'idle' in time\n");
+        return false;
+    }
+
+    // Both packs should be inhibited
+    printf("    > Waiting for BATT_INHIBIT to activate on both packs\n");
+    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
+        if ( ! wait_for_batt_inhibit_state(battery, p, true, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not activate in time\n", p+1);
+            return false;
+        }
+    }
+
+    printf("    > Test passed\n");
+    return true;
+
+}
+
+
+bool test_case_107_charging_on_one_pack_and_voltage_equalises(Battery* battery) {
+    printf("Running test [test_case_107_charging_on_one_pack_and_voltage_equalises]\n");
+    Bms* bms = battery->get_bms();
+
+    // Start in idle state
+    printf("    > Moving to idle state\n");
+    set_ignition_state(false);
+    set_charge_enable_state(false);
+    if ( ! wait_for_bms_state(bms, STATE_IDLE, 2000) ) {
+        printf("    > BMS state did not change to 'idle' in time\n");
+        return false;
+    }
+
+    // Set packs imbalanced (pack 0 low, pack 1 high)
+    printf("    > Setting packs imbalanced\n");
+    battery->get_pack(0).set_all_cell_voltages(battery->get_voltage_from_soc(25));
+    battery->get_pack(1).set_all_cell_voltages(battery->get_voltage_from_soc(50));
+
+    // Both packs should be inhibited
+    printf("    > Waiting for BATT_INHIBIT to activate on both packs\n");
+    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
+        if ( ! wait_for_batt_inhibit_state(battery, p, true, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not activate in time\n", p+1);
+            return false;
+        }
+    }
+
+    // Start charging
+    printf("    > Start charging\n");
+    set_charge_enable_state(true);
+    if ( ! wait_for_bms_state(bms, STATE_CHARGING, 2000) ) {
+        printf("    > BMS state did not change to 'charging' in time\n");
+        return false;
+    }
+
+    // Pack 0 should NOT be inhibitited (low pack)
+    // Pack 1 should be inhibitied (high pack)
+    printf("    > Ensuring BATT_INHIBIT is deactivated for pack 0\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 0, false, 2000) ) {
+        printf("    > BATT1_INHIBIT did not deactivate in time\n");
+        return false;
+    }
+
+    printf("    > Ensuring BATT_INHIBIT is activated for pack 1\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 1, true, 2000) ) {
+        printf("    > BATT2_INHIBIT did not activate in time\n");
+        return false;
+    }
+
+    // Set pack 0 to 50% soc
+    printf("    > Setting pack 0 to 50%% soc\n");
+    battery->get_pack(0).set_all_cell_voltages(battery->get_voltage_from_soc(50));
+
+    // Both packs should be uninhibited
+    printf("    > Waiting for BATT_INHIBIT to deactivate on both packs\n");
+    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
+        if ( ! wait_for_batt_inhibit_state(battery, p, false, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not deactivate in time\n", p+1);
+            return false;
+        }
+    }
+
+    printf("    > Test passed\n");
+    return true;
+
+}
+
+
+bool test_case_108_driving_on_one_pack_and_voltage_equalises(Battery* battery) {
+    printf("Running test [test_case_108_driving_on_one_pack_and_voltage_equalises]\n");
+    Bms* bms = battery->get_bms();
+
+    // Start in idle state
+    printf("    > Moving to idle state\n");
+    set_ignition_state(false);
+    set_charge_enable_state(false);
+    if ( ! wait_for_bms_state(bms, STATE_IDLE, 2000) ) {
+        printf("    > BMS state did not change to 'idle' in time\n");
+        return false;
+    }
+
+    // Set packs imbalanced (pack 0 low, pack 1 high)
+    printf("    > Setting packs imbalanced\n");
+    battery->get_pack(0).set_all_cell_voltages(battery->get_voltage_from_soc(25));
+    battery->get_pack(1).set_all_cell_voltages(battery->get_voltage_from_soc(50));
+
+    // Both packs should be inhibited
+    printf("    > Waiting for BATT_INHIBIT to activate on both packs\n");
+    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
+        if ( ! wait_for_batt_inhibit_state(battery, p, true, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not activate in time\n", p+1);
+            return false;
+        }
+    }
+
+    // Start driving
+    printf("    > Start driving\n");
+    set_ignition_state(true);
+    if ( ! wait_for_bms_state(bms, STATE_DRIVE, 2000) ) {
+        printf("    > BMS state did not change to 'drive' in time\n");
+        return false;
+    }
+
+    // Pack 0 should be inhibitited (low pack)
+    // Pack 1 should NOT be inhibitied (high pack)
+    printf("    > Ensuring BATT_INHIBIT is activated for pack 0\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 0, true, 2000) ) {
+        printf("    > BATT1_INHIBIT did not activate in time\n");
+        return false;
+    }
+
+    printf("    > Ensuring BATT_INHIBIT is deactivated for pack 1\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 1, false, 2000) ) {
+        printf("    > BATT2_INHIBIT did not deactivate in time\n");
+        return false;
+    }
+
+    // Set pack 1 to 25% soc
+    printf("    > Setting pack 1 to 25%% soc\n");
+    battery->get_pack(1).set_all_cell_voltages(battery->get_voltage_from_soc(25));
+
+    // Both packs should be uninhibited
+    printf("    > Waiting for BATT_INHIBIT to deactivate on both packs\n");
+    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
+        if ( ! wait_for_batt_inhibit_state(battery, p, false, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not deactivate in time\n", p+1);
+            return false;
+        }
+    }
+
+    printf("    > Test passed\n");
+    return true;
+
+}
+
+bool test_case_109_driving_on_one_pack_then_begin_charging_while_ignition_still_on(Battery* battery) {
+    printf("Running test [test_case_109_driving_on_one_pack_then_begin_charging_while_ignition_still_on]\n");
+    Bms* bms = battery->get_bms();
+
+    // Start in idle state
+    printf("    > Moving to idle state\n");
+    set_ignition_state(false);
+    set_charge_enable_state(false);
+    if ( ! wait_for_bms_state(bms, STATE_IDLE, 2000) ) {
+        printf("    > BMS state did not change to 'idle' in time\n");
+        return false;
+    }
+
+    // Set packs imbalanced (pack 0 low, pack 1 high)
+    printf("    > Setting packs imbalanced\n");
+    battery->get_pack(0).set_all_cell_voltages(battery->get_voltage_from_soc(25));
+    battery->get_pack(1).set_all_cell_voltages(battery->get_voltage_from_soc(50));
+
+    // Both packs should be inhibited
+    printf("    > Waiting for BATT_INHIBIT to activate on both packs\n");
+    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
+        if ( ! wait_for_batt_inhibit_state(battery, p, true, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not activate in time\n", p+1);
+            return false;
+        }
+    }
+
+    // Start driving
+    printf("    > Turn ignition on\n");
+    set_ignition_state(true);
+    if ( ! wait_for_bms_state(bms, STATE_DRIVE, 2000) ) {
+        printf("    > BMS state did not change to 'drive' in time\n");
+        return false;
+    }
+
+    // Pack 0 should be inhibitited (low pack)
+    // Pack 1 should NOT be inhibitied (high pack)
+    printf("    > Ensuring BATT_INHIBIT is activated for pack 0\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 0, true, 2000) ) {
+        printf("    > BATT1_INHIBIT did not activate in time\n");
+        return false;
+    }
+
+    printf("    > Ensuring BATT_INHIBIT is deactivated for pack 1\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 1, false, 2000) ) {
+        printf("    > BATT2_INHIBIT did not deactivate in time\n");
+        return false;
+    }
+
+    // Start charging
+    printf("    > Start charging\n");
+    set_charge_enable_state(true);
+    if ( ! wait_for_bms_state(bms, STATE_CHARGING, 2000) ) {
+        printf("    > BMS state did not change to 'charging' in time\n");
+        return false;
+    }
+
+    // CHARGE_INHIBIT should activate
+    printf("    > Ensuring CHARGE_INHIBIT is activated\n");
+    if ( ! wait_for_charge_inhibit_state(battery, true, 2000) ) {
+        printf("    > CHARGE_INHIBIT did not activate in time\n");
+        return false;
+    }
+
+    // DRIVE_INHIBIT should activate
+    printf("    > Ensuring DRIVE_INHIBIT is activated\n");
+    if ( ! wait_for_drive_inhibit_state(battery, true, 2000) ) {
+        printf("    > DRIVE_INHIBIT did not activate in time\n");
+        return false;
+    }
+
+    // BMS should go into error state
+    printf("    > Ensuring BMS goes into illegalStateTransitionFault state\n");
+    if ( ! wait_for_bms_state(bms, STATE_ILLEGAL_STATE_TRANSITION_FAULT, 2000) ) {
+        printf("    > BMS state did not change to 'illegalStateTransitionFault' in time\n");
+        return false;
+    }
+
+    printf("    > Test passed\n");
+    return true;
 
 }

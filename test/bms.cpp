@@ -63,6 +63,10 @@ void Bms::set_heaterEnabled(bool new_heaterEnabled) {
     heaterEnabled = new_heaterEnabled;
 }
 
+bool Bms::get_heaterEnabled() {
+    return heaterEnabled;
+}
+
 void Bms::set_ignitionOn(bool new_ignitionOn) {
     ignitionOn = new_ignitionOn;
 }

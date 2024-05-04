@@ -83,3 +83,13 @@ bool wait_for_packs_imbalanced_state(Bms* bms, bool state, int timeout) {
     }
     return true;
 }
+
+bool wait_for_heater_enable_state(Bms* bms, bool state, int timeout) {
+    clock_t startTime = get_clock();
+    while (bms->get_heaterEnabled() != state) {
+        if (get_clock() - startTime > timeout) {
+            return false;
+        }
+    }
+    return true;
+}

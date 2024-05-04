@@ -49,6 +49,7 @@ class Battery {
       uint16_t get_voltage_from_soc(int8_t soc);
       void read_message();
       Bms* get_bms();
+      void set_all_temperatures(int8_t newTemperature);
 };
 
 #endif  // BMS_TEST_INCLUDE_BATTERY_H_

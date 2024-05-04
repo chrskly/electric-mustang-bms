@@ -111,7 +111,7 @@ Event : Voltage of batt 1 higher than batt 2. Ignition turned on.
 Result : Batt 1 inhibit deactivates
 
 
-### Test Case xx
+### Test Case 104
 
 Description : Ignition turned off when battery contactors are inhibited.
 
@@ -128,7 +128,7 @@ Event : Ignition turned off.
 Result : Batt 1 inhibit activates.
 
 
-### Test Case xx
+### Test Case 105
 
 Description : Start charging when battery contactors are inhibited.
 
@@ -145,7 +145,7 @@ Event : Voltage of batt 1 higher than batt 2. Charging starts (CHARGE_ENABLE inp
 Result : Batt 2 inhibit deactivates.
 
 
-### Test Case xx
+### Test Case 106
 
 Description : Stop charging when battery contactors are inhibited.
 
@@ -162,7 +162,7 @@ Event : Voltage of batt 1 higher than batt 2. Charging ceases.
 Result : Batt 2 inhibit activates.
 
 
-### Test Case xx
+### Test Case 107
 
 Description : Charging on one pack, voltage equalises
 
@@ -179,7 +179,7 @@ Event : Voltage of batt1 == voltage of batt2.
 Result : batt2 inhibit deactivates.
 
 
-### Test Case xx
+### Test Case 108
 
 Description : Driving on one pack, voltage equalises
 
@@ -196,7 +196,7 @@ Event : Voltage of batt1 == voltage of batt2.
 Result : batt2 inhibit deactivates.
 
 
-### Test Case xx
+### Test Case 109
 
 Description : Driving on one pack, begin charging while ignition still on.
 
@@ -210,7 +210,8 @@ Pre-condition
 
 Event : CHARGE_ENABLE signal activates.
 
-Result : DRIVE_INHIBIT and CHARGE_INHIBIT signals should activate.
+Result : DRIVE_INHIBIT and CHARGE_INHIBIT signals should activate. BMS should go
+into illegalStateTransitionFault.
 
 
 --------------------------------------------------------------------------------
@@ -219,7 +220,7 @@ Result : DRIVE_INHIBIT and CHARGE_INHIBIT signals should activate.
 ## Test Cases : [2xx] : Temperature
 
 
-### Test Case xx
+### Test Case 201
 
 Description : Battery too cold to charge.
 
@@ -236,7 +237,7 @@ Event : Any battery temperature sensor drops below 0c
 Result : CHARGE_INHIBIT output signal activates
 
 
-### Test Case xx
+### Test Case 202
 
 Description : Battery warm enough to charge again.
 
@@ -253,7 +254,7 @@ Event : All battery sensor temperatures above 0c
 Result : CHARGE_INHIBIT output signal deactivates
 
 
-### Test Case xx
+### Test Case 203
 
 Description : Too cold to charge, but charge requested.
 
@@ -267,10 +268,10 @@ Pre-condition
 
 Event : CHARGE_ENABLE input signal activates
 
-Result : HEATER_ENABLE output signal activates
+Result : HEATER_ENABLE output signal activates and CHARGE_INHIBIT signal activates
 
 
-### Test Case xx
+### Test Case 204
 
 Description : Battery too hot to charge.
 
@@ -287,7 +288,7 @@ Event : any temperature sensor is over x degrees.
 Result : CHARGE_INHIBIT output signal activates.
 
 
-### Test Case xx
+### Test Case 205
 
 Description : Limit charging current when battery partially overheats.
 

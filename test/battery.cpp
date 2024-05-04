@@ -69,3 +69,10 @@ void Battery::read_message() {
 Bms* Battery::get_bms() {
     return &bms;
 }
+
+// Set all temperatures in all packs
+void Battery::set_all_temperatures(int8_t newTemperature) {
+    for ( int p = 0; p < numPacks; p++ ) {
+        packs[p].set_all_temperatures(newTemperature);
+    }
+}
