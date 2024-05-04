@@ -24,7 +24,7 @@
 
 
 // Switch status light to a different mode
-void StatusLight::led_set_mode(LED_MODE newMode) {
+void StatusLight::set_mode(LED_MODE newMode) {
     printf("Setting LED mode %d\n", newMode);
     switch (newMode) {
         case STANDBY:

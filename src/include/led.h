@@ -37,7 +37,7 @@ class StatusLight {
     int LEDoffDuration;
 
  public:
-    void led_set_mode(LED_MODE newMode);
+    void set_mode(LED_MODE newMode);
     void led_blink();
     bool process_led_blink_step();
 };
