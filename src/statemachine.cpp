@@ -175,7 +175,6 @@ void state_drive(Event event) {
             }
             break;
         case E_IGNITION_ON:
-            // Already in drive mode, nothing to do.
             break;
         case E_IGNITION_OFF:
             printf("Switching to state : standby, reason : ignition turned off\n");
@@ -263,7 +262,7 @@ void state_batteryHeating(Event event) {
         case E_CHARGING_TERMINATED:
             // We're no longer seeking to charge. No need to continue heating.
             battery.disable_heater();
-            /* Cannot go straight from drive mode to charge mode when packs are
+            /* Cannot go straight from charge mode to drive mode when packs are
              * imbalanced. See note 1 above. */
             if ( battery.one_or_more_contactors_inhibited() && battery.ignition_is_on() ) {
                 battery.enable_inhibit_drive();
