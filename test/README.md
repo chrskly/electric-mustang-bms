@@ -77,7 +77,7 @@ Event : Voltage difference between packs is greater than SAFE_VOLTAGE_DELTA_BETW
 Result : Both batt1 inhibit and batt2 inhibit signals activate
 
 
-### Test Case xx
+### Test Case 102
 
 Description : Do not inhibit battery contactor close when pack voltage differ and ignition is on.
 
@@ -94,7 +94,7 @@ Event : Voltage difference between packs is greater than SAFE_VOLTAGE_DELTA_BETW
 Result : batt1 inhibit and batt2 inhibit remain disabled.
 
 
-### Test Case xx
+### Test Case 103
 
 Description : Ignition turned on when battery contactors are inhibited.
 
