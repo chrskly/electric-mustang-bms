@@ -120,8 +120,6 @@ void state_standby(Event event) {
             break;
         case E_CHARGING_TERMINATED:
             break;
-        case E_EMERGENCY_SHUTDOWN:
-            break;
         default:
             printf("Received unknown event");
     }
@@ -205,9 +203,6 @@ void state_drive(Event event) {
             state = state_charging;
             break;
         case E_CHARGING_TERMINATED:
-            break;
-        case E_EMERGENCY_SHUTDOWN:
-            // Tell inverter to shut down + short sleep.
             break;
         default:
             printf("Received unknown event\n");
@@ -302,8 +297,6 @@ void state_batteryHeating(Event event) {
             printf("Switching to state : standby, reason : charge request has been terminated\n");
             statusLight.set_mode(STANDBY);
             state = state_standby;
-            break;
-        case E_EMERGENCY_SHUTDOWN:
             break;
         default:
             printf("Received unknown event\n");
@@ -405,8 +398,6 @@ void state_charging(Event event) {
             statusLight.set_mode(STANDBY);
             state = state_standby;
             break;
-        case E_EMERGENCY_SHUTDOWN:
-            break;
         default:
             printf("Received unknown event\n");
     }
@@ -420,7 +411,7 @@ void state_charging(Event event) {
  * Charging       : no
  * heater         : off
  * drive inhibit  : on
- * charge inhibit : off
+ * charge inhibit : on / off
  */
 void state_batteryEmpty(Event event) {
     switch (event) {
@@ -434,34 +425,34 @@ void state_batteryEmpty(Event event) {
                 state = state_overTempFault;
                 break;
             }
-            if ( battery.charge_is_inhibited() && battery.too_cold_to_charge() ) {
+            if ( !battery.charge_is_inhibited() && battery.too_cold_to_charge() ) {
                 battery.enable_inhibit_charge();
             }
+            break;
         case E_CELL_VOLTAGE_UPDATE:
             battery.process_voltage_update();
             // After resting for a while, the voltage may rise again slightly.
             if ( !battery.has_empty_cell() ) {
-                // allow driving again
-                battery.disable_inhibit_drive();
-
-                // If ignition is already enabled, switch directly to drive mode.
-                if ( battery.ignition_is_on() ) {
-                    if ( battery.one_or_more_contactors_inhibited() ) {
-                        battery.disable_inhibit_for_drive();
-                    }
-                    printf("Switching to state : drive, reason : ignition turned on\n");
-                    statusLight.set_mode(DRIVE);
-                    state = state_drive;
+                /* Cannot go straight from drive mode to charge mode when packs are
+                 * imbalanced. See note 1 above. */
+                if ( battery.one_or_more_contactors_inhibited() && battery.ignition_is_on() ) {
+                    battery.enable_inhibit_drive();
+                    battery.enable_inhibit_charge();
+                    // FIXME do we need to set some sort of error flag here?
+                    printf("Switching to state : illegalStateTransitionFault, reason : cannot switch directly from charge to drive with imbalanced packs\n");
+                    statusLight.set_mode(FAULT);
+                    state = state_illegalStateTransitionFault;
                     break;
                 }
+                // allow driving again
+                battery.disable_inhibit_drive();
                 printf("Switching to state : standby, reason : battery level rose\n");
                 statusLight.set_mode(STANDBY);
                 state = state_standby;
+                break;
             }
             break;
         case E_IGNITION_ON:
-            // Disallow driving.
-            battery.enable_inhibit_drive();
             break;
         case E_IGNITION_OFF:
             break;
@@ -473,11 +464,9 @@ void state_batteryEmpty(Event event) {
             }
             printf("Switching to state : charging, reason : charging initiated\n");
             statusLight.set_mode(CHARGING);
-            state = state_charging;
+            state = state_batteryHeating;
             break;
         case E_CHARGING_TERMINATED:
-            break;
-        case E_EMERGENCY_SHUTDOWN:
             break;
         default:
             printf("Received unknown event");
@@ -546,8 +535,6 @@ void state_overTempFault(Event event) {
             break;
         case E_CHARGING_TERMINATED:
             break;
-        case E_EMERGENCY_SHUTDOWN:
-            break;
         default:
             printf("Received unknown event\n");
     }
@@ -588,8 +575,6 @@ void state_illegalStateTransitionFault(Event event) {
                 printf("Switching to state : standby, reason : ignition and charging off\n");
                 state = state_standby;
             }
-            break;
-        case E_EMERGENCY_SHUTDOWN:
             break;
         default:
             printf("Received unknown event\n");
