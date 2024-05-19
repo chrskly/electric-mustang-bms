@@ -56,7 +56,7 @@ void Battery::set_all_cell_voltages(uint16_t newCellVoltage) {
 }
 
 uint16_t Battery::get_voltage_from_soc(int8_t soc) {
-    return static_cast<uint16_t>(( CELL_EMPTY_VOLTAGE + (CELL_FULL_VOLTAGE - CELL_EMPTY_VOLTAGE ) / 2 ) * soc);
+    return static_cast<uint16_t>(((CELL_FULL_VOLTAGE - CELL_EMPTY_VOLTAGE) * soc / 100) + CELL_EMPTY_VOLTAGE);
 }
 
 // Check for and read messages from each pack 

@@ -33,6 +33,8 @@
 #include "include/io.h"
 
 #include "include/testcases0xx.h"
+#include "include/testcases1xx.h"
+#include "include/testcases2xx.h"
 
 MCP2515 mainCAN(SPI_PORT, MAIN_CAN_CS, SPI_MISO, SPI_MOSI, SPI_CLK, 500000);
 Battery battery(NUM_PACKS);
@@ -68,9 +70,23 @@ int main() {
     enable_listen_for_input_signals();
 
     while (true) {
-        if ( ! test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(&battery) ) {
-            printf("Test case 001 failed\n");
-        }
+        test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(&battery);
+        test_case_002_ensure_battery_cannot_be_charged_when_full(&battery);
+        
+        test_case_101_inhibit_battery_contactor_close_when_pack_voltages_differ(&battery);
+        test_case_102_do_not_inhibit_battery_contactor_close_when_pack_voltage_differ_and_ignition_is_on(&battery);
+        test_case_103_ignition_turned_on_when_battery_contactors_are_inhibited(&battery);
+        test_case_104_ignition_turned_off_when_battery_contactors_are_inhibited(&battery);
+        test_case_105_start_charging_when_battery_contactors_are_inhibited(&battery);
+        test_case_106_stop_charging_when_battery_contactors_are_inhibited(&battery);
+        test_case_107_charging_on_one_pack_and_voltage_equalises(&battery);
+        test_case_108_driving_on_one_pack_and_voltage_equalises(&battery);
+        test_case_109_driving_on_one_pack_then_begin_charging_while_ignition_still_on(&battery);
+
+        test_case_201_battery_too_cold_to_charge(&battery);
+        test_case_202_battery_warm_enough_to_charge_again(&battery);
+        test_case_203_too_cold_to_charge_but_charge_requested(&battery);
+        test_case_204_battery_too_hot_to_charge(&battery);
     }
 
     return 0;

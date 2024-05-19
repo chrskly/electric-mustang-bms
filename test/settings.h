@@ -28,13 +28,40 @@
 #define UART_TX_PIN      0  // pin 1
 #define UART_RX_PIN      1  // pin 2
 
+// CAN bus
+#define SPI_PORT      spi0
+#define SPI_MISO        16          // pin 21
+#define SPI_CLK         18          // pin 24
+#define SPI_MOSI        19          // pin 25
+#define CAN_CLK_PIN     21          // pin 27
+#define MAIN_CAN_CS     17          // pin 22
+const int CS_PINS[2] = { 20, 15 };  // Chip select pins for the CAN controllers for each battery pack.
 
-// #define NUM_PACKS         2                        // The total number of paralleled packs in this battery
-#define NUM_PACKS         1
+// Inputs
+#define DRIVE_INHIBIT_PIN  13                      //
+const bool DRIVE_INHIBIT_ACTIVE_LOW = true;       // Is the drive inhibit signal active low?
+#define CHARGE_INHIBIT_PIN 11                      //
+const bool CHARGE_INHIBIT_ACTIVE_LOW = true;      // Is the charge inhibit signal active low?
+#define HEATER_ENABLE_PIN   9                      //
+const bool HEATER_ENABLE_ACTIVE_LOW = true;       // Is the heater signal active low?
+const int INHIBIT_CONTACTOR_PINS[2] = { 14, 12 };  //
+const bool INHIBIT_CONTACTOR_ACTIVE_LOW = true;   // Is the inhibit contactor signal active low?
+
+// Outputs
+#define IGNITION_ENABLE_PIN  2  //
+const bool IGNITION_ENABLE_ACTIVE_LOW = true;  // Is the ignition signal active low?
+#define CHARGE_ENABLE_PIN    3  //
+const bool CHARGE_ENABLE_ACTIVE_LOW = true;    // Is the charge signal active low?
+#define IN_1_PIN            11  // unused
+#define IN_2_PIN            12  // unused
+#define IN_3_PIN            13  // unused
+#define IN_4_PIN            14  // unused
+
+
+#define NUM_PACKS         2                        // The total number of paralleled packs in this battery
 #define CELLS_PER_MODULE 16                        // The number of cells in each module
 #define TEMPS_PER_MODULE  4                        // The number of temperature sensors in each module
 #define MODULES_PER_PACK  6                        // The number of modules in each pack
-
 
 #define PACK_ALIVE_TIMEOUT 5                       // If we have not seen an update from the BMS in
                                                    // PACK_ALIVE_TIMEOUT seconds, then mark the pack
@@ -51,33 +78,6 @@
 #define SAFE_VOLTAGE_DELTA_BETWEEN_PACKS 0.01      // When closing contactors, the voltage difference between the packs shall not
                                                    // be greater than this voltage, in volts.
 
-// const int CS_PINS[2] = { 20, 15 };               // Chip select pins for the CAN controllers for each battery pack.
-// const int CS_PINS[2] = { 15, 15 };
-const int CS_PINS[1] = { 15, };
-
-// Inputs
-#define CHARGE_INHIBIT_PIN 4                       // 
-#define HEATER_ENABLE_PIN 5                        // 
-const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // 
-#define DRIVE_INHIBIT_PIN 6                        // 
-
-// Outputs
-#define IGNITION_ENABLE_PIN 10  //
-#define CHARGE_ENABLE_PIN 9     //
-#define IN_1_PIN 11             // unused
-#define IN_2_PIN 12             // unused
-#define IN_3_PIN 13             // unused
-#define IN_4_PIN 14             // unused
-
-#define SPI_PORT      spi0
-#define SPI_MISO        16  // pin 21
-#define SPI_CLK         18  // pin 24
-#define SPI_MOSI        19  // pin 25
-
-// mainNet
-#define MAIN_CAN_CS     17  // pin 22
-
-#define CAN_CLK_PIN     21  // pin 27
 
 // The capacity of the battery pack
 #define BATTERY_CAPACITY_WH 14800         // 7.4kWh usable per pack, x2 packs
@@ -86,10 +86,10 @@ const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    //
                                           // kWh (value = 0)? 
 
 // Official min pack voltage = 269V. 269 / 6 / 16 = 2.8020833333V
-#define CELL_EMPTY_VOLTAGE 2.9
+#define CELL_EMPTY_VOLTAGE 2900
 
 // Official max pack voltage = 398V. 398 / 6 / 16 = 4.1458333333V
-#define CELL_FULL_VOLTAGE 4.0
+#define CELL_FULL_VOLTAGE 4100
 
 #define MINIMUM_TEMPERATURE -20          // 
 #define MINIMUM_CHARGING_TEMPERATURE 0   // Disallow charging below this temperature

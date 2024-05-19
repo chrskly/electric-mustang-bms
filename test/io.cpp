@@ -59,6 +59,10 @@ void gpio_callback(uint gpio, uint32_t events) {
 }
 
 void enable_listen_for_input_signals() {
+    gpio_set_pulls(DRIVE_INHIBIT_PIN, !DRIVE_INHIBIT_ACTIVE_LOW, DRIVE_INHIBIT_ACTIVE_LOW);
+    gpio_set_pulls(CHARGE_INHIBIT_PIN, !CHARGE_INHIBIT_ACTIVE_LOW, CHARGE_INHIBIT_ACTIVE_LOW);
+    gpio_set_pulls(INHIBIT_CONTACTOR_PINS[0], !INHIBIT_CONTACTOR_ACTIVE_LOW, INHIBIT_CONTACTOR_ACTIVE_LOW);
+    gpio_set_pulls(INHIBIT_CONTACTOR_PINS[1], !INHIBIT_CONTACTOR_ACTIVE_LOW, INHIBIT_CONTACTOR_ACTIVE_LOW);
     gpio_set_irq_enabled_with_callback(DRIVE_INHIBIT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
     gpio_set_irq_enabled(CHARGE_INHIBIT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
     gpio_set_irq_enabled(INHIBIT_CONTACTOR_PINS[0], GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
@@ -69,9 +73,19 @@ void enable_listen_for_input_signals() {
 // Outputs
 
 void set_ignition_state(bool state) {
-    gpio_put(IGNITION_ENABLE_PIN, state);
+    printf("Setting ignition state to %d\n", state);
+    if ( IGNITION_ENABLE_ACTIVE_LOW == state ) {
+        gpio_put(IGNITION_ENABLE_PIN, 0);
+    } else {
+        gpio_put(IGNITION_ENABLE_PIN, 1);
+    }
 }
 
 void set_charge_enable_state(bool state) {
-    gpio_put(CHARGE_ENABLE_PIN, state);
+    printf("Setting charge enable state to %d\n", state);
+    if ( CHARGE_ENABLE_ACTIVE_LOW == state ) {
+        gpio_put(CHARGE_ENABLE_PIN, 0);
+    } else {
+        gpio_put(CHARGE_ENABLE_PIN, 1);
+    }
 }

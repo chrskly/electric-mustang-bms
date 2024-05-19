@@ -17,12 +17,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BMS_TEST_INCLUDE_TESTCASES0XX_H_
-#define BMS_TEST_INCLUDE_TESTCASES0XX_H_
+#ifndef BMS_TEST_INCLUDE_TESTCASES2XX_H_
+#define BMS_TEST_INCLUDE_TESTCASES2XX_H_
 
 #include "include/battery.h"
 
-bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* battery);
-bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery);
+bool test_case_201_battery_too_cold_to_charge(Battery* battery);
+bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery);
+bool test_case_203_too_cold_to_charge_but_charge_requested(Battery* battery);
+bool test_case_204_battery_too_hot_to_charge(Battery* battery);
 
-#endif // BMS_TEST_INCLUDE_TESTCASES0XX_H_
+#endif // BMS_TEST_INCLUDE_TESTCASES2XX_H_

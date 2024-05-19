@@ -26,6 +26,8 @@ add_executable(bms
         testcaseutils.cpp
         util.cpp
         testcases0xx.cpp
+        testcases1xx.cpp
+        testcases2xx.cpp
         io.cpp
         )
 

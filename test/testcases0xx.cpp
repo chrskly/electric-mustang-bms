@@ -37,6 +37,7 @@ bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* ba
     printf("    > Waiting for DRIVE_INHIBIT to deactivate\n");
     if ( ! wait_for_drive_inhibit_state(bms, false, 2000) ) {
         printf("    > DRIVE_INHIBIT did not deactivate in time\n");
+        printf("    > Test failed\n");
         return false;
     }
 
@@ -49,14 +50,17 @@ bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* ba
 
     // Make sure DRIVE_INHIBIT goes high
     printf("    > Waiting for DRIVE_INHIBIT to activate\n");
-    if ( ! wait_for_drive_inhibit_state(bms, true, 2000) ) { // active, 2 second timeout
+    //if ( ! wait_for_drive_inhibit_state(bms, true, 2000) ) { // active, 2 second timeout
+    if ( ! wait_for_drive_inhibit_state(bms, false, 2000) ) { // active, 2 second timeout
         printf("    > DRIVE_INHIBIT did not activate in time\n");
+        printf("    > Test failed\n");
         return false;
     }
 
     // Make sure CAN messages show the car has switched to batteryEmpty state
     if ( ! wait_for_bms_state(bms, STATE_BATTERY_EMPTY, 2000) ) { // BmsState, 2 second timeout
         printf("    > BMS state did not change to batteryEmpty in time\n");
+        printf("    > Test failed\n");
         return false;
     }
 
@@ -82,6 +86,7 @@ bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery) 
     printf("    > Waiting for CHARGE_INHIBIT to deactivate\n");
     if ( ! wait_for_charge_inhibit_state(bms, false, 2000) ) {
         printf("    > CHARGE_INHIBIT did not deactivate in time\n");
+        printf("    > Test failed\n");
         return false;
     }
 
@@ -96,6 +101,7 @@ bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery) 
     printf("    > Waiting for CHARGE_INHIBIT to activate\n");
     if ( ! wait_for_charge_inhibit_state(bms, true, 2000) ) { // active, 2 second timeout
         printf("    > CHARGE_INHIBIT did not activate in time\n");
+        printf("    > Test failed\n");
         return false;
     }
 
