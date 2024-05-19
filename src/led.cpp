@@ -19,8 +19,32 @@
 
 #include <stdio.h>
 #include "pico/stdlib.h"
+#include "include/bms.h"
 
 #include "include/led.h"
+
+extern Bms bms;
+
+struct repeating_timer ledBlinkTimer;
+
+bool process_led_blink_step(struct repeating_timer *t) {
+    bms.led_blink();
+    return true;
+}
+
+StatusLight::StatusLight() {
+    on = false;
+    counter = 0;
+    onDuration = 0;
+    offDuration = 0;
+
+    // Set up the LED pin
+    gpio_init(PICO_DEFAULT_LED_PIN);
+    gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+
+    // timer to handle the on-ing and off-ing of the LED
+    add_repeating_timer_ms(100, process_led_blink_step, NULL, &ledBlinkTimer);
+}
 
 
 // Switch status light to a different mode
@@ -29,56 +53,44 @@ void StatusLight::set_mode(LED_MODE newMode) {
     switch (newMode) {
         case STANDBY:
             printf("Switch status light to mode STANDBY\n");
-            LEDonDuration = 1;
-            LEDoffDuration = 39;
+            onDuration = 1;
+            offDuration = 39;
             break;
         case DRIVE:
             printf("Switch status light to mode DRIVE\n");
-            LEDonDuration = 20;
-            LEDoffDuration = 0;
+            onDuration = 20;
+            offDuration = 0;
             break;
         case CHARGING:
             printf("Switch status light to mode CHARGING\n");
-            LEDonDuration = 10;
-            LEDoffDuration = 10;
+            onDuration = 10;
+            offDuration = 10;
             break;
         case FAULT:
             printf("Switch status light to mode FAULT\n");
-            LEDonDuration = 1;
-            LEDoffDuration = 1;
+            onDuration = 1;
+            offDuration = 1;
             break;
     }
 }
 
 void StatusLight::led_blink() {
-    ++LEDcounter;
+    ++counter;
 
-    if ( LEDon ) {
-        if ( LEDcounter > LEDonDuration ) {
-            LEDcounter = 0;
-            if ( LEDoffDuration > 0 ) {
+    if ( on ) {
+        if ( counter > onDuration ) {
+            counter = 0;
+            if ( offDuration > 0 ) {
                 gpio_put(PICO_DEFAULT_LED_PIN, 0);
-                LEDon = false;
+                on = false;
             }
         }
     } else {
-        if ( LEDcounter > LEDoffDuration ) {
+        if ( counter > offDuration ) {
             gpio_put(PICO_DEFAULT_LED_PIN, 1);
-            LEDcounter = 0;
-            LEDon = true;
+            counter = 0;
+            on = true;
         }
     }
-}
-
-bool process_led_blink_step(struct repeating_timer *t) {
-    extern StatusLight statusLight;
-    statusLight.led_blink();
-    return true;
-}
-
-struct repeating_timer ledBlinkTimer;
-
-void enable_led_blink() {
-    add_repeating_timer_ms(100, process_led_blink_step, NULL, &ledBlinkTimer);
 }
 

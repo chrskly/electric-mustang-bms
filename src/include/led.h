@@ -28,22 +28,17 @@ enum LED_MODE {
     FAULT
 };
 
-
 class StatusLight {
- private:
-    bool LEDon;
-    int LEDcounter;
-    int LEDonDuration;
-    int LEDoffDuration;
+    private:
+        bool on;
+        int counter;
+        int onDuration;
+        int offDuration;
 
- public:
-    void set_mode(LED_MODE newMode);
-    void led_blink();
-    bool process_led_blink_step();
+    public:
+        StatusLight();
+        void set_mode(LED_MODE newMode);
+        void led_blink();
 };
-
-
-
-void enable_led_blink();
 
 #endif  // BMS_SRC_INCLUDE_LED_H_

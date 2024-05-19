@@ -28,13 +28,42 @@
 #define UART_TX_PIN      0  // pin 1
 #define UART_RX_PIN      1  // pin 2
 
+// CAN bus
+#define SPI_PORT      spi0
+#define SPI_MISO        16          // pin 21
+#define SPI_CLK         18          // pin 24
+#define SPI_MOSI        19          // pin 25
+#define CAN_CLK_PIN     21          // pin 27
+#define MAIN_CAN_CS     17          // pin 22
+const int CS_PINS[2] = { 20, 15 };  // Chip select pins for the CAN controllers for each battery pack.
 
-// #define NUM_PACKS         2                        // The total number of paralleled packs in this battery
-#define NUM_PACKS         1
+// Inputs
+#define IGNITION_ENABLE_PIN 10  //
+const bool IGNITION_ENABLE_ACTIVE_LOW = true;  // Is the ignition signal active low?
+#define CHARGE_ENABLE_PIN 9     //
+const bool CHARGE_ENABLE_ACTIVE_LOW = true;    // Is the charge signal active low?
+#define IN_1_PIN 11             // unused
+#define IN_2_PIN 12             // unused
+#define IN_3_PIN 13             // unused
+#define IN_4_PIN 14             // unused
+
+// Outputs
+#define CHARGE_INHIBIT_PIN 4                       // Low-side switch to create CHARGE_INHIBIT signal. a.k.a OUT1
+const bool CHARGE_INHIBIT_ACTIVE_LOW = true;      // Is the charge inhibit signal active low?
+#define HEATER_ENABLE_PIN 5                        // Low-side switch to turn on battery heaters. a.k.a. OUT2
+const bool HEATER_ENABLE_ACTIVE_LOW = true;       // Is the heater signal active low?
+const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallow closing of battery box contactors
+const bool INHIBIT_CONTACTOR_ACTIVE_LOW = true;   // Is the inhibit contactor signal active low?
+#define DRIVE_INHIBIT_PIN 6                        // Low-side switch to disallow driving. a.k.a OUT3
+const bool DRIVE_INHIBIT_ACTIVE_LOW = true;       // Is the drive inhibit signal active low?
+#define OUT_4_PIN 7                                // unused
+
+//
+
+#define NUM_PACKS         2                        // The total number of paralleled packs in this battery
 #define CELLS_PER_MODULE 16                        // The number of cells in each module
 #define TEMPS_PER_MODULE  4                        // The number of temperature sensors in each module
 #define MODULES_PER_PACK  6                        // The number of modules in each pack
-
 
 #define PACK_ALIVE_TIMEOUT 5                       // If we have not seen an update from the BMS in
                                                    // PACK_ALIVE_TIMEOUT seconds, then mark the pack
@@ -51,35 +80,6 @@
 #define SAFE_VOLTAGE_DELTA_BETWEEN_PACKS 10        // When closing contactors, the voltage difference between the packs shall not
                                                    // be greater than this voltage, in millivolts.
 
-// const int CS_PINS[2] = { 20, 15 };               // Chip select pins for the CAN controllers for each battery pack.
-// const int CS_PINS[2] = { 15, 15 };
-const int CS_PINS[1] = { 15, };
-
-// Outputs
-#define CHARGE_INHIBIT_PIN 4                       // Low-side switch to create CHARGE_INHIBIT signal. a.k.a OUT1
-#define HEATER_ENABLE_PIN 5                        // Low-side switch to turn on battery heaters. a.k.a. OUT2
-const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallow closing of battery box contactors
-#define DRIVE_INHIBIT_PIN 6                        // Low-side switch to disallow driving. a.k.a OUT3
-
-// Inputs
-#define IGNITION_ENABLE_PIN 10  //
-#define CHARGE_ENABLE_PIN 9     //
-#define IN_1_PIN 11             // unused
-#define IN_2_PIN 12             // unused
-#define IN_3_PIN 13             // unused
-#define IN_4_PIN 14             // unused
-
-#define SPI_PORT      spi0
-
-#define SPI_MISO        16  // pin 21
-#define SPI_CLK         18  // pin 24
-#define SPI_MOSI        19  // pin 25
-
-// mainNet
-#define MAIN_CAN_CS     17  // pin 22
-
-#define CAN_CLK_PIN     21  // pin 27
-
 // The capacity of the battery pack
 #define BATTERY_CAPACITY_WH 14800         // 7.4kWh usable per pack, x2 packs
 #define BATTERY_CAPACITY_AS 187200        // 26Ah per pack (93,600 As), x2 packs
@@ -92,26 +92,26 @@ const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallo
 // Official max pack voltage = 398V. 398 / 6 / 16 = 4.1458333333V
 #define CELL_FULL_VOLTAGE 4000
 
-#define MINIMUM_TEMPERATURE -20          // 
-#define MINIMUM_CHARGING_TEMPERATURE 0   // Disallow charging below this temperature
-#define WARNING_TEMPERATURE 30           // 
-#define MAXIMUM_TEMPERATURE 50           // Stop everything if the battery is above this temperature
+#define MINIMUM_TEMPERATURE -20         // 
+#define MINIMUM_CHARGING_TEMPERATURE 0  // Disallow charging below this temperature
+#define WARNING_TEMPERATURE 30          // 
+#define MAXIMUM_TEMPERATURE 50          // Stop everything if the battery is above this temperature
 
-#define CHARGE_THROTTLE_TEMP_LOW  20                // Start throttling charge current when battery sensors above this temperature
-#define CHARGE_THROTTLE_TEMP_HIGH 30                // Top of the throttling scale. Limit current to CHARGE_CURRENT_MIN at and above this temperature
-#define CHARGE_CURRENT_MAX 125                      // ~50kw
-#define CHARGE_CURRENT_MIN 8                        // ~3.3kw
+#define CHARGE_THROTTLE_TEMP_LOW  20    // Start throttling charge current when battery sensors above this temperature
+#define CHARGE_THROTTLE_TEMP_HIGH 30    // Top of scale. Limit current to CHARGE_CURRENT_MIN at and above this temperature
+#define CHARGE_CURRENT_MAX 125          // ~50kw
+#define CHARGE_CURRENT_MIN 8            // ~3.3kw
 
-#define BALANCE_INTERVAL 1200                       // number of seconds between balancing sessions
+#define BALANCE_INTERVAL 1200           // number of seconds between balancing sessions
 
 //// ---- CAN message IDs
 
-#define BMS_LIMITS_MSG_ID 0x351                     // Charge/discharge limits message
-#define BMS_SOC_MSG_ID 0x355                        // SoC status message
-#define BMS_STATUS_MSG_ID 0x356                     // Status message emitted by the BMS
-#define BMS_ALARM_MSG_ID 0x35A                      // Warning message emitted by the BMS
+#define BMS_LIMITS_MSG_ID 0x351         // Charge/discharge limits message
+#define BMS_SOC_MSG_ID 0x355            // SoC status message
+#define BMS_STATUS_MSG_ID 0x356         // Status message emitted by the BMS
+#define BMS_ALARM_MSG_ID 0x35A          // Warning message emitted by the BMS
 
-#define CAN_ID_ISA_SHUNT_AH 0x527                   // Message ISA shunt sends which contains Ah data.
-#define CAN_ID_ISA_SHUNT_WH 0x528                   // Message ISA shunt sends which contains Wh data.
+#define CAN_ID_ISA_SHUNT_AH 0x527       // Message ISA shunt sends which contains Ah data.
+#define CAN_ID_ISA_SHUNT_WH 0x528       // Message ISA shunt sends which contains Wh data.
 
 #endif  // BMS_SRC_SETTINGS_H_

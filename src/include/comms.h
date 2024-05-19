@@ -22,19 +22,14 @@
 
 #include "include/battery.h"
 
-void request_module_data(BatteryModule *module);
-bool poll_all_modules_for_data(struct repeating_timer *t);
-void enable_module_polling();
-void send_ISA_reset_message();
-bool send_status_message();
-void enable_status_messages();
-bool send_charge_limits_message();
-void enable_charge_limits_messages();
-void disable_charge_limits_messages();
+void send_shunt_reset_message();
+//bool send_status_message(struct repeating_timer *t);
+//void enable_status_messages();
+//bool handle_main_CAN_messages(struct repeating_timer *t);
+//void enable_handle_main_CAN_messages();
+//bool handle_battery_CAN_messages(struct repeating_timer *t);
+//void enable_handle_battery_CAN_messages();
 
-bool handle_main_CAN_messages(struct repeating_timer *t);
-void enable_handle_main_CAN_messages();
-bool handle_battery_CAN_messages(struct repeating_timer *t);
-void enable_handle_battery_CAN_messages();
+void enable_message_handlers();
 
 #endif  // BMS_SRC_INCLUDE_COMMS_H_

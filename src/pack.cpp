@@ -24,11 +24,11 @@
 #include "mcp2515/mcp2515.h"
 #include "settings.h"
 #include "include/statemachine.h"
+#include "include/bms.h"
 
 
 BatteryPack::BatteryPack() {}
 
-//
 BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _numModules, int _numCellsPerModule, int _numTemperatureSensorsPerModule) {
     id = _id;
 
@@ -43,7 +43,7 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _n
         modules[m] = BatteryModule(m, this, numCellsPerModule, numTemperatureSensorsPerModule);
     }
 
-    // Set up CAN port
+    // Set up dedicated CAN port for communicating with this pack
     printf("Creating CAN port (cs:%d, miso:%d, mosi:%d, clk:%d)\n", CANCSPin, SPI_MISO, SPI_MOSI, SPI_CLK);
     MCP2515 CAN(spi0, CANCSPin, SPI_MISO, SPI_MOSI, SPI_CLK, 500000);
     MCP2515::ERROR response;
@@ -69,6 +69,7 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _n
     printf("Setting up contactor control\n");
     gpio_init(contactorInhibitPin);
     gpio_set_dir(contactorInhibitPin, GPIO_OUT);
+    gpio_set_pulls(contactorInhibitPin, !INHIBIT_CONTACTOR_ACTIVE_LOW, INHIBIT_CONTACTOR_ACTIVE_LOW);
     gpio_put(contactorInhibitPin, 0);
 
     // Set next balance time to 10 seconds from now
@@ -89,7 +90,6 @@ void BatteryPack::print() {
     }
 }
 
-
 uint8_t BatteryPack::getcheck(can_frame &msg, int id) {
     unsigned char canmes[11];
     int meslen = msg.can_dlc + 1;  // remove one for crc and add two for id bytes
@@ -101,7 +101,6 @@ uint8_t BatteryPack::getcheck(can_frame &msg, int id) {
     }
     return (crc8.get_crc8(canmes, meslen, finalxor[id]));
 }
-
 
 /*
  *
@@ -152,7 +151,7 @@ void BatteryPack::request_data() {
  * Check for message from battery modules, parse as required.
  */
 void BatteryPack::read_message() {
-    extern State state;
+    extern Bms bms;
     can_frame frame;
     if ( CAN.readMessage(&frame) == MCP2515::ERROR_OK ) {
 
@@ -167,12 +166,12 @@ void BatteryPack::read_message() {
         // Temperature messages
         if ( (frame.can_id & 0xFF0) == 0x180 ) {
             decode_temperatures(&frame);
-            state(E_TEMPERATURE_UPDATE);
+            bms.send_event(E_TEMPERATURE_UPDATE);
         }
         // Voltage messages
         if (frame.can_id > 0x99 && frame.can_id < 0x180) {
             decode_voltages(&frame);
-            state(E_CELL_VOLTAGE_UPDATE);
+            bms.send_event(E_CELL_VOLTAGE_UPDATE);
         }
     }
 }
@@ -235,18 +234,6 @@ void BatteryPack::recalculate_total_voltage() {
     voltage = newVoltage;
 }
 
-// Get the max permissable voltage of the whole pack
-// FIXME : this should be a fixed value
-float BatteryPack::get_max_voltage() {
-    return CELL_FULL_VOLTAGE * CELLS_PER_MODULE * MODULES_PER_PACK;
-}
-
-// Get the min permissable voltage of the whole pack
-// FIXME : this should be a fixed value
-float BatteryPack::get_min_voltage() {
-    return CELL_EMPTY_VOLTAGE * CELLS_PER_MODULE * MODULES_PER_PACK;
-}
-
 // Return the voltage of the lowest cell in the pack
 uint16_t BatteryPack::get_lowest_cell_voltage() {
     uint16_t lowestCellVoltage = 10;
@@ -302,7 +289,7 @@ void BatteryPack::set_cell_voltage(int moduleId, int cellIndex, uint32_t newCell
     modules[moduleId].set_cell_voltage(cellIndex, newCellVoltage);
 }
 
-// Extract voltage readings from CAN message and updated stored values
+// Extract voltage readings from CAN message and update stored values
 void BatteryPack::decode_voltages(can_frame *frame) {
     int messageId = (frame->can_id & 0x0F0);
     int moduleId = (frame->can_id & 0x00F);
@@ -382,17 +369,6 @@ bool BatteryPack::has_temperature_sensor_over_max() {
         }
     }
     return false;
-}
-
-// Return the maximum current we can charge the pack with.
-int BatteryPack::get_max_charge_current() {
-    int maxChargeCurrent = 0;
-    for ( int m = 0; m < numModules; m++ ) {
-        if ( modules[m].get_max_charge_current() < maxChargeCurrent ) {
-            maxChargeCurrent = modules[m].get_max_charge_current();
-        }
-    }
-    return maxChargeCurrent;
 }
 
 // return the temperature of the lowest sensor in the pack

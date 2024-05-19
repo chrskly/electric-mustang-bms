@@ -17,13 +17,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BMS_SRC_INCLUDE_INPUTS_H_
-#define BMS_SRC_INCLUDE_INPUTS_H_
+#ifndef BMS_SRC_INCLUDE_IO_H_
+#define BMS_SRC_INCLUDE_IO_H_
 
-void ignition_on_callback(uint gpio, uint32_t events);
-void enable_listen_for_ignition_signal();
+#include "include/bms.h"
 
-void charge_enable_callback(uint gpio, uint32_t events);
-void enable_listen_for_charge_enable_signal();
+class Bms;
 
-#endif  // BMS_SRC_INCLUDE_INPUTS_H_
+class Io {
+    private:
+        Bms* bms;
+        // Inputs
+        bool ignitionOn;
+        bool chargeEnable;             // Charger is asking to charge
+    public:
+        Io();
+        void enable_drive_inhibit();
+        void disable_drive_inhibit();
+        bool drive_is_inhibited();
+        void enable_charge_inhibit();
+        void disable_charge_inhibit();
+        bool charge_is_inhibited();
+        void enable_heater();
+        void disable_heater();
+        bool heater_is_enabled();
+
+        bool ignition_is_on();
+        bool charge_enable_is_on();
+};
+
+#endif  // BMS_SRC_INCLUDE_IO_H_

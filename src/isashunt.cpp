@@ -25,7 +25,7 @@
 
 //ISAShunt::ISAShunt() {}
 
-void ISAShunt::heartbeat() {
+void Shunt::heartbeat() {
     lastHeartbeat = get_clock();
 }
 

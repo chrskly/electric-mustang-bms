@@ -84,18 +84,34 @@ The car will also have precharge and main contactors in the HVJB. These are cont
 +-----------------------------------------------+
 ```
 
-- A1 : IN_3
-- A2 : IN_1
-- A3 : CHARGE_ENABLE_IN
-- A4 : DRIVE_INHIBIT / OUT_3
-- A5 : CHARGE_INHIBIT / OUT1
-- A6 : BATT_2_INHIBIT
-- A7 : BATT_1_INHIBIT
-- A8 : HEATER_ENABLE / OUT_2
-- A9 : OUT_4
-- A10 : IGNITION_ON_IN
-- A11 : IN_2
-- A12 : IN_4
+### BMS
+- A1  : GPIO_13 : IN_3
+- A2  : GPIO_11 : IN_1
+- A3  : GPIO_9  : IN_X  / CHARGE_ENABLE_IN
+- A4  : GPIO_6  : OUT_3 / DRIVE_INHIBIT
+- A5  : GPIO_4  : OUT_1 / CHARGE_INHIBIT
+- A6  : GPIO_3  : OUT_X / BATT_2_INHIBIT
+- A7  : GPIO_2  : OUT_X / BATT_1_INHIBIT
+- A8  : GPIO_5  : OUT_2 / HEATER_ENABLE
+- A9  : GPIO_7  : OUT_4
+- A10 : GPIO_10 : IN_X  / IGNITION_ON_IN
+- A11 : GPIO_12 : IN_2
+- A12 : GPIO_14 : IN_4
+
+### Tester
+- A1  : GPIO_13 : IN_3  / DRIVE_INHIBIT
+- A2  : GPIO_11 : IN_1  / CHARGE_INHIBIT
+- A3  : GPIO_9  : IN_X  / HEATER_ENABLE
+- A4  : GPIO_6  : OUT_3 / 
+- A5  : GPIO_4  : OUT_1 / 
+- A6  : GPIO_3  : OUT_X / CHARGE_ENABLE
+- A7  : GPIO_2  : OUT_X / IGNITION_ON
+- A8  : GPIO_5  : OUT_2 / 
+- A9  : GPIO_7  : OUT_4
+- A10 : GPIO_10 : IN_X  / 
+- A11 : GPIO_12 : IN_2 / BATT_2_INHIBIT
+- A12 : GPIO_14 : IN_4 / BATT_1_INHIBIT
+
 
 - B1 : BATT_2_CAN_H
 - B2 : BATT_1_CAN_H

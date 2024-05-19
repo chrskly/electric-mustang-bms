@@ -33,83 +33,74 @@ class BatteryModule;
 const uint8_t finalxor[12] = { 0xCF, 0xF5, 0xBB, 0x81, 0x27, 0x1D, 0x53, 0x69, 0x02, 0x38, 0x76, 0x4C };
 
 class BatteryPack {
- public:
-    int id;
+   public:
+      int id;
 
-    BatteryPack();
-    BatteryPack(int _id, int CANCSPin, int _contactorPin, int _numModules, int _numCellsPerModule, int _numTemperatureSensorsPerModule);
+      BatteryPack();
+      BatteryPack(int _id, int CANCSPin, int _contactorPin, int _numModules, int _numCellsPerModule, int _numTemperatureSensorsPerModule);
 
-    void set_battery(Battery* battery) { this->battery = battery; }
+      void set_battery(Battery* battery) { this->battery = battery; }
 
-    void print();
-    uint8_t getcheck(can_frame &msg, int id);
-    void request_data();
-    void read_message();
+      void print();
+      uint8_t getcheck(can_frame &msg, int id);
+      void request_data();
+      void read_message();
+      void send_message(can_frame *frame);
 
-    //bool pack_is_alive();
+      void set_pack_error_status(int newErrorStatus);
+      int get_pack_error_status();
+      void set_pack_balance_status(int newBalanceStatus);
+      int get_pack_balance_status();
+      bool pack_is_due_to_be_balanced();
+      void reset_balance_timer();
 
-    // void send_message(can_frame *frame) { (*this->CAN).sendMessage(frame); }
-    void send_message(can_frame *frame);
+      // Voltage
+      float get_voltage();
+      void recalculate_total_voltage();
+      uint16_t get_lowest_cell_voltage();
+      bool has_empty_cell();
+      uint16_t get_highest_cell_voltage();
+      bool has_full_cell();
+      void set_cell_voltage(int moduleIndex, int cellIndex, uint32_t newCellVoltage);
+      void decode_voltages(can_frame *frame);
+      void recalculate_cell_delta();
+      void process_voltage_update();
 
-    void set_pack_error_status(int newErrorStatus);
-    int get_pack_error_status();
-    void set_pack_balance_status(int newBalanceStatus);
-    int get_pack_balance_status();
-    bool pack_is_due_to_be_balanced();
-    void reset_balance_timer();
+      // Temperature
+      bool has_temperature_sensor_over_max();
+      int8_t get_lowest_temperature();
+      void decode_temperatures(can_frame *temperatureMessageFrame);
 
-    // Voltage
-    float get_voltage();
-    void recalculate_total_voltage();
-    float get_max_voltage();
-    float get_min_voltage();
-    uint16_t get_lowest_cell_voltage();
-    bool has_empty_cell();
-    uint16_t get_highest_cell_voltage();
-    bool has_full_cell();
-    void set_cell_voltage(int moduleIndex, int cellIndex, uint32_t newCellVoltage);
-    int get_index_of_high_pack();
-    int get_index_of_low_pack();
-    void decode_voltages(can_frame *frame);
-    void recalculate_cell_delta();
-    void process_voltage_update();
+      // Contactors
+      void enable_inhibit_contactor_close();
+      void disable_inhibit_contactor_close();
+      bool contactors_are_inhibited();
 
-    // Temperature
-    bool has_temperature_sensor_over_max();
-    int get_max_charge_current();
-    int8_t get_lowest_temperature();
-    void decode_temperatures(can_frame *temperatureMessageFrame);
+   private:
+      MCP2515 CAN;                                     // CAN bus connection to this pack
+      absolute_time_t lastUpdate;                      // Time we received last update from BMS
+      int numModules;                                  //
+      int numCellsPerModule;                           //
+      int numTemperatureSensorsPerModule;              //
+      Battery* battery;                                // The parent Battery that contains this BatteryPack
+      float voltage;                                   // Voltage of the total pack
+      int cellDelta;                                   // Difference in voltage between high and low cell, in mV
 
-    // Contactors
-    void enable_inhibit_contactor_close();
-    void disable_inhibit_contactor_close();
-    bool contactors_are_inhibited();
+      // contactors
+      int contactorInhibitPin;                         // Pin on the pico which controls contactors for this pack
+      bool contactorsAreInhibited;                     // Is the
 
- private:
-    MCP2515 CAN;                                     // CAN bus connection to this pack
-    absolute_time_t lastUpdate;                      // Time we received last update from BMS
-    int numModules;                                  //
-    int numCellsPerModule;                           //
-    int numTemperatureSensorsPerModule;              //
-    Battery* battery;                                // The parent Battery that contains this BatteryPack
-    float voltage;                                   // Voltage of the total pack
-    int cellDelta;                                   // Difference in voltage between high and low cell, in mV
+      int balanceStatus;                               //
+      int errorStatus;
+      absolute_time_t nextBalanceTime;                 // Time that the next balance should occur.
+      uint8_t pollMessageId;                           //
+      bool initialised;
+      BatteryModule modules[MODULES_PER_PACK];         // The child modules that make up this BatteryPack
+      CRC8 crc8;
 
-    // contactors
-    int contactorInhibitPin;                         // Pin on the pico which controls contactors for this pack
-    bool contactorsAreInhibited;                     // Is the
-
-    int balanceStatus;                               //
-    int errorStatus;
-    absolute_time_t nextBalanceTime;                 // Time that the next balance should occur.
-    uint8_t pollMessageId;                           //
-    bool initialised;
-    BatteryModule modules[MODULES_PER_PACK];         // The child modules that make up this BatteryPack
-    CRC8 crc8;
-
-    bool inStartup;
-    uint8_t modulePollingCycle;
-    can_frame pollModuleFrame;
+      bool inStartup;
+      uint8_t modulePollingCycle;
+      can_frame pollModuleFrame;
 };
 
 #endif  // BMS_SRC_INCLUDE_PACK_H_

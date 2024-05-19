@@ -25,8 +25,7 @@
 #include "include/comms.h"
 
 extern Battery battery;
-extern State state;
-extern StatusLight statusLight;
+extern Bms bms;
 
 
 /* 
@@ -55,25 +54,21 @@ void state_standby(Event event) {
         case E_TEMPERATURE_UPDATE:
             // Battery is overheating. Stop everything.
             if ( battery.has_temperature_sensor_over_max() ) {
-                battery.enable_inhibit_drive();
-                battery.enable_inhibit_charge();
-                printf("Switching to state : overTempFault, reason : battery too hot\n");
-                statusLight.set_mode(FAULT);
-                state = state_overTempFault;
+                bms.enable_drive_inhibit();
+                bms.enable_charge_inhibit();
+                bms.set_state(state_overTempFault, "battery too hot");
                 break;
             }
             // We're not charging right now, but flag that it's too cold for later reference
-            if ( !battery.charge_is_inhibited() && battery.too_cold_to_charge() ) {
-                battery.enable_inhibit_charge();
+            if ( !bms.charge_is_inhibited() && battery.too_cold_to_charge() ) {
+                bms.enable_charge_inhibit();
             }
         case E_CELL_VOLTAGE_UPDATE:
             battery.process_voltage_update();
             // Battery is empty. Disallow driving.
             if ( battery.has_empty_cell() ) {
-                battery.enable_inhibit_drive();
-                printf("Switching to state : batteryEmpty, reason: empty battery\n");
-                statusLight.set_mode(FAULT);
-                state = state_batteryEmpty;
+                bms.enable_drive_inhibit();
+                bms.set_state(state_batteryEmpty, "empty battery");
                 break;
             }
             /* The contactors are currently open. We don't want to allow the
@@ -92,9 +87,7 @@ void state_standby(Event event) {
             if ( battery.one_or_more_contactors_inhibited() ) {
                 battery.disable_inhibit_for_drive();
             }
-            printf("Switching to state : drive, reason: ignition turned on\n");
-            statusLight.set_mode(DRIVE);
-            state = state_drive;
+            bms.set_state(state_drive, "ignition turned on");
             break;
         case E_IGNITION_OFF:
             break;
@@ -102,17 +95,13 @@ void state_standby(Event event) {
             /* If the batteries are not warm enough to be charged, turn on the
              * battery heater, and disallow charging until they're warm enough. */
             if ( battery.too_cold_to_charge() ) {
-                battery.enable_heater();
-                battery.enable_inhibit_charge();
-                battery.enable_inhibit_drive();
-                printf("Switching to state : state_batteryHeating, reason : charge requested, but too cold to charge\n");
-                statusLight.set_mode(CHARGING);
-                state = state_batteryHeating;
+                bms.enable_heater();
+                bms.enable_charge_inhibit();
+                bms.enable_drive_inhibit();
+                bms.set_state(state_batteryHeating, "charge requested, but too cold to charge");
                 break;
             }
-            printf("Switching to state : charging, reason: charge requested\n");
-            statusLight.set_mode(CHARGING);
-            state = state_charging;
+            bms.set_state(state_charging, "charge requested");
             break;
         case E_CHARGING_TERMINATED:
             break;
@@ -135,16 +124,14 @@ void state_drive(Event event) {
         case E_TEMPERATURE_UPDATE:
             // Battery is overheating. Stop everything.
             if ( battery.has_temperature_sensor_over_max() ) {
-                battery.enable_inhibit_drive();
-                battery.enable_inhibit_charge();
-                printf("Switching to state : overTempFault, reason : battery too hot\n");
-                statusLight.set_mode(FAULT);
-                state = state_overTempFault;
+                bms.enable_drive_inhibit();
+                bms.enable_charge_inhibit();
+                bms.set_state(state_overTempFault, "battery too hot");
                 break;
             }
             // We're not charging right now, but flag that it's too cold for later reference
-            if ( !battery.charge_is_inhibited() && battery.too_cold_to_charge() ) {
-                battery.enable_inhibit_charge();
+            if ( !bms.charge_is_inhibited() && battery.too_cold_to_charge() ) {
+                bms.enable_charge_inhibit();
             }
         case E_CELL_VOLTAGE_UPDATE:
             battery.process_voltage_update();
@@ -155,10 +142,8 @@ void state_drive(Event event) {
             /* Battery is empty. Disallow driving (force car into neutral). We
              * cannot open the contactors as this could blow up the inverter. */
             if ( battery.has_empty_cell() ) {
-                battery.enable_inhibit_drive();
-                printf("Switching to state : batteryEmpty, reason : empty battery\n");
-                statusLight.set_mode(FAULT);
-                state = state_batteryEmpty;
+                bms.enable_drive_inhibit();
+                bms.set_state(state_batteryEmpty, "empty battery");
                 break;
             }
             /* If we're driving on a subset of pack(s), and we've driven down
@@ -171,28 +156,22 @@ void state_drive(Event event) {
         case E_IGNITION_ON:
             break;
         case E_IGNITION_OFF:
-            printf("Switching to state : standby, reason : ignition turned off\n");
-            statusLight.set_mode(STANDBY);
-            state = state_standby;
+            bms.set_state(state_standby, "ignition turned off");
             break;
         case E_CHARGING_INITIATED:
             /* Cannot go straight from drive mode to charge mode when packs are
             * imbalanced. See note 1 above. */
             if ( battery.one_or_more_contactors_inhibited() ) {
-                battery.enable_inhibit_drive();
-                battery.enable_inhibit_charge();
-                printf("Switching to state : illegalStateTransitionFault, reason : cannot switch directly from drive to charge with imbalanced packs\n");
-                statusLight.set_mode(FAULT);
-                state = state_illegalStateTransitionFault;
+                bms.enable_drive_inhibit();
+                bms.enable_charge_inhibit();
+                bms.set_state(state_illegalStateTransitionFault, "cannot switch directly from drive to charge with imbalanced packs");
                 break;
             }
             /* Lets assume that we're not in motion (hopefully a safe 
              * assumption). All contactors are already closed so we can just 
              * switch straight into charge mode. */
-            battery.enable_inhibit_drive();
-            printf("Switching to state : charging, reason : charging initiated\n");
-            statusLight.set_mode(CHARGING);
-            state = state_charging;
+            bms.enable_drive_inhibit();
+            bms.set_state(state_charging, "charge requested");
             break;
         case E_CHARGING_TERMINATED:
             break;
@@ -216,20 +195,16 @@ void state_batteryHeating(Event event) {
             /* Important to catch overheating first. We don't want to heat the
              * battery all the way into an overheat situation */
             if ( battery.has_temperature_sensor_over_max() ) {
-                battery.enable_inhibit_drive();
-                battery.enable_inhibit_charge();
-                printf("Switching to state : overTempFault, reason : battery too hot\n");
-                statusLight.set_mode(FAULT);
-                state = state_overTempFault;
+                bms.enable_drive_inhibit();
+                bms.enable_charge_inhibit();
+                bms.set_state(state_overTempFault, "battery too hot");
                 break;
             }
             // If no longer too cold to charge, allow charging
             if ( !battery.too_cold_to_charge() && !battery.has_full_cell() ) {
-                battery.disable_heater();
-                battery.disable_inhibit_charge();
-                printf("Switching to state : charging, reason : battery warmed to minimum charging temperature\n");
-                statusLight.set_mode(CHARGING);
-                state = state_charging;
+                bms.disable_heater();
+                bms.disable_charge_inhibit();
+                bms.set_state(state_charging, "battery warmed to minimum charging temperature");
                 break;
             }
             break;
@@ -238,11 +213,9 @@ void state_batteryHeating(Event event) {
             /* There's no point in heating the battery to get it ready for charging if it's already full.
              * Charger should pick up on this and stop requesting charge. */
             if ( battery.has_full_cell() ) {
-                battery.enable_inhibit_charge();
-                battery.disable_heater();
-                printf("Switching to state : charging, reason : battery was heating, but is already full. No need to continue heating.\n");
-                statusLight.set_mode(CHARGING);
-                state = state_charging;
+                bms.enable_charge_inhibit();
+                bms.disable_heater();
+                bms.set_state(state_charging, "battery was heating, but is already full. No need to continue heating.");
                 break;
             }
             break;
@@ -254,41 +227,33 @@ void state_batteryHeating(Event event) {
             break;
         case E_CHARGING_TERMINATED:
             // We're no longer seeking to charge. No need to continue heating.
-            battery.disable_heater();
+            bms.disable_heater();
             /* Cannot go straight from charge mode to drive mode when packs are
              * imbalanced. See note 1 above. */
-            if ( battery.one_or_more_contactors_inhibited() && battery.ignition_is_on() ) {
-                battery.enable_inhibit_drive();
-                battery.enable_inhibit_charge();
+            if ( battery.one_or_more_contactors_inhibited() && bms.ignition_is_on() ) {
+                bms.enable_drive_inhibit();
+                bms.enable_charge_inhibit();
                 // FIXME do we need to set some sort of error flag here?
-                printf("Switching to state : illegalStateTransitionFault, reason : cannot switch directly from charge to drive with imbalanced packs\n");
-                statusLight.set_mode(FAULT);
-                state = state_illegalStateTransitionFault;
+                bms.set_state(state_illegalStateTransitionFault, "cannot switch directly from charge to drive with imbalanced packs");
                 break;
             }
             // Battery empty
             if ( battery.has_empty_cell() ) {
-                battery.enable_inhibit_drive();
-                printf("Switching to state : batteryEmpty, reason : charge terminated but battery still empty\n");
-                statusLight.set_mode(FAULT);
-                state = state_batteryEmpty;
+                bms.enable_drive_inhibit();
+                bms.set_state(state_batteryEmpty, "charge terminated but battery still empty");
                 break;
             }
             // Drive mode
-            if ( battery.ignition_is_on() ) {
-                battery.disable_inhibit_charge();
-                battery.disable_inhibit_drive();
-                printf("Switching to state : drive, reason : charging request has been terminated and ignition is on\n");
-                statusLight.set_mode(DRIVE);
-                state = state_drive;
+            if ( bms.ignition_is_on() ) {
+                bms.disable_charge_inhibit();
+                bms.disable_drive_inhibit();
+                bms.set_state(state_drive, "charging terminated + ignition on");
                 break;
             }
             // Standby mode
-            battery.disable_inhibit_drive();
-            battery.disable_inhibit_charge();
-            printf("Switching to state : standby, reason : charge request has been terminated\n");
-            statusLight.set_mode(STANDBY);
-            state = state_standby;
+            bms.disable_drive_inhibit();
+            bms.disable_charge_inhibit();
+            bms.set_state(state_standby, "charging terminated");
             break;
         default:
             printf("Received unknown event\n");
@@ -310,80 +275,66 @@ void state_charging(Event event) {
         case E_TEMPERATURE_UPDATE:
             // Battery is overheating. Stop everything.
             if ( battery.has_temperature_sensor_over_max() ) {
-                battery.enable_inhibit_drive();
-                battery.enable_inhibit_charge();
-                printf("Switching to state : overTempFault, reason : battery too hot\n");
-                statusLight.set_mode(FAULT);
-                state = state_overTempFault;
+                bms.enable_drive_inhibit();
+                bms.enable_charge_inhibit();
+                bms.set_state(state_overTempFault, "battery too hot");
                 break;
             }
             // If we're waiting on the battery to warm, and it has, allow charging
-            if ( battery.heater_enabled() && !battery.too_cold_to_charge() ) {
-                battery.disable_heater();
-                battery.disable_inhibit_charge();
+            if ( bms.heater_is_enabled() && !battery.too_cold_to_charge() ) {
+                bms.disable_heater();
+                bms.disable_charge_inhibit();
             }
             /* Deal with the unlikely scenario where the battery gets too cold
              * mid-charge. Enable heater, block charging. */
-            if ( !battery.heater_enabled() && battery.too_cold_to_charge() ) {
-                battery.enable_inhibit_charge();
-                battery.enable_heater();
+            if ( !bms.heater_is_enabled() && battery.too_cold_to_charge() ) {
+                bms.enable_charge_inhibit();
+                bms.enable_heater();
             }
             // Recalculate max charging current
-            battery.update_max_charge_current();
+            bms.update_max_charge_current();
             break;
         case E_CELL_VOLTAGE_UPDATE:
             battery.process_voltage_update();
             /* Prevent cells from getting over-charged */
             if ( battery.has_full_cell() ) {
-                battery.enable_inhibit_charge();
+                bms.enable_charge_inhibit();
             }
             break;
         case E_IGNITION_ON:
-            /* We're going to continue to charge so we should prevent the car
-             * from driving away. */
-            battery.enable_inhibit_drive();
             break;
         case E_IGNITION_OFF:
-            battery.disable_inhibit_drive();
             break;
         case E_CHARGING_INITIATED:
             break;
         case E_CHARGING_TERMINATED:
             /* Cannot go straight from drive mode to charge mode when packs are
              * imbalanced. See note 1 above. */
-            if ( battery.one_or_more_contactors_inhibited() && battery.ignition_is_on() ) {
-                battery.enable_inhibit_drive();
-                battery.enable_inhibit_charge();
+            if ( battery.one_or_more_contactors_inhibited() && bms.ignition_is_on() ) {
+                bms.enable_drive_inhibit();
+                bms.enable_charge_inhibit();
                 // FIXME do we need to set some sort of error flag here?
-                printf("Switching to state : illegalStateTransitionFault, reason : cannot switch directly from charge to drive with imbalanced packs\n");
-                statusLight.set_mode(FAULT);
-                state = state_illegalStateTransitionFault;
+                bms.set_state(state_illegalStateTransitionFault, "cannot switch directly from charge to drive with imbalanced packs");
                 break;
             }
             /* Did we start charging with an empty battery, but cancel the
              * charge before actually putting any energy into the battery? */
             if ( battery.has_empty_cell() ) {
-                battery.enable_inhibit_drive();
-                printf("Switching to state : batteryEmpty, reason : charge terminated but battery still empty\n");
-                statusLight.set_mode(FAULT);
-                state = state_batteryEmpty;
+                bms.enable_drive_inhibit();
+                bms.set_state(state_batteryEmpty, "charge terminated but battery still empty");
                 break;
             }
             /* If battery is full (i.e., we've charged to 100%), reset kWh/Ah
              * counters on the ISA shunt. */
             if ( battery.has_full_cell() ) {
-                send_ISA_reset_message();
+                send_shunt_reset_message();
             }
             // If ignition is already on, switch directly to drive mode
-            if ( battery.ignition_is_on() ) {
-                printf("Switching to state : drive, reason : charging terminated + ignition on\n");
-                statusLight.set_mode(DRIVE);
-                state = state_drive;
+            if ( bms.ignition_is_on() ) {
+                bms.set_state(state_drive, "charging terminated + ignition on");
                 break;
             }
-            printf("Switching to state : standby, reason : charging terminated\n");
-            statusLight.set_mode(STANDBY);
-            state = state_standby;
+            bms.set_state(state_standby, "charging terminated");
             break;
         default:
             printf("Received unknown event\n");
@@ -405,15 +356,13 @@ void state_batteryEmpty(Event event) {
         case E_TEMPERATURE_UPDATE:
             // Battery is overheating. Stop everything.
             if ( battery.has_temperature_sensor_over_max() ) {
-                battery.enable_inhibit_drive();
-                battery.enable_inhibit_charge();
-                printf("Switching to state : overTempFault, reason : battery too hot\n");
-                statusLight.set_mode(FAULT);
-                state = state_overTempFault;
+                bms.enable_drive_inhibit();
+                bms.enable_charge_inhibit();
+                bms.set_state(state_overTempFault, "battery too hot");
                 break;
             }
-            if ( !battery.charge_is_inhibited() && battery.too_cold_to_charge() ) {
-                battery.enable_inhibit_charge();
+            if ( !bms.charge_is_inhibited() && battery.too_cold_to_charge() ) {
+                bms.enable_charge_inhibit();
             }
             break;
         case E_CELL_VOLTAGE_UPDATE:
@@ -422,20 +371,16 @@ void state_batteryEmpty(Event event) {
             if ( !battery.has_empty_cell() ) {
                 /* Cannot go straight from drive mode to charge mode when packs are
                  * imbalanced. See note 1 above. */
-                if ( battery.one_or_more_contactors_inhibited() && battery.ignition_is_on() ) {
-                    battery.enable_inhibit_drive();
-                    battery.enable_inhibit_charge();
+                if ( battery.one_or_more_contactors_inhibited() && bms.ignition_is_on() ) {
+                    bms.enable_drive_inhibit();
+                    bms.enable_charge_inhibit();
                     // FIXME do we need to set some sort of error flag here?
-                    printf("Switching to state : illegalStateTransitionFault, reason : cannot switch directly from charge to drive with imbalanced packs\n");
-                    statusLight.set_mode(FAULT);
-                    state = state_illegalStateTransitionFault;
+                    bms.set_state(state_illegalStateTransitionFault, "cannot switch directly from charge to drive with imbalanced packs");
                     break;
                 }
                 // allow driving again
-                battery.disable_inhibit_drive();
-                printf("Switching to state : standby, reason : battery level rose\n");
-                statusLight.set_mode(STANDBY);
-                state = state_standby;
+                bms.disable_drive_inhibit();
+                bms.set_state(state_standby, "battery level rose");
                 break;
             }
             break;
@@ -446,12 +391,12 @@ void state_batteryEmpty(Event event) {
         case E_CHARGING_INITIATED:
             // Is it too cold to charge?
             if ( battery.too_cold_to_charge() ) {
-                battery.enable_inhibit_charge();
-                battery.enable_heater();
+                bms.enable_charge_inhibit();
+                bms.enable_heater();
+                bms.set_state(state_batteryHeating, "charge requested, but too cold to charge");
+                break;
             }
-            printf("Switching to state : charging, reason : charging initiated\n");
-            statusLight.set_mode(CHARGING);
-            state = state_batteryHeating;
+            bms.set_state(state_charging, "charge requested");
             break;
         case E_CHARGING_TERMINATED:
             break;
@@ -479,34 +424,28 @@ void state_overTempFault(Event event) {
              * which state to switch to based on the input signals */
             if ( !battery.has_temperature_sensor_over_max() ) {
                 // Charge mode overrides drive mode
-                if ( battery.charge_enable_is_on() ) {
+                if ( bms.charge_is_enabled() ) {
                     if ( battery.one_or_more_contactors_inhibited() ) {
                         battery.disable_inhibit_for_charge();
                     }
-                    battery.disable_inhibit_charge();
-                    printf("Switching to state : charging, reason : battery has cooled\n");
-                    statusLight.set_mode(CHARGING);
-                    state = state_charging;
+                    bms.disable_charge_inhibit();
+                    bms.set_state(state_charging, "battery has cooled");
                     break;
                 }
                 // Drive mode
-                if ( battery.ignition_is_on() ) {
+                if ( bms.ignition_is_on() ) {
                     if ( battery.one_or_more_contactors_inhibited() ) {
                         battery.disable_inhibit_for_drive();
                     }
-                    battery.disable_inhibit_charge();
-                    battery.disable_inhibit_drive();
-                    printf("Switching to state : drive, reason : battery has cooled\n");
-                    statusLight.set_mode(DRIVE);
-                    state = state_drive;
+                    bms.disable_charge_inhibit();
+                    bms.disable_drive_inhibit();
+                    bms.set_state(state_drive, "battery has cooled");
                     break;
                 }
                 // Standby mode
-                battery.disable_inhibit_drive();
-                battery.disable_inhibit_charge();
-                printf("Switching to state : standby, reason : battery has cooled\n");
-                statusLight.set_mode(STANDBY);
-                state = state_standby;
+                bms.disable_drive_inhibit();
+                bms.disable_charge_inhibit();
+                bms.set_state(state_standby, "battery has cooled");
                 break;
             }
             break;
@@ -549,17 +488,15 @@ void state_illegalStateTransitionFault(Event event) {
         case E_IGNITION_ON:
             break;
         case E_IGNITION_OFF:
-            if ( ! battery.charge_enable_is_on() ) {
-                printf("Switching to state : standby, reason : ignition and charging off\n");
-                state = state_standby;
+            if ( ! bms.charge_is_enabled() ) {
+                bms.set_state(state_standby, "ignition and charging off");
             }
             break;
         case E_CHARGING_INITIATED:
             break;
         case E_CHARGING_TERMINATED:
-            if ( ! battery.ignition_is_on() ) {
-                printf("Switching to state : standby, reason : ignition and charging off\n");
-                state = state_standby;
+            if ( ! bms.ignition_is_on() ) {
+                bms.set_state(state_standby, "ignition and charging off");
             }
             break;
         default:
@@ -585,7 +522,7 @@ struct stateName stateNames[7] = {
 };
 
 // Return the name of the current state
-const char* get_state_name() {
+const char* get_state_name(State state) {
     for ( int i=0; i < 8; i++ ) {
         if ( state == stateNames[i].state ) {
             return stateNames[i].stateName;

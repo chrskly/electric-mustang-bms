@@ -25,11 +25,16 @@
 #include "include/statemachine.h"
 #include "include/battery.h"
 #include "include/pack.h"
-#include "include/isashunt.h"
+#include "include/shunt.h"
+#include "include/battery.h"
+#include "include/bms.h"
 
 
 extern MCP2515 mainCAN;
 extern Battery battery;
+extern Bms bms;
+extern Battery battery;
+extern Shunt shunt;
 
 
 //// ----
@@ -42,19 +47,19 @@ extern Battery battery;
  * Send CAN messages to ISA shunt to tell it to reset. Resets the kw/ah
  * counters.
  */
-void send_ISA_reset_message() {
-    struct can_frame ISAResetFrame;
-    ISAResetFrame.can_id = 0x411;
-    ISAResetFrame.can_dlc = 8;
-    ISAResetFrame.data[0] = 0x3F;
-    ISAResetFrame.data[1] = 0x00;
-    ISAResetFrame.data[2] = 0x00;
-    ISAResetFrame.data[3] = 0x00;
-    ISAResetFrame.data[4] = 0x00;
-    ISAResetFrame.data[5] = 0x00;
-    ISAResetFrame.data[6] = 0x00;
-    ISAResetFrame.data[7] = 0x00;
-    mainCAN.sendMessage(&ISAResetFrame);
+void send_shunt_reset_message() {
+    struct can_frame shuntResetFrame;
+    shuntResetFrame.can_id = 0x411;
+    shuntResetFrame.can_dlc = 8;
+    shuntResetFrame.data[0] = 0x3F;
+    shuntResetFrame.data[1] = 0x00;
+    shuntResetFrame.data[2] = 0x00;
+    shuntResetFrame.data[3] = 0x00;
+    shuntResetFrame.data[4] = 0x00;
+    shuntResetFrame.data[5] = 0x00;
+    shuntResetFrame.data[6] = 0x00;
+    shuntResetFrame.data[7] = 0x00;
+    mainCAN.sendMessage(&shuntResetFrame);
 }
 
 
@@ -82,22 +87,14 @@ bool send_limits_message(struct repeating_timer *t) {
     limitsFrame.can_dlc = 8;
     limitsFrame.data[0] = (uint8_t)( battery.get_max_voltage() * 10 ) && 0xFF;
     limitsFrame.data[1] = (uint8_t)( battery.get_max_voltage() * 10 ) >> 8;
-    limitsFrame.data[2] = (uint8_t)( battery.get_max_charge_current() * 10 ) && 0xFF;
-    limitsFrame.data[3] = (uint8_t)( battery.get_max_charge_current() * 10 ) >> 8;
-    limitsFrame.data[4] = (uint8_t)( battery.get_max_discharge_current() * 10 ) && 0xFF;
-    limitsFrame.data[5] = (uint8_t)( battery.get_max_discharge_current() * 10 ) >> 8;
+    limitsFrame.data[2] = (uint8_t)( bms.get_max_charge_current() * 10 ) && 0xFF;
+    limitsFrame.data[3] = (uint8_t)( bms.get_max_charge_current() * 10 ) >> 8;
+    limitsFrame.data[4] = (uint8_t)( bms.get_max_discharge_current() * 10 ) && 0xFF;
+    limitsFrame.data[5] = (uint8_t)( bms.get_max_discharge_current() * 10 ) >> 8;
     limitsFrame.data[6] = (uint8_t)( battery.get_min_voltage() * 10 ) && 0xFF;
     limitsFrame.data[7] = (uint8_t)( battery.get_min_voltage() * 10 ) >> 8;
     mainCAN.sendMessage(&limitsFrame);
     return true;
-}
-
-void enable_limits_messages() {
-    add_repeating_timer_ms(1000, send_limits_message, NULL, &limitsMessageTimer);
-}
-
-void disable_limits_messages() {
-      //
 }
 
 
@@ -117,7 +114,7 @@ void disable_limits_messages() {
  * byte 1 = error bits
  *   bit 0 = internalError   - something has gone wrong in the BMS
  *   bit 1 = packsImbalanced - the voltage between two or more packs varies by an unsafe amount
- *   bit 2 =
+ *   bit 2 = shuntIsDead     - the shunt has not sent a message in SHUNT_TTL seconds
  *   bit 3 = 
  *   bit 4 =
  *   bit 5 =
@@ -139,30 +136,30 @@ struct can_frame bmsStateFrame;
 struct repeating_timer bmsStateTimer;
 
 bool send_bms_state_message(struct repeating_timer *t) {
-    extern State state;
+    //extern State state;
     extern bool internalError;
 
     bmsStateFrame.can_id = 0x352;
     bmsStateFrame.can_dlc = 8;
 
-    if ( state == &state_standby ) {
+    if ( bms.get_state() == &state_standby ) {
         bmsStateFrame.data[0] = 0x00;
-    } else if ( state == &state_drive ) {
+    } else if ( bms.get_state() == &state_drive ) {
         bmsStateFrame.data[0] = 0x01;
-    } else if ( state == &state_charging ) {
+    } else if ( bms.get_state() == &state_charging ) {
         bmsStateFrame.data[0] = 0x02;
-    } else if ( state == &state_batteryEmpty ) {
+    } else if ( bms.get_state() == &state_batteryEmpty ) {
         bmsStateFrame.data[0] = 0x03;
-    } else if ( state == &state_overTempFault ) {
+    } else if ( bms.get_state() == &state_overTempFault ) {
         bmsStateFrame.data[0] = 0x04;
-    } else if ( state == &state_illegalStateTransitionFault ) {
+    } else if ( bms.get_state() == &state_illegalStateTransitionFault ) {
         bmsStateFrame.data[0] = 0x05;
     } else {
         bmsStateFrame.data[0] = 0xFF;
     }
 
-    bmsStateFrame.data[1] = battery.get_error_byte();
-    bmsStateFrame.data[1] = battery.get_status_byte();
+    bmsStateFrame.data[1] = bms.get_error_byte();
+    bmsStateFrame.data[1] = bms.get_status_byte();
 
     bmsStateFrame.data[2] = 0x00;
     bmsStateFrame.data[3] = 0x00;
@@ -172,10 +169,6 @@ bool send_bms_state_message(struct repeating_timer *t) {
     bmsStateFrame.data[7] = 0x00;
     mainCAN.sendMessage(&bmsStateFrame);
     return true;
-}
-
-void enable_bms_state_messages() {
-    add_repeating_timer_ms(1000, send_bms_state_message, NULL, &bmsStateTimer);
 }
 
 
@@ -214,10 +207,6 @@ bool send_module_liveness_message(struct repeating_timer *t) {
     return true;
 }
 
-void enable_module_liveness_messages() {
-    add_repeating_timer_ms(5000, send_module_liveness_message, NULL, &moduleLivenessTimer);
-}
-
 
 /*
  * SoC message 0x355
@@ -241,22 +230,17 @@ struct repeating_timer socMessageTimer;
 bool send_soc_message(struct repeating_timer *t) {
     socFrame.can_id = BMS_SOC_MSG_ID;
     socFrame.can_dlc = 8;
-    socFrame.data[0] = (uint8_t)battery.get_soc() && 0xFF;            // SoC LSB
-    socFrame.data[1] = (uint8_t)battery.get_soc() >> 8;               // SoC MSB
+    socFrame.data[0] = (uint8_t)bms.get_soc() && 0xFF;            // SoC LSB
+    socFrame.data[1] = (uint8_t)bms.get_soc() >> 8;               // SoC MSB
     socFrame.data[2] = 0x00;                                          // SoH, not implemented
     socFrame.data[3] = 0x00;                                          // SoH, not implemented
-    socFrame.data[4] = (uint8_t)( battery.get_soc() * 100 ) && 0xFF;  // SoC LSB, scaled
-    socFrame.data[5] = (uint8_t)( battery.get_soc() * 100 ) >> 8;     // SoC MSB, scaled
+    socFrame.data[4] = (uint8_t)( bms.get_soc() * 100 ) && 0xFF;  // SoC LSB, scaled
+    socFrame.data[5] = (uint8_t)( bms.get_soc() * 100 ) >> 8;     // SoC MSB, scaled
     socFrame.data[6] = 0x00;                                          // unused
     socFrame.data[7] = 0x00;                                          // unused
     mainCAN.sendMessage(&socFrame);
     return true;
 }
-
-void enable_soc_messages() {
-    add_repeating_timer_ms(1000, send_soc_message, NULL, &socMessageTimer);
-}
-
 
 /*
  * Status message 0x356
@@ -282,18 +266,14 @@ bool send_status_message(struct repeating_timer *t) {
     statusFrame.can_dlc = 8;
     statusFrame.data[0] = (uint8_t)( battery.get_voltage() * 100 ) && 0xFF;
     statusFrame.data[1] = (uint8_t)( battery.get_voltage() * 100 ) >> 8;
-    statusFrame.data[2] = (uint8_t)( battery.get_amps() * 10 ) && 0xFF;
-    statusFrame.data[3] = (uint8_t)( battery.get_amps() * 10 ) >> 8;
-    statusFrame.data[4] = battery.get_highest_cell_temperature() && 0xFF;
-    statusFrame.data[5] = (uint8_t)battery.get_highest_cell_temperature() >> 8;
-    statusFrame.data[6] = (uint8_t)( battery.shuntVoltage1 * 100 ) && 0xFF;
-    statusFrame.data[7] = (uint8_t)( battery.shuntVoltage1 * 100 ) >> 8;
+    statusFrame.data[2] = (uint8_t)( shunt.get_amps() * 10 ) && 0xFF;
+    statusFrame.data[3] = (uint8_t)( shunt.get_amps() * 10 ) >> 8;
+    statusFrame.data[4] = battery.get_highest_sensor_temperature() && 0xFF;
+    statusFrame.data[5] = (uint8_t)battery.get_highest_sensor_temperature() >> 8;
+    statusFrame.data[6] = (uint8_t)( shunt.get_voltage1() * 100 ) && 0xFF;
+    statusFrame.data[7] = (uint8_t)( shunt.get_voltage1() * 100 ) >> 8;
     mainCAN.sendMessage(&statusFrame);
     return true;
-}
-
-void enable_status_messages() {
-    add_repeating_timer_ms(1000, send_status_message, NULL, &statusMessageTimer);
 }
 
 
@@ -370,13 +350,6 @@ bool send_alarm_message(struct repeating_timer *t) {
     return true;
 }
 
-void enable_alarm_messages() {
-    add_repeating_timer_ms(1000, send_alarm_message, NULL, &alarmMessageTimer);
-}
-
-
-
-
 
 //// ----
 //
@@ -392,47 +365,47 @@ struct repeating_timer handleMainCANMessageTimer;
 
 
 bool handle_main_CAN_messages(struct repeating_timer *t) {
-    extern ISAShunt shunt;
+    extern Shunt shunt;
     if ( mainCAN.readMessage(&m) == MCP2515::ERROR_OK ) {
         switch ( m.can_id ) {
             // ISA shunt amps
             case 0x521:
-                battery.amps = (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) );
+                shunt.set_amps( (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) );
                 shunt.heartbeat();
                 break;
             // ISA shunt voltage 1
             case 0x522:
-                battery.shuntVoltage1 = (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 1000.0f;
+                shunt.set_voltage1( (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 1000.0f );
                 shunt.heartbeat();
                 break;
             // ISA shunt voltage 2
             case 0x523:
-                battery.shuntVoltage2 = (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 1000.0f;
+                shunt.set_voltage2( (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 1000.0f );
                 shunt.heartbeat();
                 break;
             // ISA shunt voltage 3
             case 0x524:
-                battery.shuntVoltage3 = (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 1000.0f;
+                shunt.set_voltage3( (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 1000.0f );
                 shunt.heartbeat();
                 break;
             // ISA shunt temperature
             case 0x525:
-                battery.shuntTemperature = (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 10;
+                shunt.set_temperature( (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 10 );
                 shunt.heartbeat();
                 break;
             // ISA shunt kilowatts
             case 0x526:
-                battery.watts = (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 1000.0f;
+                shunt.set_watts( (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) / 1000.0f );
                 shunt.heartbeat();
                 break;
             // ISA shunt amp-hours
             case 0x527:
-                battery.ampSeconds = (int32_t)(m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]);
+                shunt.set_ampSeconds( (int32_t)(m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) );
                 shunt.heartbeat();
                 break;
             // ISA shunt kilowatt-hours
             case 0x528:
-                battery.wattHours = (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) );
+                shunt.set_wattHours( (int32_t)( (m.data[5] << 24) | (m.data[4] << 16) | (m.data[3] << 8) | (m.data[2]) ) );
                 shunt.heartbeat();
                 break;
             default:
@@ -441,11 +414,6 @@ bool handle_main_CAN_messages(struct repeating_timer *t) {
     }
     return true;
 }
-
-void enable_handle_main_CAN_messages() {
-    add_repeating_timer_ms(10, handle_main_CAN_messages, NULL, &handleMainCANMessageTimer);
-}
-
 
 // Handle the CAN messages that come back from the battery modules
 
@@ -456,6 +424,22 @@ bool handle_battery_CAN_messages(struct repeating_timer *t) {
     return true;
 }
 
-void enable_handle_battery_CAN_messages() {
+
+void enable_message_handlers() {
+    // limits (out)
+    add_repeating_timer_ms(1000, send_limits_message, NULL, &limitsMessageTimer);
+    // bms state (out)
+    add_repeating_timer_ms(1000, send_bms_state_message, NULL, &bmsStateTimer);
+    // module liveness (out)
+    add_repeating_timer_ms(5000, send_module_liveness_message, NULL, &moduleLivenessTimer);
+    // soc (out)
+    add_repeating_timer_ms(1000, send_soc_message, NULL, &socMessageTimer);
+    // status (out)
+    add_repeating_timer_ms(1000, send_status_message, NULL, &statusMessageTimer);
+    // Alarms (out)
+    add_repeating_timer_ms(1000, send_alarm_message, NULL, &alarmMessageTimer);
+    // main CAN (in)
+    add_repeating_timer_ms(10, handle_main_CAN_messages, NULL, &handleMainCANMessageTimer);
+    // enable battery CAN (in)
     add_repeating_timer_ms(5, handle_battery_CAN_messages, NULL, &handleBatteryCANMessagesTimer);
 }

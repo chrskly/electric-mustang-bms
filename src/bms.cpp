@@ -17,166 +17,201 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*------------------------------------------------------------------------------
-
-EV Mustang BMS
-
-------------------------------------------------------------------------------*/
-
-
-#include <stdio.h>
-#include "pico/stdlib.h"
-#include "hardware/spi.h"
-#include "hardware/uart.h"
-#include "hardware/gpio.h"
-#include "hardware/clocks.h"
-#include "hardware/pll.h"
-#include "hardware/watchdog.h"
-
-#include "mcp2515/mcp2515.h"
-
-#include "include/battery.h"
 #include "include/bms.h"
-#include "include/statemachine.h"
-#include "include/comms.h"
-#include "include/led.h"
-#include "include/inputs.h"
-#include "include/isashunt.h"
+#include "include/shunt.h"
 
+extern Shunt shunt;
 
-struct can_frame rx;
+struct repeating_timer updateSocTimer;
 
-// receive frame
-struct can_frame frame;
+bool update_soc(struct repeating_timer *t) {
+    extern Bms bms;
+    bms.recalculate_soc();
+    return true;
+}
 
-// error frame
-struct can_frame errorFrame;
+Bms::Bms(Battery* _battery, Io* _io) {
+    battery = _battery;
+    state = state_standby;
+    io = _io;
+    internalError = false;
 
-State state;
-StatusLight statusLight;
+    // It's excessive to update the SoC every time we get a message from the ISA
+    // shunt. Just update at a regular interval.
+    add_repeating_timer_ms(5000, update_soc, NULL, &updateSocTimer);
+}
 
-Battery battery(NUM_PACKS);
-MCP2515 mainCAN(SPI_PORT, MAIN_CAN_CS, SPI_MISO, SPI_MOSI, SPI_CLK, 500000);
+void Bms::set_state(State _state, std::string reason) {
+    printf("Switching to state : %s, reason : %s\n", reason);
+    state = _state;
+    // Change light blinking pattern based on state
+    if ( state = state_standby ) {
+        statusLight.set_mode(STANDBY);
+    } else if ( state = state_drive ) {
+        statusLight.set_mode(DRIVE);
+    } else if ( state = state_batteryHeating ) {
+        statusLight.set_mode(CHARGING);
+    } else if ( state = state_charging ) {
+        statusLight.set_mode(CHARGING);
+    } else if ( state = state_batteryEmpty ) {
+        statusLight.set_mode(FAULT);
+    } else if ( state = state_overTempFault ) {
+        statusLight.set_mode(FAULT);
+    } else if ( state = state_illegalStateTransitionFault ) {
+        statusLight.set_mode(FAULT);
+    } else {
+        statusLight.set_mode(FAULT);
+    }
+}
 
-ISAShunt shunt;
+State Bms::get_state() {
+    return state;
+}
 
+void Bms::send_event(Event event) {
+    state(event);
+}
 
 // Watchdog
 
-struct repeating_timer watchdogKeepaliveTimer;
-
-bool watchdog_keepalive(struct repeating_timer *t) {
-    watchdog_update();
-    return true;
+void Bms::set_watchdog_reboot(bool value) {
+    watchdogReboot = value;
 }
 
-void enable_watchdog_keepalive() {
-    add_repeating_timer_ms(1000, watchdog_keepalive, NULL, &watchdogKeepaliveTimer);
+// DRIVE_INHIBIT
+
+void Bms::enable_drive_inhibit() {
+    io->enable_drive_inhibit();
 }
 
-
-// Status print
-
-struct repeating_timer statusPrintTimer;
-
-bool status_print(struct repeating_timer *t) {
-    battery.print();
-    return true;
+void Bms::disable_drive_inhibit() {
+    io->disable_drive_inhibit();
 }
 
-//
-void enable_status_print() {
-    add_repeating_timer_ms(5000, status_print, NULL, &statusPrintTimer);
+bool Bms::drive_is_inhibited() {
+    return io->drive_is_inhibited();
 }
 
+// CHARGE_INHIBIT
+
+void Bms::enable_charge_inhibit() {
+    io->enable_charge_inhibit();
+}
+
+void Bms::disable_charge_inhibit() {
+    io->disable_charge_inhibit();
+}
+
+bool Bms::charge_is_inhibited() {
+    return io->charge_is_inhibited();
+}
+
+// HEATER
+
+void Bms::enable_heater() {
+    io->enable_heater();
+}
+
+void Bms::disable_heater() {
+    io->disable_heater();
+}
+
+bool Bms::heater_is_enabled() {
+    return io->heater_is_enabled();
+}
+
+// IGNITION
+
+bool Bms::ignition_is_on() {
+    return io->ignition_is_on();
+}
+
+// CHARGE_ENABLE
+
+bool Bms::charge_is_enabled() {
+    return io->charge_enable_is_on();
+}
+
+// SoC
+
+uint8_t Bms::get_soc() {
+    return soc;
+}
 
 /*
- * Update SoC.
+ * Recalculate the SoC based on the latest data from the ISA shunt.
  *
- * It's excessive to update this value every time we get a message from the ISA
- * shunt. Just update at a regular interval.
+ * 0 khw/ah == 100% charged. Value goes negative as we draw energy from the pack.
  */
-
-struct repeating_timer socUpdateTimer;
-
-bool update_soc(struct repeating_timer *t) {
-    battery.recalculate_soc();
-    return true;
-}
-
-//
-void enable_update_soc() {
-    add_repeating_timer_ms(5000, update_soc, NULL, &socUpdateTimer);
-}
-
-
-int main() {
-    stdio_init_all();
-
-    set_sys_clock_khz(80000, true);
-
-    // set up the serial port
-    uart_init(UART_ID, BAUD_RATE);
-    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
-    gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
-
-    printf("BMS starting up ...\n");
-
-    state = &state_standby;
-
-    battery.initialise();
-
-    // Set up blinky LED
-    gpio_init(PICO_DEFAULT_LED_PIN);
-    gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
-    statusLight.led_set_mode(STANDBY);
-    enable_led_blink();
-
-    // 8MHz clock for CAN oscillator
-    clock_gpio_init(CAN_CLK_PIN, CLOCKS_CLK_GPOUT0_CTRL_AUXSRC_VALUE_CLK_SYS, 10);
-
-    printf("Setting up main CAN port (BITRATE:%d:%d)\n", CAN_500KBPS, MCP_8MHZ);
-    mainCAN.reset();
-    mainCAN.setBitrate(CAN_500KBPS, MCP_8MHZ);
-    mainCAN.setNormalMode();
-    printf("Enabling handling of inbound CAN messages on main bus\n");
-    enable_handle_main_CAN_messages();
-
-    // Check for unexpected reboot
-    if (watchdog_caused_reboot()) {
-        printf("Rebooted by Watchdog!\n");
-        // errorFame.can_id = ;
-        // mainCAN.sendMessage();
+void Bms::recalculate_soc() {
+    if ( CALCULATE_SOC_FROM_AMP_SECONDS == 1 ) {
+        soc = 100 * (BATTERY_CAPACITY_AS + shunt.get_ampSeconds()) / BATTERY_CAPACITY_AS;
     } else {
-        printf("Clean boot\n");
+        soc = 100 * (BATTERY_CAPACITY_WH + shunt.get_wattHours()) / BATTERY_CAPACITY_WH;
     }
-    watchdog_enable(5000, 1);
-    enable_watchdog_keepalive();
-
-    battery.print();
-    battery.send_test_message();
-
-    printf("Enabling handling of inbound CAN messages from batteries\n");
-    enable_handle_battery_CAN_messages();
-
-    printf("Enabling module polling\n");
-    enable_module_polling();
-
-    printf("Enabling status print\n");
-    enable_status_print();
-
-    printf("Enable listen for IGNITION_ON signal\n");
-    enable_listen_for_ignition_signal();
-
-    printf("Enable listen for CHARGE_ENABLE signal\n");
-    enable_listen_for_charge_enable_signal();
-
-    enable_update_soc();
-
-    while (true) {
-    }
-
-    return 0;
 }
 
+// Error
 
+void Bms::set_internal_error() {
+    internalError = true;
+}
+
+void Bms::clear_internal_error() {
+    internalError = false;
+}
+
+// Combine error bits into error byte to send out in status CAN message
+uint8_t Bms::get_error_byte() {
+    return (
+        0x00 | \
+        internalError | \
+        battery->packs_are_imbalanced() << 1 | \
+        shunt.is_dead() << 2
+    );
+}
+
+// Combine status bits into status byte to send out in status CAN message
+uint8_t Bms::get_status_byte() {
+    return (
+        0x00 | \
+        charge_is_inhibited() | \
+        drive_is_inhibited() << 1 | \
+        heater_is_enabled() << 2 | \
+        ignition_is_on() << 3 | \
+        charge_is_enabled() << 4
+    );
+}
+
+// Charging
+
+void Bms::update_max_charge_current() {
+    float highestTemperature = battery->get_highest_sensor_temperature();
+    if ( highestTemperature > CHARGE_THROTTLE_TEMP_LOW ) {
+        float degreesOver = highestTemperature - CHARGE_THROTTLE_TEMP_LOW;
+        float scaleFactor = 1 - (degreesOver / (CHARGE_THROTTLE_TEMP_HIGH - CHARGE_THROTTLE_TEMP_LOW));
+        float chargeCurrent = (scaleFactor * (CHARGE_CURRENT_MAX - CHARGE_CURRENT_MIN)) + CHARGE_CURRENT_MIN;
+        maxChargeCurrent = static_cast<int>(chargeCurrent);
+    } else {
+        maxChargeCurrent = static_cast<int>(CHARGE_CURRENT_MAX);
+    }
+}
+
+int8_t Bms::get_max_charge_current() {
+    return maxChargeCurrent;
+}
+
+void Bms::update_max_discharge_current() {
+    // FIXME actual implementation
+    maxDischargeCurrent = 100;
+}
+
+int8_t Bms::Bms::get_max_discharge_current() {
+    return maxDischargeCurrent;
+}
+
+// statusLight
+
+void Bms::led_blink() {
+    statusLight.led_blink();
+}

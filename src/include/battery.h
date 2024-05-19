@@ -21,113 +21,63 @@
 #define BMS_SRC_INCLUDE_BATTERY_H_
 
 #include "include/pack.h"
+#include "include/bms.h"
 #include "settings.h"
 
+class Bms;
+
 class Battery {
- private:
-    BatteryPack packs[NUM_PACKS];
-    int numPacks;                  // Number of battery packs in this battery
-    uint32_t voltage;                 // Total voltage of whole battery
-    uint16_t lowestCellVoltage;       // Voltage of cell with lowest voltage across whole battery
-    uint16_t highestCellVoltage;      // Voltage of cell with highest voltage across whole battery
-    uint8_t cellDelta;                // FIXME todo
-    float lowestCellTemperature;   //
-    float highestCellTemperature;  //
+   private:
+      BatteryPack packs[NUM_PACKS];
+      int numPacks;                    // Number of battery packs in this battery
+      uint32_t voltage;                // Total voltage of whole battery
+      uint16_t lowestCellVoltage;      // Voltage of cell with lowest voltage across whole battery
+      uint16_t highestCellVoltage;     // Voltage of cell with highest voltage across whole battery
+      uint32_t minimumBatteryVoltage;  // Lowest permitted voltage of the whole battery
+      uint32_t maximumBatteryVoltage;  // Highest permitted voltage of the whole battery
+      uint8_t cellDelta;               // FIXME todo
+      float lowestSensorTemperature;   //
+      float highestSensorTemperature;  //
+      Bms* bms;
 
-    float maxChargeCurrent;        //
-    float maxDischargeCurrent;     //
+   public:
+      Battery();
+      void initialise(Bms* _bms);
+      int print();
 
-    // Outputs
-    bool heaterEnabled;            // Indicates that the battery heater is currently enabled
-    bool inhibitCharge;            // Indicates that the BMS INHIBIT_CHARGE signal is enabled
-    bool inhibitDrive;             // Indicates that the BMS INHIBIT_DRIVE signal is enabled
+      void request_data();
+      void read_message();
+      void send_test_message();
 
-    // Inputs
-    bool ignitionOn;
-    bool chargeEnable;             // Charger is asking to charge
+      // Voltage
+      uint32_t get_voltage();
+      void set_voltage(uint32_t voltage) { this->voltage = voltage; }
+      void recalculate_voltage();
+      void recalculate_cell_delta();
+      uint32_t get_max_voltage();
+      uint32_t get_min_voltage();
+      int get_index_of_high_pack();
+      int get_index_of_low_pack();
+      void process_voltage_update();
+      void recalculate_lowest_cell_voltage();
+      bool has_empty_cell();
+      void recalculate_highest_cell_voltage();
+      bool has_full_cell();
+      uint32_t voltage_delta_between_packs();
+      BatteryPack* get_pack_with_highest_voltage();
+      bool packs_are_imbalanced(); 
 
-    float soc;
+      // Temperature
+      float get_highest_sensor_temperature();
+      bool has_temperature_sensor_over_max();
+      float get_lowest_temperature();
+      bool too_cold_to_charge();
 
-    // Something has gone wrong with the BMS
-    bool internalError;
-
-    // The voltage between the two packs
-    bool packsAreImbalanced;
-
- public:
-    // Readings from ISA shunt
-    int32_t amps;
-    int32_t shuntVoltage1;
-    int32_t shuntVoltage2;
-    int32_t shuntVoltage3;
-    int32_t shuntTemperature;
-    int32_t watts;
-    int32_t ampSeconds;
-    int32_t wattHours;
-
-    Battery(int _numPacks);
-    void initialise();
-    int print();
-    uint8_t get_error_byte();
-    uint8_t get_status_byte();
-
-    void request_data();
-    void read_message();
-    void send_test_message();
-
-    float get_soc();
-    void recalculate_soc();
-
-    // Voltage
-    uint32_t get_voltage();
-    void set_voltage(uint32_t voltage) { this->voltage = voltage; }
-    void recalculate_voltage();
-    void recalculate_cell_delta();
-    uint32_t get_max_voltage();
-    uint32_t get_min_voltage();
-
-    void update_cell_voltage(int packIndex, int moduleIndex, int cellIndex, float newCellVoltage);
-    int get_index_of_high_pack();
-    int get_index_of_low_pack();
-    void process_voltage_update();
-    uint16_t get_lowest_cell_voltage();
-    void recalculate_lowest_cell_voltage();
-    bool has_empty_cell();
-    uint16_t get_highest_cell_voltage();
-    void recalculate_highest_cell_voltage();
-    bool has_full_cell();
-    uint32_t voltage_delta_between_packs();
-    BatteryPack* get_pack_with_highest_voltage();
-    bool packs_are_imbalanced();
-    uint16_t get_amps();
-    float get_highest_cell_temperature();
-
-    // Temperature
-    bool has_temperature_sensor_over_max();
-    void update_max_charge_current();
-    void update_max_discharge_current();
-    float get_lowest_temperature();
-    bool too_cold_to_charge();
-
-    bool charge_enable_is_on();
-    bool heater_enabled();
-    void enable_heater();
-    void disable_heater();
-    void enable_inhibit_charge();
-    void disable_inhibit_charge();
-    bool charge_is_inhibited();
-    float get_max_charge_current();
-    float get_max_discharge_current();
-    void enable_inhibit_drive();
-    void disable_inhibit_drive();
-    bool drive_is_inhibited();
-    void disable_inhibit_for_drive();
-    void disable_inhibit_for_charge();
-    bool ignition_is_on();
-
-    // Contactors
-    void inhibit_contactor_close();
-    bool one_or_more_contactors_inhibited();
+      // Contactors
+      void disable_inhibit_for_drive();
+      void disable_inhibit_for_charge();
+      void inhibit_contactor_close();
+      bool one_or_more_contactors_inhibited();
 };
 
 #endif  // BMS_SRC_INCLUDE_BATTERY_H_

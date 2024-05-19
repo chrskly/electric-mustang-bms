@@ -15,6 +15,7 @@ add_executable(bms
         settings.h
         util.cpp
         mcp2515/mcp2515.cpp
+        io.cpp        
         module.cpp
         pack.cpp
         battery.cpp
@@ -23,8 +24,8 @@ add_executable(bms
         statemachine.cpp
         led.cpp
         CRC8.cpp
-        inputs.cpp
-        isashunt.cpp
+        shunt.cpp
+        main.cpp
         )
 
 pico_add_extra_outputs(bms)

@@ -86,7 +86,6 @@ uint32_t BatteryModule::get_voltage() {
 uint16_t BatteryModule::get_lowest_cell_voltage() {
     uint16_t lowestCellVoltage = 10000;
     for ( int c = 0; c < numCells; c++ ) {
-        // printf("Comparing %3.3f and %3.3f\n", cellVoltage[c], lowestCellVoltage);
         if ( cellVoltage[c] < lowestCellVoltage ) {
             lowestCellVoltage = cellVoltage[c];
         }
@@ -98,7 +97,6 @@ uint16_t BatteryModule::get_lowest_cell_voltage() {
 uint16_t BatteryModule::get_highest_cell_voltage() {
     uint16_t highestCellVoltage = 0;
     for ( int c = 0; c < numCells; c++ ) {
-        // printf("module : comparing : %.4f to %.4f\n", cellVoltage[c], highestCellVoltage);
         if ( cellVoltage[c] > highestCellVoltage ) {
             highestCellVoltage = cellVoltage[c];
         }
@@ -225,28 +223,3 @@ bool BatteryModule::temperature_at_warning_level() {
     }
     return false;
 }
-
-
-//// ----
-//
-// Charging
-//
-//// ----
-
-// Return the maximum current the charger may push into the module
-int BatteryModule::get_max_charge_current() {
-    float highestTemperature = get_highest_temperature();
-    if ( highestTemperature > CHARGE_THROTTLE_TEMP_LOW ) {
-        float degreesOver = highestTemperature - CHARGE_THROTTLE_TEMP_LOW;
-        float scaleFactor = 1 - (degreesOver / (CHARGE_THROTTLE_TEMP_HIGH - CHARGE_THROTTLE_TEMP_LOW));
-        float chargeCurrent = (scaleFactor * (CHARGE_CURRENT_MAX - CHARGE_CURRENT_MIN)) + CHARGE_CURRENT_MIN;
-        return static_cast<int>(chargeCurrent);
-    } else {
-        return static_cast<int>(CHARGE_CURRENT_MAX);
-    }
-}
-
-
-
-
-

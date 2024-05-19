@@ -40,6 +40,6 @@ void state_batteryEmpty(Event event);
 void state_overTempFault(Event event);
 void state_illegalStateTransitionFault(Event event);
 
-const char* get_state_name();
+const char* get_state_name(State state);
 
 #endif  // BMS_SRC_INCLUDE_STATEMACHINE_H_
