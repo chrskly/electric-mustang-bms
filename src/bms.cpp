@@ -32,7 +32,7 @@ bool update_soc(struct repeating_timer *t) {
 
 Bms::Bms(Battery* _battery, Io* _io) {
     battery = _battery;
-    state = state_standby;
+    state = &state_standby;
     io = _io;
     internalError = false;
 
@@ -41,27 +41,30 @@ Bms::Bms(Battery* _battery, Io* _io) {
     add_repeating_timer_ms(5000, update_soc, NULL, &updateSocTimer);
 }
 
-void Bms::set_state(State _state, std::string reason) {
-    printf("Switching to state : %s, reason : %s\n", reason);
-    state = _state;
+void Bms::set_state(State newState, std::string reason) {
+    std::string oldStateName = get_state_name(state);
+    std::string newStateName = get_state_name(newState);
+    printf("Switching from state %s to state %s, reason : %s\n", oldStateName.c_str(), newStateName.c_str(), reason.c_str());
+    state = newState;
     // Change light blinking pattern based on state
-    if ( state = state_standby ) {
+    if ( state == state_standby ) {
         statusLight.set_mode(STANDBY);
-    } else if ( state = state_drive ) {
+    } else if ( state == state_drive ) {
         statusLight.set_mode(DRIVE);
-    } else if ( state = state_batteryHeating ) {
+    } else if ( state == state_batteryHeating ) {
         statusLight.set_mode(CHARGING);
-    } else if ( state = state_charging ) {
+    } else if ( state == state_charging ) {
         statusLight.set_mode(CHARGING);
-    } else if ( state = state_batteryEmpty ) {
+    } else if ( state == state_batteryEmpty ) {
         statusLight.set_mode(FAULT);
-    } else if ( state = state_overTempFault ) {
+    } else if ( state == state_overTempFault ) {
         statusLight.set_mode(FAULT);
-    } else if ( state = state_illegalStateTransitionFault ) {
+    } else if ( state == state_illegalStateTransitionFault ) {
         statusLight.set_mode(FAULT);
     } else {
         statusLight.set_mode(FAULT);
     }
+    printf("after set mode\n");
 }
 
 State Bms::get_state() {

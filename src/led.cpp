@@ -49,25 +49,20 @@ StatusLight::StatusLight() {
 
 // Switch status light to a different mode
 void StatusLight::set_mode(LED_MODE newMode) {
-    printf("Setting LED mode %d\n", newMode);
     switch (newMode) {
         case STANDBY:
-            printf("Switch status light to mode STANDBY\n");
             onDuration = 1;
             offDuration = 39;
             break;
         case DRIVE:
-            printf("Switch status light to mode DRIVE\n");
             onDuration = 20;
             offDuration = 0;
             break;
         case CHARGING:
-            printf("Switch status light to mode CHARGING\n");
             onDuration = 10;
             offDuration = 10;
             break;
         case FAULT:
-            printf("Switch status light to mode FAULT\n");
             onDuration = 1;
             offDuration = 1;
             break;
