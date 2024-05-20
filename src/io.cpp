@@ -83,28 +83,31 @@ Io::Io() {
 // DRIVE_INHIBIT output
 
 void Io::enable_drive_inhibit() {
+    printf("Enabling drive inhibit\n");
     if ( DRIVE_INHIBIT_ACTIVE_LOW ) {
-        gpio_put(IGNITION_ENABLE_PIN, 0);
+        gpio_put(DRIVE_INHIBIT_PIN, 0);
     } else {
-        gpio_put(IGNITION_ENABLE_PIN, 1);
+        gpio_put(DRIVE_INHIBIT_PIN, 1);
     }
 }
 
 void Io::disable_drive_inhibit() {
+    printf("Disabling drive inhibit\n");
     if ( DRIVE_INHIBIT_ACTIVE_LOW ) {
-        gpio_put(IGNITION_ENABLE_PIN, 1);
+        gpio_put(DRIVE_INHIBIT_PIN, 1);
     } else {
-        gpio_put(IGNITION_ENABLE_PIN, 0);
+        gpio_put(DRIVE_INHIBIT_PIN, 0);
     }
 }
 
 bool Io::drive_is_inhibited() {
-    return gpio_get(IGNITION_ENABLE_PIN);
+    return gpio_get(DRIVE_INHIBIT_PIN);
 }
 
 // CHARGE_INHIBIT output
 
 void Io::enable_charge_inhibit() {
+    printf("Enabling charge inhibit\n");
     if ( CHARGE_INHIBIT_ACTIVE_LOW ) {
         gpio_put(CHARGE_INHIBIT_PIN, 0);
     } else {
@@ -113,6 +116,7 @@ void Io::enable_charge_inhibit() {
 }
 
 void Io::disable_charge_inhibit() {
+    printf("Disabling charge inhibit\n");
     if ( CHARGE_INHIBIT_ACTIVE_LOW ) {
         gpio_put(CHARGE_INHIBIT_PIN, 0);
     } else {
@@ -127,6 +131,7 @@ bool Io::charge_is_inhibited() {
 // HEATER output
 
 void Io::enable_heater() {
+    printf("Enabling heater\n");
     if ( HEATER_ENABLE_ACTIVE_LOW ) {
         gpio_put(HEATER_ENABLE_PIN, 0);
     } else {
@@ -135,6 +140,7 @@ void Io::enable_heater() {
 }
 
 void Io::disable_heater() {
+    printf("Disabling heater\n");
     if ( HEATER_ENABLE_ACTIVE_LOW ) {
         gpio_put(HEATER_ENABLE_PIN, 1);
     } else {

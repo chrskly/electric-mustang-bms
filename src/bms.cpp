@@ -64,7 +64,6 @@ void Bms::set_state(State newState, std::string reason) {
     } else {
         statusLight.set_mode(FAULT);
     }
-    printf("after set mode\n");
 }
 
 State Bms::get_state() {

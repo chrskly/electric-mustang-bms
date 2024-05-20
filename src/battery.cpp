@@ -26,6 +26,8 @@
 
 #include "settings.h"
 
+extern Io io;
+
 struct repeating_timer pollPackTimer;
 
 Battery::Battery() {
@@ -68,13 +70,16 @@ void Battery::initialise(Bms* _bms) {
 
 //
 int Battery::print() {
-    printf("--------------------------------------------------------------------------------\n");
-    printf("BMS status : %s\n", get_state_name(bms->get_state()));
+    //printf("--------------------------------------------------------------------------------\n");
+    //printf("State:%s, V:%s, CI:%s, DI:%s\n", get_state_name(bms->get_state()), voltage, io.charge_is_inhibited(), io.drive_is_inhibited() );
+    printf("State:%s, V:%d, CHG_INH:%d, DRV_INH:%d, IGN:%d, CHG_EN:%d\n", 
+        get_state_name(bms->get_state()), voltage/1000, io.charge_is_inhibited(),
+        io.drive_is_inhibited(), io.ignition_is_on(), io.charge_enable_is_on() );
     // for ( int p = 0; p < numPacks; p++ ) {
     //     packs[p].print();
     // }
-    printf("Battery voltage : %d\n", voltage);
-    printf("--------------------------------------------------------------------------------\n");
+    //printf("Battery voltage : %d\n", voltage);
+    //printf("--------------------------------------------------------------------------------\n");
     return 0;
 }
 
