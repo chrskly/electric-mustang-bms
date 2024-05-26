@@ -67,7 +67,8 @@ void enable_watchdog_keepalive() {
 struct repeating_timer statusPrintTimer;
 
 bool status_print(struct repeating_timer *t) {
-    battery.print();
+    bms.print();
+    //battery.print();
     return true;
 }
 

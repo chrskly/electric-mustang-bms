@@ -38,7 +38,7 @@ Bms::Bms(Battery* _battery, Io* _io) {
 
     // It's excessive to update the SoC every time we get a message from the ISA
     // shunt. Just update at a regular interval.
-    add_repeating_timer_ms(5000, update_soc, NULL, &updateSocTimer);
+    add_repeating_timer_ms(500, update_soc, NULL, &updateSocTimer);
 }
 
 void Bms::set_state(State newState, std::string reason) {
@@ -74,6 +74,12 @@ void Bms::send_event(Event event) {
     state(event);
 }
 
+void Bms::print() {
+    printf("State:%s, V:%d, SoC:%d, CHG_INH:%d, DRV_INH:%d, IGN:%d, CHG_EN:%d\n",
+        get_state_name(get_state()), battery->get_voltage()/1000, soc, io->charge_is_inhibited(),
+        io->drive_is_inhibited(), io->ignition_is_on(), io->charge_enable_is_on() );
+}
+
 // Watchdog
 
 void Bms::set_watchdog_reboot(bool value) {
@@ -83,11 +89,17 @@ void Bms::set_watchdog_reboot(bool value) {
 // DRIVE_INHIBIT
 
 void Bms::enable_drive_inhibit() {
-    io->enable_drive_inhibit();
+    if ( !drive_is_inhibited() ) {
+        printf("Enabling drive inhibit\n");
+        io->enable_drive_inhibit();
+    }
 }
 
 void Bms::disable_drive_inhibit() {
-    io->disable_drive_inhibit();
+    if ( drive_is_inhibited() ) {
+        printf("Disabling drive inhibit\n");
+        io->disable_drive_inhibit();
+    }
 }
 
 bool Bms::drive_is_inhibited() {
@@ -97,11 +109,17 @@ bool Bms::drive_is_inhibited() {
 // CHARGE_INHIBIT
 
 void Bms::enable_charge_inhibit() {
-    io->enable_charge_inhibit();
+    if ( !charge_is_inhibited() ) {
+        printf("Enabling charge inhibit\n");
+        io->enable_charge_inhibit();
+    }
 }
 
 void Bms::disable_charge_inhibit() {
-    io->disable_charge_inhibit();
+    if ( charge_is_inhibited() ) {
+        printf("Disabling charge inhibit\n");
+        io->disable_charge_inhibit();
+    }
 }
 
 bool Bms::charge_is_inhibited() {

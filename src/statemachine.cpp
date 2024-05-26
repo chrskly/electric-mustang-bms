@@ -60,7 +60,7 @@ void state_standby(Event event) {
                 break;
             }
             // We're not charging right now, but flag that it's too cold for later reference
-            if ( !bms.charge_is_inhibited() && battery.too_cold_to_charge() ) {
+            if ( battery.too_cold_to_charge() ) {
                 bms.enable_charge_inhibit();
             }
         case E_CELL_VOLTAGE_UPDATE:
@@ -71,6 +71,9 @@ void state_standby(Event event) {
                 bms.set_state(&state_batteryEmpty, "empty battery");
                 printf("STATE AFTER CHABGE : %s\n", get_state_name(bms.get_state()));
                 break;
+            }
+            if ( battery.has_full_cell() ) {
+                bms.enable_charge_inhibit();
             }
             /* The contactors are currently open. We don't want to allow the
              * contactors to close when the packs have different voltages. So we
@@ -146,6 +149,9 @@ void state_drive(Event event) {
                 bms.enable_drive_inhibit();
                 bms.set_state(&state_batteryEmpty, "empty battery");
                 break;
+            }
+            if ( !bms.charge_is_inhibited() && battery.has_full_cell() ) {
+                bms.enable_charge_inhibit();
             }
             /* If we're driving on a subset of pack(s), and we've driven down
              * the high pack(s) enough that its/their voltage matches the low
@@ -298,7 +304,7 @@ void state_charging(Event event) {
         case E_CELL_VOLTAGE_UPDATE:
             battery.process_voltage_update();
             /* Prevent cells from getting over-charged */
-            if ( battery.has_full_cell() ) {
+            if ( !bms.charge_is_inhibited() && battery.has_full_cell() ) {
                 bms.enable_charge_inhibit();
             }
             break;
@@ -383,6 +389,9 @@ void state_batteryEmpty(Event event) {
                 bms.disable_drive_inhibit();
                 bms.set_state(&state_standby, "battery level rose");
                 break;
+            }
+            if ( !bms.charge_is_inhibited() && battery.has_full_cell() ) {
+                bms.enable_charge_inhibit();
             }
             break;
         case E_IGNITION_ON:
@@ -485,6 +494,9 @@ void state_illegalStateTransitionFault(Event event) {
             break;
         case E_CELL_VOLTAGE_UPDATE:
             battery.process_voltage_update();
+            if ( !bms.charge_is_inhibited() && battery.has_full_cell() ) {
+                bms.enable_charge_inhibit();
+            }
             break;
         case E_IGNITION_ON:
             break;

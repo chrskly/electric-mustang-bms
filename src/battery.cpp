@@ -65,21 +65,14 @@ void Battery::initialise(Bms* _bms) {
 
     // Enable polling of packs for voltage/temperature data
     printf("Enabling polling of packs for data\n");
-    add_repeating_timer_ms(1000, poll_packs_for_data, NULL, &pollPackTimer);
+    add_repeating_timer_ms(100, poll_packs_for_data, NULL, &pollPackTimer);
 }
 
 //
 int Battery::print() {
-    //printf("--------------------------------------------------------------------------------\n");
-    //printf("State:%s, V:%s, CI:%s, DI:%s\n", get_state_name(bms->get_state()), voltage, io.charge_is_inhibited(), io.drive_is_inhibited() );
-    printf("State:%s, V:%d, CHG_INH:%d, DRV_INH:%d, IGN:%d, CHG_EN:%d\n", 
-        get_state_name(bms->get_state()), voltage/1000, io.charge_is_inhibited(),
-        io.drive_is_inhibited(), io.ignition_is_on(), io.charge_enable_is_on() );
     // for ( int p = 0; p < numPacks; p++ ) {
     //     packs[p].print();
     // }
-    //printf("Battery voltage : %d\n", voltage);
-    //printf("--------------------------------------------------------------------------------\n");
     return 0;
 }
 

@@ -49,6 +49,7 @@ class Bms {
         void set_state(State _state, std::string reason);
         State get_state();
         void send_event(Event event);
+        void print();
 
         // Watchdog
         void set_watchdog_reboot(bool value);
