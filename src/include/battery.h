@@ -60,17 +60,19 @@ class Battery {
       int get_index_of_low_pack();
       void process_voltage_update();
       void recalculate_lowest_cell_voltage();
+      uint16_t get_lowest_cell_voltage();
       bool has_empty_cell();
       void recalculate_highest_cell_voltage();
+      uint16_t get_highest_cell_voltage();
       bool has_full_cell();
       uint32_t voltage_delta_between_packs();
       BatteryPack* get_pack_with_highest_voltage();
       bool packs_are_imbalanced(); 
 
       // Temperature
-      float get_highest_sensor_temperature();
+      int8_t get_highest_sensor_temperature();
       bool has_temperature_sensor_over_max();
-      float get_lowest_temperature();
+      int8_t get_lowest_sensor_temperature();
       bool too_cold_to_charge();
 
       // Contactors

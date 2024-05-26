@@ -51,7 +51,7 @@ bool test_case_101_inhibit_battery_contactor_close_when_pack_voltages_differ(Bat
 
     // Ensure no delta between packs by setting all cell voltages to 50% soc
     uint16_t newCellVoltage = battery->get_voltage_from_soc(50);
-    printf("    > Setting all cell voltages to %dV (approx 50%% soc)\n", newCellVoltage);
+    printf("    > Setting all cell voltages to %dmV (approx 50%% soc)\n", newCellVoltage);
     battery->set_all_cell_voltages(newCellVoltage);
 
     // Wait for all battery inhibit signals to disable
@@ -106,7 +106,7 @@ bool test_case_102_do_not_inhibit_battery_contactor_close_when_pack_voltage_diff
 
     // Ensure no delta between packs by setting all cell voltages to 50% soc
     uint16_t newCellVoltage = battery->get_voltage_from_soc(50);
-    printf("    > Setting all cell voltages to %dV (approx 50%% soc)\n", newCellVoltage);
+    printf("    > Setting all cell voltages to %dmV (approx 50%% soc)\n", newCellVoltage);
     battery->set_all_cell_voltages(newCellVoltage);
 
     // Wait for all battery inhibit signals to disable

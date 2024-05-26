@@ -75,9 +75,20 @@ void Bms::send_event(Event event) {
 }
 
 void Bms::print() {
-    printf("State:%s, V:%d, SoC:%d, CHG_INH:%d, DRV_INH:%d, IGN:%d, CHG_EN:%d\n",
-        get_state_name(get_state()), battery->get_voltage()/1000, soc, io->charge_is_inhibited(),
-        io->drive_is_inhibited(), io->ignition_is_on(), io->charge_enable_is_on() );
+    std::string chg_inh = io->charge_is_inhibited() ? "true" : "false";
+    std::string drv_inh = io->drive_is_inhibited() ? "true" : "false";
+    std::string ign = io->ignition_is_on() ? "true" : "false";
+    std::string chg_en = io->charge_enable_is_on() ? "true" : "false";
+    int8_t Tmax = battery->get_highest_sensor_temperature();
+    int8_t Tmin = battery->get_lowest_sensor_temperature();
+    int16_t Vmax = battery->get_highest_cell_voltage();
+    int16_t Vmin = battery->get_lowest_cell_voltage();
+    printf("State:%s, SoC:%d, CHG_INH:%s, DRV_INH:%s, IGN:%s, CHG_EN:%s\n",
+        get_state_name(get_state()), soc, chg_inh.c_str(),
+        drv_inh.c_str(), ign.c_str(), chg_en.c_str() );
+    printf("    V:%d, VMax:%d, VMin:%d\n", battery->get_voltage()/1000, Vmax, Vmin );
+    printf("    TMax:%d, TMin:%d\n", Tmax, Tmin );
+    //battery->print();
 }
 
 // Watchdog
@@ -88,17 +99,15 @@ void Bms::set_watchdog_reboot(bool value) {
 
 // DRIVE_INHIBIT
 
-void Bms::enable_drive_inhibit() {
+void Bms::enable_drive_inhibit(std::string context) {
     if ( !drive_is_inhibited() ) {
-        printf("Enabling drive inhibit\n");
-        io->enable_drive_inhibit();
+        io->enable_drive_inhibit(context);
     }
 }
 
-void Bms::disable_drive_inhibit() {
+void Bms::disable_drive_inhibit(std::string context) {
     if ( drive_is_inhibited() ) {
-        printf("Disabling drive inhibit\n");
-        io->disable_drive_inhibit();
+        io->disable_drive_inhibit(context);
     }
 }
 
@@ -108,17 +117,17 @@ bool Bms::drive_is_inhibited() {
 
 // CHARGE_INHIBIT
 
-void Bms::enable_charge_inhibit() {
-    if ( !charge_is_inhibited() ) {
-        printf("Enabling charge inhibit\n");
-        io->enable_charge_inhibit();
-    }
+void Bms::enable_charge_inhibit(std::string context) {
+    //printf("Enabling charge inhibit\n");
+    //if ( !charge_is_inhibited() ) {
+        io->enable_charge_inhibit(context);
+    //}
 }
 
-void Bms::disable_charge_inhibit() {
+void Bms::disable_charge_inhibit(std::string context) {
+    //printf("Disabling charge inhibit\n");
     if ( charge_is_inhibited() ) {
-        printf("Disabling charge inhibit\n");
-        io->disable_charge_inhibit();
+        io->disable_charge_inhibit(context);
     }
 }
 

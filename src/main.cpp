@@ -74,7 +74,7 @@ bool status_print(struct repeating_timer *t) {
 
 //
 void enable_status_print() {
-    add_repeating_timer_ms(2000, status_print, NULL, &statusPrintTimer);
+    add_repeating_timer_ms(1000, status_print, NULL, &statusPrintTimer);
 }
 
 

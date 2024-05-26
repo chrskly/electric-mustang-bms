@@ -86,7 +86,7 @@ const bool CHARGE_ENABLE_ACTIVE_LOW = true;    // Is the charge signal active lo
                                           // kWh (value = 0)? 
 
 // Official min pack voltage = 269V. 269 / 6 / 16 = 2.8020833333V
-#define CELL_EMPTY_VOLTAGE 2900
+#define CELL_EMPTY_VOLTAGE 2850
 
 // Official max pack voltage = 398V. 398 / 6 / 16 = 4.1458333333V
 #define CELL_FULL_VOLTAGE 4100

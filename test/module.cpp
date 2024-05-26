@@ -49,7 +49,7 @@ void BatteryModule::set_all_cell_voltages(uint16_t newVoltage) {
     }
 }
 
-uint8_t BatteryModule::get_cell_temperature(int cellId) {
+int8_t BatteryModule::get_cell_temperature(int cellId) {
     return cellTemperature[cellId];
 }
 

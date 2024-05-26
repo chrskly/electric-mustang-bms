@@ -47,7 +47,7 @@ BatteryModule::BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _nu
     // Initialise temperature sensor readings to zero
     numTemperatureSensors = _numTemperatureSensors;
     for ( int t = 0; t < numTemperatureSensors; t++ ) {
-        cellTemperature[t] = -128;
+        cellTemperature[t] = -127;
     }
     allModuleDataPopulated = false;
 }
@@ -90,6 +90,7 @@ uint16_t BatteryModule::get_lowest_cell_voltage() {
             lowestCellVoltage = cellVoltage[c];
         }
     }
+    //printf("lowest cell voltage for module %d is %d\n", id, lowestCellVoltage);
     return lowestCellVoltage;
 }
 
@@ -113,7 +114,7 @@ void BatteryModule::set_cell_voltage(int cellIndex, uint16_t newCellVoltage) {
 // Return true if any of the cells in the module are under min voltage
 bool BatteryModule::has_empty_cell() {
     for ( int c = 0; c < numCells; c++ ) {
-        if ( cellVoltage[c] < CELL_EMPTY_VOLTAGE ) {
+        if ( cellVoltage[c] <= CELL_EMPTY_VOLTAGE ) {
             return true;
         }
     }
@@ -123,7 +124,7 @@ bool BatteryModule::has_empty_cell() {
 // Return true if any of the cells in the module are over max voltage
 bool BatteryModule::has_full_cell() {
     for ( int c = 0; c < numCells; c++ ) {
-        if ( cellVoltage[c] > CELL_FULL_VOLTAGE ) {
+        if ( cellVoltage[c] >= CELL_FULL_VOLTAGE ) {
             return true;
         }
     }
@@ -150,7 +151,7 @@ void BatteryModule::check_if_module_data_is_populated() {
     }
     bool temperatureMissing = false;
     for ( int t = 0; t < numTemperatureSensors; t++ ) {
-        if ( cellTemperature[t] == 0 ) {
+        if ( cellTemperature[t] < -126 ) {
             temperatureMissing = true;
         }
     }
@@ -178,25 +179,26 @@ void BatteryModule::update_temperature(int tempSensorId, uint8_t newTemperature)
 
 // Return the temperature of the coldest sensor in the module
 int8_t BatteryModule::get_lowest_temperature() {
-    uint8_t lowestTemperature = 255;
+    int8_t lowestTemperature = 126;
     for ( int t = 0; t < numTemperatureSensors; t++ ) {
         // Skip uninitialised readings
-        if ( cellTemperature[t] < -127 ) {
+        if ( cellTemperature[t] < -126 ) {
             continue;
         }
         if ( cellTemperature[t] < lowestTemperature ) {
             lowestTemperature = cellTemperature[t];
         }
     }
+    //printf("lowest temp : %d\n", lowestTemperature);
     return lowestTemperature;
 }
 
 // Return the temperature of the hottest sensor in the module
 int8_t BatteryModule::get_highest_temperature() {
-    int8_t highestTemperature = -40;
+    int8_t highestTemperature = -126;
     for ( int t = 0; t < numTemperatureSensors; t++ ) {
         // Skip uninitialised readings
-        if ( cellTemperature[t] < -127 ) {
+        if ( cellTemperature[t] < -126 ) {
             continue;
         }
         if ( cellTemperature[t] > highestTemperature ) {

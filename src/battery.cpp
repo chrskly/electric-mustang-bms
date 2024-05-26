@@ -70,9 +70,9 @@ void Battery::initialise(Bms* _bms) {
 
 //
 int Battery::print() {
-    // for ( int p = 0; p < numPacks; p++ ) {
-    //     packs[p].print();
-    // }
+    for ( int p = 0; p < numPacks; p++ ) {
+        packs[p].print();
+    }
     return 0;
 }
 
@@ -181,6 +181,8 @@ void Battery::process_voltage_update() {
     // Do processing for overall battery
     recalculate_voltage();
     recalculate_cell_delta();
+    recalculate_lowest_cell_voltage();
+    recalculate_highest_cell_voltage();
 }
 
 
@@ -201,6 +203,10 @@ void Battery::recalculate_lowest_cell_voltage() {
     lowestCellVoltage = newLowestCellVoltage;
 }
 
+uint16_t Battery::get_lowest_cell_voltage() {
+    return lowestCellVoltage;
+}
+
 // Return true if any cell in the battery is below the minimum voltage level
 bool Battery::has_empty_cell() {
     for ( int p = 0; p < numPacks; p++ ) {
@@ -217,7 +223,7 @@ bool Battery::has_empty_cell() {
 void Battery::recalculate_highest_cell_voltage() {
     uint16_t newHighestCellVoltage = 0;
     for ( int p = 0; p < numPacks; p++ ) {
-        if ( packs[p].get_highest_cell_voltage() < newHighestCellVoltage ) {
+        if ( packs[p].get_highest_cell_voltage() > newHighestCellVoltage ) {
             newHighestCellVoltage = packs[p].get_highest_cell_voltage();
         }
     }
@@ -226,6 +232,10 @@ void Battery::recalculate_highest_cell_voltage() {
         bms->set_internal_error();
     }
     highestCellVoltage = newHighestCellVoltage;
+}
+
+uint16_t Battery::get_highest_cell_voltage() {
+    return highestCellVoltage;
 }
 
 // Return true if any cell in the battery is below the minimum voltage level
@@ -280,7 +290,18 @@ bool Battery::packs_are_imbalanced() {
 //
 //// ----
 
-float Battery::get_highest_sensor_temperature() {
+int8_t Battery::get_highest_sensor_temperature() {
+    //return highestSensorTemperature;
+    float highestSensorTemperature = -126;
+    for ( int p = 0; p < numPacks; p++ ) {
+        if ( packs[p].get_highest_temperature() > highestSensorTemperature ) {
+            highestSensorTemperature = packs[p].get_highest_temperature();
+        }
+    }
+    // Saftey check
+    if ( highestSensorTemperature < -20 || highestSensorTemperature > 50 ) {
+        bms->set_internal_error();
+    }
     return highestSensorTemperature;
 }
 
@@ -294,7 +315,7 @@ bool Battery::has_temperature_sensor_over_max() {
     return false;
 }
 
-float Battery::get_lowest_temperature() {
+int8_t Battery::get_lowest_sensor_temperature() {
     float lowestTemperature = 1000;
     for ( int p = 0; p < numPacks; p++ ) {
         if ( packs[p].get_lowest_temperature() < lowestTemperature ) {
@@ -316,7 +337,8 @@ float Battery::get_lowest_temperature() {
 //// ----
 
 bool Battery::too_cold_to_charge() {
-    if ( get_lowest_temperature() < MINIMUM_CHARGING_TEMPERATURE ) {
+    //printf("Comparing %f to %f\n", get_lowest_sensor_temperature(), MINIMUM_CHARGING_TEMPERATURE);
+    if ( get_lowest_sensor_temperature() < MINIMUM_CHARGING_TEMPERATURE ) {
         return true;
     }
     return false;

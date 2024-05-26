@@ -29,31 +29,31 @@
 void gpio_callback(uint gpio, uint32_t events) {
     extern Battery battery;
     if ( gpio == DRIVE_INHIBIT_PIN ) {
-        if ( gpio_get(DRIVE_INHIBIT_PIN) == 1 ) {
-            battery.get_bms()->set_inhibitDrive(true);
-        } else {
+        if ( gpio_get(DRIVE_INHIBIT_PIN) == DRIVE_INHIBIT_ACTIVE_LOW ) {
             battery.get_bms()->set_inhibitDrive(false);
+        } else {
+            battery.get_bms()->set_inhibitDrive(true);
         }
     }
     if ( gpio == CHARGE_INHIBIT_PIN ) {
-        if ( gpio_get(CHARGE_INHIBIT_PIN) == 1 ) {
-            battery.get_bms()->set_inhibitCharge(true);
-        } else {
+        if ( gpio_get(CHARGE_INHIBIT_PIN) == CHARGE_INHIBIT_ACTIVE_LOW ) {
             battery.get_bms()->set_inhibitCharge(false);
+        } else {
+            battery.get_bms()->set_inhibitCharge(true);
         }
     }
     if ( gpio == INHIBIT_CONTACTOR_PINS[0] ) { // batt1 inhibit
-        if ( gpio_get(INHIBIT_CONTACTOR_PINS[0]) == 1 ) {
-            battery.get_pack(0).set_inhibit(true);
-        } else {
+        if ( gpio_get(INHIBIT_CONTACTOR_PINS[0]) == INHIBIT_CONTACTOR_ACTIVE_LOW ) {
             battery.get_pack(0).set_inhibit(false);
+        } else {
+            battery.get_pack(0).set_inhibit(true);
         }
     }
     if ( gpio == INHIBIT_CONTACTOR_PINS[1] ) { // batt2 inhibit
-        if ( gpio_get(INHIBIT_CONTACTOR_PINS[1]) == 1 ) {
-            battery.get_pack(1).set_inhibit(true);
-        } else {
+        if ( gpio_get(INHIBIT_CONTACTOR_PINS[1]) == INHIBIT_CONTACTOR_ACTIVE_LOW ) {
             battery.get_pack(1).set_inhibit(false);
+        } else {
+            battery.get_pack(1).set_inhibit(true);
         }
     }
 }

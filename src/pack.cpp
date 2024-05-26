@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 
+#include "hardware/gpio.h"
 #include "include/pack.h"
 #include "include/module.h"
 #include "mcp2515/mcp2515.h"
@@ -62,7 +63,6 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _n
 
     voltage = 0.0000f;
     cellDelta = 0;
-    contactorsAreInhibited = false;
 
     // Set up contactor control.
     contactorInhibitPin = _contactorInhibitPin;
@@ -84,7 +84,7 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _n
 }
 
 void BatteryPack::print() {
-    printf("Pack %d : %3.2fV : Hi %d : Lo %d : %dmV\n", id, (voltage/1000), get_lowest_cell_voltage(), get_highest_cell_voltage(), cellDelta);
+    printf("Pack %d : %3.2fV : Hi %d : Lo %d : %dmV\n", id, (voltage/1000), get_highest_cell_voltage(), get_lowest_cell_voltage(), cellDelta);
     for ( int m = 0; m < numModules; m++ ) {
         modules[m].print();
     }
@@ -236,7 +236,7 @@ void BatteryPack::recalculate_total_voltage() {
 
 // Return the voltage of the lowest cell in the pack
 uint16_t BatteryPack::get_lowest_cell_voltage() {
-    uint16_t lowestCellVoltage = 10;
+    uint16_t lowestCellVoltage = 10000;
     for ( int m = 0; m < numModules; m++ ) {
         // skip modules with incomplete cell data
         if ( !modules[m].all_module_data_populated() ) {
@@ -373,7 +373,7 @@ bool BatteryPack::has_temperature_sensor_over_max() {
 
 // return the temperature of the lowest sensor in the pack
 int8_t BatteryPack::get_lowest_temperature() {
-    int8_t lowestModuleTemperature = 127;
+    int8_t lowestModuleTemperature = 126;
     for ( int m = 0; m < numModules; m++ ) {
         if ( ! modules[m].all_module_data_populated() ) {
             continue;
@@ -382,7 +382,22 @@ int8_t BatteryPack::get_lowest_temperature() {
             lowestModuleTemperature = modules[m].get_lowest_temperature();
         }
     }
+    //printf("lowest temp : %d\n", lowestModuleTemperature);
     return lowestModuleTemperature;
+}
+
+// return the temperature of the highest sensor in the pack
+int8_t BatteryPack::get_highest_temperature() {
+    int8_t highestModuleTemperature = -126;
+    for ( int m = 0; m < numModules; m++ ) {
+        if ( ! modules[m].all_module_data_populated() ) {
+            continue;
+        }
+        if ( modules[m].get_highest_temperature() > highestModuleTemperature ) {
+            highestModuleTemperature = modules[m].get_highest_temperature();
+        }
+    }
+    return highestModuleTemperature;
 }
 
 // Extract temperature sensor readings from CAN frame and update stored values
@@ -390,7 +405,9 @@ void BatteryPack::decode_temperatures(can_frame *temperatureMessageFrame) {
     int moduleId = (temperatureMessageFrame->can_id & 0x00F);
     modules[moduleId].heartbeat();
     for ( int t = 0; t < numTemperatureSensorsPerModule; t++ ) {
-        modules[moduleId].update_temperature(t, temperatureMessageFrame->data[t] - 40);
+        float temperature = temperatureMessageFrame->data[t] - 40;
+        //printf("Updating temperature for module %d sensor %d : %2.2f\n", moduleId, t, temperature);
+        modules[moduleId].update_temperature(t, temperature);
     }
 }
 
@@ -403,19 +420,35 @@ void BatteryPack::decode_temperatures(can_frame *temperatureMessageFrame) {
 
 // Prevent the contactors for this pack from closing
 void BatteryPack::enable_inhibit_contactor_close() {
-    contactorsAreInhibited = true;
-    // gpio_put();
+    if ( !contactors_are_inhibited() ) {
+        printf("Enabling inhibit of contactor close for pack %d\n", id);
+        if ( INHIBIT_CONTACTOR_ACTIVE_LOW ) {
+            gpio_put(INHIBIT_CONTACTOR_PINS[id], 0);
+        } else {
+            gpio_put(INHIBIT_CONTACTOR_PINS[id], 1);
+        }
+    }
 }
 
 // Allow the contactors for this pack to close
 void BatteryPack::disable_inhibit_contactor_close() {
-    contactorsAreInhibited = false;
-    // gpio_put();
+    if ( contactors_are_inhibited() ) {
+        printf("Disabling inhibit of contactor close for pack %d\n", id);
+        if ( INHIBIT_CONTACTOR_ACTIVE_LOW ) {
+            gpio_put(INHIBIT_CONTACTOR_PINS[id], 1);
+        } else {
+            gpio_put(INHIBIT_CONTACTOR_PINS[id], 0);
+        }
+    }
 }
 
 // Return true if the contactors for this pack are currently not allowed to close
 bool BatteryPack::contactors_are_inhibited() {
-    return contactorsAreInhibited;
+    if ( INHIBIT_CONTACTOR_ACTIVE_LOW ) {
+        return !gpio_get(INHIBIT_CONTACTOR_PINS[id]);
+    } else {
+        return gpio_get(INHIBIT_CONTACTOR_PINS[id]);
+    }
 }
 
 

@@ -69,6 +69,7 @@ class BatteryPack {
       // Temperature
       bool has_temperature_sensor_over_max();
       int8_t get_lowest_temperature();
+      int8_t get_highest_temperature();
       void decode_temperatures(can_frame *temperatureMessageFrame);
 
       // Contactors
@@ -88,7 +89,6 @@ class BatteryPack {
 
       // contactors
       int contactorInhibitPin;                         // Pin on the pico which controls contactors for this pack
-      bool contactorsAreInhibited;                     // Is the
 
       int balanceStatus;                               //
       int errorStatus;

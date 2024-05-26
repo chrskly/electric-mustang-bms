@@ -32,7 +32,7 @@ class BatteryModule {
       int numCells;                              // Number of cells in this module
       int numTemperatureSensors;                 // Number of temperature sensors in this module
       uint16_t cellVoltage[CELLS_PER_MODULE];    // Voltages of each cell
-      uint8_t cellTemperature[TEMPS_PER_MODULE]; // Temperatures of each cell
+      int8_t cellTemperature[TEMPS_PER_MODULE];  // Temperatures of each cell
       BatteryPack* pack;                         // The parent BatteryPack that contains this module
 
    public:
@@ -40,7 +40,7 @@ class BatteryModule {
       BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _numTemperatureSensors);
       uint16_t get_cell_voltage(int cellId);
       void set_all_cell_voltages(uint16_t newVoltage);
-      uint8_t get_cell_temperature(int cellId);
+      int8_t get_cell_temperature(int cellId);
       void set_all_temperatures(uint8_t newTemperature);
       void set_temperature(int sensorId, uint8_t temperature);
 };

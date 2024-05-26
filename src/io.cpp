@@ -68,22 +68,25 @@ Io::Io() {
     gpio_init(DRIVE_INHIBIT_PIN);
     gpio_set_dir(DRIVE_INHIBIT_PIN, GPIO_OUT);
     gpio_set_pulls(DRIVE_INHIBIT_PIN, !DRIVE_INHIBIT_ACTIVE_LOW, DRIVE_INHIBIT_ACTIVE_LOW);
+    disable_drive_inhibit("initialization\n");
 
     // CHARGE_INHIBIT output
     gpio_init(CHARGE_INHIBIT_PIN);
     gpio_set_pulls(CHARGE_INHIBIT_PIN, !CHARGE_INHIBIT_ACTIVE_LOW, CHARGE_INHIBIT_ACTIVE_LOW);
     gpio_set_dir(CHARGE_INHIBIT_PIN, GPIO_OUT);
+    disable_charge_inhibit("initialization\n");
 
     // Heater output
     gpio_init(HEATER_ENABLE_PIN);
     gpio_set_dir(HEATER_ENABLE_PIN, GPIO_OUT);
     gpio_set_pulls(HEATER_ENABLE_PIN, !HEATER_ENABLE_ACTIVE_LOW, HEATER_ENABLE_ACTIVE_LOW);
+    disable_heater();
 }
 
 // DRIVE_INHIBIT output
 
-void Io::enable_drive_inhibit() {
-    printf("Enabling drive inhibit\n");
+void Io::enable_drive_inhibit(std::string context) {
+    printf("Enabling drive inhibit : %s\n", context.c_str());
     if ( DRIVE_INHIBIT_ACTIVE_LOW ) {
         gpio_put(DRIVE_INHIBIT_PIN, 0);
     } else {
@@ -91,8 +94,8 @@ void Io::enable_drive_inhibit() {
     }
 }
 
-void Io::disable_drive_inhibit() {
-    printf("Disabling drive inhibit\n");
+void Io::disable_drive_inhibit(std::string context) {
+    printf("Disabling drive inhibit : %s\n", context.c_str());
     if ( DRIVE_INHIBIT_ACTIVE_LOW ) {
         gpio_put(DRIVE_INHIBIT_PIN, 1);
     } else {
@@ -101,13 +104,17 @@ void Io::disable_drive_inhibit() {
 }
 
 bool Io::drive_is_inhibited() {
-    return gpio_get(DRIVE_INHIBIT_PIN);
+    if ( DRIVE_INHIBIT_ACTIVE_LOW ) {
+        return !gpio_get(DRIVE_INHIBIT_PIN);
+    } else {
+        return gpio_get(DRIVE_INHIBIT_PIN);
+    }
 }
 
 // CHARGE_INHIBIT output
 
-void Io::enable_charge_inhibit() {
-    printf("Enabling charge inhibit\n");
+void Io::enable_charge_inhibit(std::string context) {
+    printf("Enabling charge inhibit : %s\n", context.c_str());
     if ( CHARGE_INHIBIT_ACTIVE_LOW ) {
         gpio_put(CHARGE_INHIBIT_PIN, 0);
     } else {
@@ -115,17 +122,21 @@ void Io::enable_charge_inhibit() {
     }
 }
 
-void Io::disable_charge_inhibit() {
-    printf("Disabling charge inhibit\n");
+void Io::disable_charge_inhibit(std::string context) {
+    printf("Disabling charge inhibit : %s\n", context.c_str());
     if ( CHARGE_INHIBIT_ACTIVE_LOW ) {
-        gpio_put(CHARGE_INHIBIT_PIN, 0);
-    } else {
         gpio_put(CHARGE_INHIBIT_PIN, 1);
+    } else {
+        gpio_put(CHARGE_INHIBIT_PIN, 0);
     }
 }
 
 bool Io::charge_is_inhibited() {
-    return gpio_get(CHARGE_INHIBIT_PIN);
+    if ( CHARGE_INHIBIT_ACTIVE_LOW ) {
+        return !gpio_get(CHARGE_INHIBIT_PIN);
+    } else {
+        return gpio_get(CHARGE_INHIBIT_PIN);
+    }
 }
 
 // HEATER output

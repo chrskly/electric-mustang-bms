@@ -63,7 +63,7 @@ bool handle_battery_CAN_messages(struct repeating_timer *t) {
 }
 
 void enable_handle_battery_CAN_messages() {
-    add_repeating_timer_ms(10, handle_battery_CAN_messages, NULL, &handleBatteryCANMessagesTimer);
+    add_repeating_timer_ms(5, handle_battery_CAN_messages, NULL, &handleBatteryCANMessagesTimer);
 }
 
 

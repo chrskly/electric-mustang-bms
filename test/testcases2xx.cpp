@@ -53,7 +53,7 @@ bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery) {
     battery->set_all_temperatures(-1);
 
     // Wait for CHARGE_INHIBIT to activate
-    printf("  > Waiting for CHARGE_INHIBIT to activate\n");
+    printf("    > Waiting for CHARGE_INHIBIT to activate\n");
     if ( ! wait_for_charge_inhibit_state(bms, true, 2000) ) {
         printf("    > CHARGE_INHIBIT did not activate in time\n");
         printf("    > Test failed\n");
@@ -61,7 +61,7 @@ bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery) {
     }
 
     // Set the temperature to 10C
-    printf("  > Setting all temperatures to 10C\n");
+    printf("    > Setting all temperatures to 10C\n");
     battery->set_all_temperatures(10);
 
     // Wait for CHARGE_INHIBIT to deactivate

@@ -57,6 +57,7 @@ bool wait_for_charge_inhibit_state(Bms* bms, bool state, int timeout) {
 bool wait_for_bms_state(Bms* bms, BmsState state, int timeout) {
     clock_t startTime = get_clock();
     while (bms->get_state() != state) {
+        //printf("Comparing %d to %d\n", bms->get_state(), state);
         if (get_clock() - startTime > timeout) {
             return false;
         }

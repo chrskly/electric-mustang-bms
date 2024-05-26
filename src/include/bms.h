@@ -55,13 +55,13 @@ class Bms {
         void set_watchdog_reboot(bool value);
 
         // DRIVE_INHIBIT
-        void enable_drive_inhibit();
-        void disable_drive_inhibit();
+        void enable_drive_inhibit(std::string context);
+        void disable_drive_inhibit(std::string context);
         bool drive_is_inhibited();
 
         // CHARGE_INHIBIT
-        void enable_charge_inhibit();
-        void disable_charge_inhibit();
+        void enable_charge_inhibit(std::string context);
+        void disable_charge_inhibit(std::string context);
         bool charge_is_inhibited();
 
         // HEATER

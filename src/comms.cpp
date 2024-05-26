@@ -143,17 +143,17 @@ bool send_bms_state_message(struct repeating_timer *t) {
     bmsStateFrame.can_dlc = 8;
 
     if ( bms.get_state() == &state_standby ) {
-        bmsStateFrame.data[0] = 0x00;
-    } else if ( bms.get_state() == &state_drive ) {
         bmsStateFrame.data[0] = 0x01;
-    } else if ( bms.get_state() == &state_charging ) {
+    } else if ( bms.get_state() == &state_drive ) {
         bmsStateFrame.data[0] = 0x02;
-    } else if ( bms.get_state() == &state_batteryEmpty ) {
+    } else if ( bms.get_state() == &state_charging ) {
         bmsStateFrame.data[0] = 0x03;
-    } else if ( bms.get_state() == &state_overTempFault ) {
+    } else if ( bms.get_state() == &state_batteryEmpty ) {
         bmsStateFrame.data[0] = 0x04;
-    } else if ( bms.get_state() == &state_illegalStateTransitionFault ) {
+    } else if ( bms.get_state() == &state_overTempFault ) {
         bmsStateFrame.data[0] = 0x05;
+    } else if ( bms.get_state() == &state_illegalStateTransitionFault ) {
+        bmsStateFrame.data[0] = 0x06;
     } else {
         bmsStateFrame.data[0] = 0xFF;
     }

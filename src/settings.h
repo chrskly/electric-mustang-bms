@@ -93,7 +93,7 @@ const bool DRIVE_INHIBIT_ACTIVE_LOW = true;       // Is the drive inhibit signal
 #define CELL_FULL_VOLTAGE 4000
 
 #define MINIMUM_TEMPERATURE -20         // 
-#define MINIMUM_CHARGING_TEMPERATURE 0  // Disallow charging below this temperature
+#define MINIMUM_CHARGING_TEMPERATURE 1  // Disallow charging below this temperature
 #define WARNING_TEMPERATURE 30          // 
 #define MAXIMUM_TEMPERATURE 50          // Stop everything if the battery is above this temperature
 

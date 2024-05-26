@@ -22,6 +22,7 @@
 #include "include/pack.h"
 #include "include/module.h"
 #include "include/battery.h"
+#include "include/bms.h"
 
 BatteryPack::BatteryPack() {}
 
@@ -182,6 +183,7 @@ void BatteryPack::read_message() {
 
         // BMS state message
         if ( frame.can_id == 0x352 ) {
+            printf("Received CAN fram 0x352 : %d\n", static_cast<BmsState>(frame.data[0]));
             // State
             bms->set_state(static_cast<BmsState>(frame.data[0]));
             // Error bits
