@@ -20,10 +20,13 @@
 #ifndef BMS_TEST_INCLUDE_BMS_H_
 #define BMS_TEST_INCLUDE_BMS_H_
 
-//#include "include/battery.h"
+#include "hardware/timer.h"
+#include "include/shunt.h"
+#include "mcp2515/mcp2515.h"
+#include "include/battery.h"
 
 enum BmsState : uint8_t {
-    STATE_IDLE,
+    STATE_STANDBY,
     STATE_DRIVE,
     STATE_BATTERY_HEATING,
     STATE_CHARGING,
@@ -51,11 +54,14 @@ class Bms {
         int16_t maxChargeCurrent;     // Maximum current that can be drawn from the battery
         int16_t maxDischargeCurrent;  // Maximum current that can be drawn from the battery
         int64_t moduleLiveness;       // Bitfield of module liveness
+        MCP2515* CAN;
+        Shunt* shunt;
+        Battery battery;
 
     public:
         Bms();
-        Bms(int _numPacks);
-        void set_state(BmsState new_state);
+        Bms(Shunt* _shunt);
+        void set_state(uint8_t new_state);
         BmsState get_state();
         void set_internalError(bool new_internalError);
         void set_packsImbalanced(bool new_packsImbalanced);
@@ -78,6 +84,9 @@ class Bms {
         void set_maxChargeCurrent(int16_t new_maxChargeCurrent);
         void set_maxDischargeCurrent(int16_t new_maxDischargeCurrent);
         void set_moduleLiveness(int64_t new_moduleLiveness);
+        Battery get_battery();
+        bool send_frame(can_frame* frame);
+        bool read_frame(can_frame* frame);
 };
 
 #endif  // BMS_TEST_INCLUDE_BMS_H_

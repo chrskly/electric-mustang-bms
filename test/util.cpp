@@ -21,8 +21,24 @@
 #include <time.h>
 #include <stdio.h>
 #include <pico/stdlib.h>
+#include "mcp2515/mcp2515.h"
 
 clock_t get_clock() {
     return (clock_t) time_us_64() / 10000;
 }
 
+void zero_frame(can_frame* frame) {
+    frame->can_id = 0;
+    frame->can_dlc = 8;
+    for ( int i = 0; i < 8; i++ ) {
+        frame->data[i] = 0;
+    }
+}
+
+void print_frame(can_frame* frame) {
+    printf("[print_frame] ID: 0x%03X, DLC: %d, Data: ", static_cast<uint32_t>(frame->can_id), frame->can_dlc);
+    for ( int i = 0; i < 8; i++ ) {
+        printf("%d ", frame->data[i]);
+    }
+    printf("\n");
+}

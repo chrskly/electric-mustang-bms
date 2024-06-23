@@ -39,26 +39,26 @@ const int CS_PINS[2] = { 20, 15 };  // Chip select pins for the CAN controllers 
 
 // Inputs
 #define DRIVE_INHIBIT_PIN  13                      //
-const bool DRIVE_INHIBIT_ACTIVE_LOW = true;       // Is the drive inhibit signal active low?
+//const bool DRIVE_INHIBIT_ACTIVE_LOW = true;       // Is the drive inhibit signal active low?
 #define CHARGE_INHIBIT_PIN 11                      //
-const bool CHARGE_INHIBIT_ACTIVE_LOW = true;      // Is the charge inhibit signal active low?
+//const bool CHARGE_INHIBIT_ACTIVE_LOW = true;      // Is the charge inhibit signal active low?
 #define HEATER_ENABLE_PIN   9                      //
-const bool HEATER_ENABLE_ACTIVE_LOW = true;       // Is the heater signal active low?
+//const bool HEATER_ENABLE_ACTIVE_LOW = true;       // Is the heater signal active low?
 const int INHIBIT_CONTACTOR_PINS[2] = { 14, 12 };  //
-const bool INHIBIT_CONTACTOR_ACTIVE_LOW = true;   // Is the inhibit contactor signal active low?
+//const bool INHIBIT_CONTACTOR_ACTIVE_LOW = true;   // Is the inhibit contactor signal active low?
 
 // Outputs
 #define IGNITION_ENABLE_PIN  2  //
-const bool IGNITION_ENABLE_ACTIVE_LOW = true;  // Is the ignition signal active low?
-#define CHARGE_ENABLE_PIN    3  //
-const bool CHARGE_ENABLE_ACTIVE_LOW = true;    // Is the charge signal active low?
+//const bool IGNITION_ENABLE_ACTIVE_LOW = true;  // Is the ignition signal active low?
+#define CHARGE_ENABLE_PIN    4  //
+//const bool CHARGE_ENABLE_ACTIVE_LOW = true;    // Is the charge signal active low?
 #define IN_1_PIN            11  // unused
 #define IN_2_PIN            12  // unused
 #define IN_3_PIN            13  // unused
 #define IN_4_PIN            14  // unused
 
 
-#define NUM_PACKS         2                        // The total number of paralleled packs in this battery
+#define NUM_PACKS         1                        // The total number of paralleled packs in this battery
 #define CELLS_PER_MODULE 16                        // The number of cells in each module
 #define TEMPS_PER_MODULE  4                        // The number of temperature sensors in each module
 #define MODULES_PER_PACK  6                        // The number of modules in each pack
@@ -102,6 +102,10 @@ const bool CHARGE_ENABLE_ACTIVE_LOW = true;    // Is the charge signal active lo
 #define CHARGE_CURRENT_MIN 8                        // ~3.3kw
 
 #define BALANCE_INTERVAL 1200                       // number of seconds between balancing sessions
+
+#define CAN_MUTEX_TIMEOUT_MS 1000                   // Timeout for the CAN mutex
+#define SEND_FRAME_RETRIES 6                        // Number of times to retry sending a CAN frame
+#define READ_FRAME_RETRIES 3
 
 //// ---- CAN message IDs
 

@@ -23,27 +23,27 @@
 
 #include "include/led.h"
 
-extern Bms bms;
-
 struct repeating_timer ledBlinkTimer;
 
 bool process_led_blink_step(struct repeating_timer *t) {
-    bms.led_blink();
+    Bms* bms = static_cast<Bms*>(t->user_data);
+    bms->led_blink();
     return true;
 }
 
-StatusLight::StatusLight() {
+StatusLight::StatusLight(Bms* _bms) {
     on = false;
     counter = 0;
     onDuration = 0;
     offDuration = 0;
+    bms = _bms;
 
     // Set up the LED pin
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
 
     // timer to handle the on-ing and off-ing of the LED
-    add_repeating_timer_ms(100, process_led_blink_step, NULL, &ledBlinkTimer);
+    add_repeating_timer_ms(100, process_led_blink_step, static_cast<void*>(&bms), &ledBlinkTimer);
 }
 
 

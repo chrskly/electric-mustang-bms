@@ -20,8 +20,26 @@
 #include <stdio.h>
 #include "include/shunt.h"
 
-Shunt::Shunt(MCP2515* _CAN) {
-    MCP2515* CAN = _CAN;
+struct repeating_timer handleShuntSendTimer;
+
+bool handle_shunt_send(struct repeating_timer *t) {
+    extern Shunt shunt;
+    shunt.send_ampSeconds();
+    shunt.send_wattHours();
+    return true;
+}
+
+Shunt::Shunt() {
+    printf("[shunt] Shunt object created\n");
+}
+
+void Shunt::set_CAN_port(MCP2515* _CAN) {
+    CAN = _CAN;
+}
+
+void Shunt::enable() {
+    printf("[shunt] Enabling shunt\n");
+    add_repeating_timer_ms(1000, handle_shunt_send, NULL, &handleShuntSendTimer);
 }
 
 void Shunt::set_ampSeconds(int32_t newAmpSeconds) {

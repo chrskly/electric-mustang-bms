@@ -18,51 +18,65 @@
  */
 
 #include <stdio.h>
+#include <string>
 
 #include "hardware/gpio.h"
 #include "include/io.h"
-#include "include/battery.h"
+//#include "include/battery.h"
+#include "include/bms.h"
 #include "settings.h"
 
 // Input handlers
+// These are resistor divider inputs. High is on, low is off.
 
 void gpio_callback(uint gpio, uint32_t events) {
-    extern Battery battery;
+    extern Bms bms;
+    //extern Battery battery;
+
+    int newState;
+    std::string newStateStr;
+    //printf("GPIO %d event %d\n", gpio, events);
     if ( gpio == DRIVE_INHIBIT_PIN ) {
-        if ( gpio_get(DRIVE_INHIBIT_PIN) == DRIVE_INHIBIT_ACTIVE_LOW ) {
-            battery.get_bms()->set_inhibitDrive(false);
-        } else {
-            battery.get_bms()->set_inhibitDrive(true);
-        }
+        newState = gpio_get(DRIVE_INHIBIT_PIN);
+        newStateStr = newState == 1 ? "on" : "off";
+        printf("    * Drive inhibit signal changed to : %s\n", newStateStr.c_str());
+        bms.set_inhibitDrive(newState == 1);
     }
     if ( gpio == CHARGE_INHIBIT_PIN ) {
-        if ( gpio_get(CHARGE_INHIBIT_PIN) == CHARGE_INHIBIT_ACTIVE_LOW ) {
-            battery.get_bms()->set_inhibitCharge(false);
-        } else {
-            battery.get_bms()->set_inhibitCharge(true);
-        }
+        newState = gpio_get(CHARGE_INHIBIT_PIN);
+        newStateStr = newState == 1 ? "on" : "off";
+        printf("    * Charge inhibit signal changed to : %s\n", newStateStr.c_str());
+        bms.set_inhibitCharge(newState == 1);
     }
     if ( gpio == INHIBIT_CONTACTOR_PINS[0] ) { // batt1 inhibit
-        if ( gpio_get(INHIBIT_CONTACTOR_PINS[0]) == INHIBIT_CONTACTOR_ACTIVE_LOW ) {
-            battery.get_pack(0).set_inhibit(false);
-        } else {
-            battery.get_pack(0).set_inhibit(true);
-        }
+        newState = gpio_get(INHIBIT_CONTACTOR_PINS[0]);
+        newStateStr = newState == 1 ? "on" : "off";
+        printf("    * Battery 1 inhibit signal changed to : %s\n", newStateStr.c_str());
+        bms.get_battery().get_pack(0)->set_inhibit(newState == 1);
     }
     if ( gpio == INHIBIT_CONTACTOR_PINS[1] ) { // batt2 inhibit
-        if ( gpio_get(INHIBIT_CONTACTOR_PINS[1]) == INHIBIT_CONTACTOR_ACTIVE_LOW ) {
-            battery.get_pack(1).set_inhibit(false);
-        } else {
-            battery.get_pack(1).set_inhibit(true);
-        }
+        newState = gpio_get(INHIBIT_CONTACTOR_PINS[1]);
+        newStateStr = newState == 1 ? "on" : "off";
+        printf("    * Battery 2 inhibit signal changed to : %s\n", newStateStr.c_str());
+        bms.get_battery().get_pack(1)->set_inhibit(newState == 1);
     }
 }
 
 void enable_listen_for_input_signals() {
-    gpio_set_pulls(DRIVE_INHIBIT_PIN, !DRIVE_INHIBIT_ACTIVE_LOW, DRIVE_INHIBIT_ACTIVE_LOW);
-    gpio_set_pulls(CHARGE_INHIBIT_PIN, !CHARGE_INHIBIT_ACTIVE_LOW, CHARGE_INHIBIT_ACTIVE_LOW);
-    gpio_set_pulls(INHIBIT_CONTACTOR_PINS[0], !INHIBIT_CONTACTOR_ACTIVE_LOW, INHIBIT_CONTACTOR_ACTIVE_LOW);
-    gpio_set_pulls(INHIBIT_CONTACTOR_PINS[1], !INHIBIT_CONTACTOR_ACTIVE_LOW, INHIBIT_CONTACTOR_ACTIVE_LOW);
+    printf("Enabling input signal listeners\n");
+    
+    gpio_init(DRIVE_INHIBIT_PIN);
+    gpio_set_dir(DRIVE_INHIBIT_PIN, GPIO_IN);
+
+    gpio_init(CHARGE_INHIBIT_PIN);
+    gpio_set_dir(CHARGE_INHIBIT_PIN, GPIO_IN);
+
+    gpio_init(INHIBIT_CONTACTOR_PINS[0]);
+    gpio_set_dir(INHIBIT_CONTACTOR_PINS[0], GPIO_IN);
+
+    gpio_init(INHIBIT_CONTACTOR_PINS[1]);
+    gpio_set_dir(INHIBIT_CONTACTOR_PINS[1], GPIO_IN);
+
     gpio_set_irq_enabled_with_callback(DRIVE_INHIBIT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
     gpio_set_irq_enabled(CHARGE_INHIBIT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
     gpio_set_irq_enabled(INHIBIT_CONTACTOR_PINS[0], GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
@@ -71,21 +85,18 @@ void enable_listen_for_input_signals() {
 
 
 // Outputs
+// We're driving low side switches here. A high signal activates the switch which grounds whatever we're driving. In testing
+// we're driving relays because we ulitmately want to generate a 12V signal for the digitial inputs on the BMS side.
+// high => on, low => off
 
 void set_ignition_state(bool state) {
-    printf("Setting ignition state to %d\n", state);
-    if ( IGNITION_ENABLE_ACTIVE_LOW == state ) {
-        gpio_put(IGNITION_ENABLE_PIN, 0);
-    } else {
-        gpio_put(IGNITION_ENABLE_PIN, 1);
-    }
+    std::string stateStr = state ? "on" : "off";
+    printf("    * Setting ignition state to %s\n", stateStr.c_str());
+    gpio_put(IGNITION_ENABLE_PIN, state);
 }
 
 void set_charge_enable_state(bool state) {
-    printf("Setting charge enable state to %d\n", state);
-    if ( CHARGE_ENABLE_ACTIVE_LOW == state ) {
-        gpio_put(CHARGE_ENABLE_PIN, 0);
-    } else {
-        gpio_put(CHARGE_ENABLE_PIN, 1);
-    }
+    std::string stateStr = state ? "on" : "off";
+    printf("    * Setting charge enable state to %s\n", stateStr.c_str());
+    gpio_put(CHARGE_ENABLE_PIN, state);
 }

@@ -33,6 +33,6 @@ add_executable(bms
 
 pico_add_extra_outputs(bms)
 
-target_link_libraries(bms pico_stdlib hardware_spi)
+target_link_libraries(bms pico_stdlib hardware_spi pico_multicore)
 
 target_include_directories(bms PRIVATE include . )

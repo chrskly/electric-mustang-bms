@@ -29,23 +29,30 @@
 extern Bms bms;
 
 // Input signal handler
+// These are resistor divider inputs. High is on, low is off.
 
 void gpio_callback(uint gpio, uint32_t events) {
     extern State state;
+    int newState;
+    std::string newStateStr;
     if ( gpio == IGNITION_ENABLE_PIN ) {
-        printf("Ignition signal changed to : %d", gpio_get(IGNITION_ENABLE_PIN));
-        if ( IGNITION_ENABLE_ACTIVE_LOW == gpio_get(IGNITION_ENABLE_PIN) ) {
-            bms.send_event(E_IGNITION_OFF);
-        } else {
+        newState = gpio_get(IGNITION_ENABLE_PIN);
+        newStateStr = newState == 1 ? "on" : "off";
+        printf("    * Ignition signal changed to : %s\n", newStateStr.c_str());
+        if ( newState ) {
             bms.send_event(E_IGNITION_ON);
+        } else {
+            bms.send_event(E_IGNITION_OFF);
         }
     }
     if ( gpio == CHARGE_ENABLE_PIN ) {
-        printf("Charge signal changed to : %d", gpio_get(CHARGE_ENABLE_PIN));
-        if ( CHARGE_ENABLE_ACTIVE_LOW == gpio_get(CHARGE_ENABLE_PIN) ) {
-            bms.send_event(E_CHARGING_TERMINATED);
-        } else {
+        newState = gpio_get(CHARGE_ENABLE_PIN);
+        newStateStr = newState == 1 ? "on" : "off";
+        printf("Charge signal changed to : %s\n", newStateStr.c_str());
+        if ( newState ) {
             bms.send_event(E_CHARGING_INITIATED);
+        } else {
+            bms.send_event(E_CHARGING_TERMINATED);
         }
     }
 }
@@ -55,108 +62,77 @@ Io::Io() {
     chargeEnable = false;
 
     // IGNITION input
+    gpio_init(IGNITION_ENABLE_PIN);
     gpio_set_dir(IGNITION_ENABLE_PIN, GPIO_IN);
-    gpio_set_pulls(IGNITION_ENABLE_PIN, !IGNITION_ENABLE_ACTIVE_LOW, IGNITION_ENABLE_ACTIVE_LOW);
     gpio_set_irq_enabled_with_callback(IGNITION_ENABLE_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
 
     // CHARGE_ENABLE input
+    gpio_init(CHARGE_ENABLE_PIN);
     gpio_set_dir(CHARGE_ENABLE_PIN, GPIO_IN);
-    gpio_set_pulls(CHARGE_ENABLE_PIN, !CHARGE_ENABLE_ACTIVE_LOW, CHARGE_ENABLE_ACTIVE_LOW);
     gpio_set_irq_enabled(CHARGE_ENABLE_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
 
     // DRIVE_INHIBIT output
     gpio_init(DRIVE_INHIBIT_PIN);
     gpio_set_dir(DRIVE_INHIBIT_PIN, GPIO_OUT);
-    gpio_set_pulls(DRIVE_INHIBIT_PIN, !DRIVE_INHIBIT_ACTIVE_LOW, DRIVE_INHIBIT_ACTIVE_LOW);
     disable_drive_inhibit("initialization\n");
 
     // CHARGE_INHIBIT output
     gpio_init(CHARGE_INHIBIT_PIN);
-    gpio_set_pulls(CHARGE_INHIBIT_PIN, !CHARGE_INHIBIT_ACTIVE_LOW, CHARGE_INHIBIT_ACTIVE_LOW);
     gpio_set_dir(CHARGE_INHIBIT_PIN, GPIO_OUT);
     disable_charge_inhibit("initialization\n");
 
     // Heater output
     gpio_init(HEATER_ENABLE_PIN);
     gpio_set_dir(HEATER_ENABLE_PIN, GPIO_OUT);
-    gpio_set_pulls(HEATER_ENABLE_PIN, !HEATER_ENABLE_ACTIVE_LOW, HEATER_ENABLE_ACTIVE_LOW);
     disable_heater();
 }
+
+// REMINDER : THESE OUTPUTS ARE A LOW SIDE SWITCHES.
+//     gpio high == on  == output low
+//     gpio low  == off == output high/floating?
 
 // DRIVE_INHIBIT output
 
 void Io::enable_drive_inhibit(std::string context) {
-    printf("Enabling drive inhibit : %s\n", context.c_str());
-    if ( DRIVE_INHIBIT_ACTIVE_LOW ) {
-        gpio_put(DRIVE_INHIBIT_PIN, 0);
-    } else {
-        gpio_put(DRIVE_INHIBIT_PIN, 1);
-    }
+    printf("    * Enabling drive inhibit : %s\n", context.c_str());
+    gpio_put(DRIVE_INHIBIT_PIN, 1);
 }
 
 void Io::disable_drive_inhibit(std::string context) {
-    printf("Disabling drive inhibit : %s\n", context.c_str());
-    if ( DRIVE_INHIBIT_ACTIVE_LOW ) {
-        gpio_put(DRIVE_INHIBIT_PIN, 1);
-    } else {
-        gpio_put(DRIVE_INHIBIT_PIN, 0);
-    }
+    printf("    * Disabling drive inhibit : %s\n", context.c_str());
+    gpio_put(DRIVE_INHIBIT_PIN, 0);
 }
 
 bool Io::drive_is_inhibited() {
-    if ( DRIVE_INHIBIT_ACTIVE_LOW ) {
-        return !gpio_get(DRIVE_INHIBIT_PIN);
-    } else {
-        return gpio_get(DRIVE_INHIBIT_PIN);
-    }
+    return gpio_get(DRIVE_INHIBIT_PIN);
 }
 
 // CHARGE_INHIBIT output
 
 void Io::enable_charge_inhibit(std::string context) {
-    printf("Enabling charge inhibit : %s\n", context.c_str());
-    if ( CHARGE_INHIBIT_ACTIVE_LOW ) {
-        gpio_put(CHARGE_INHIBIT_PIN, 0);
-    } else {
-        gpio_put(CHARGE_INHIBIT_PIN, 1);
-    }
+    printf("    * Enabling charge inhibit : %s\n", context.c_str());
+    gpio_put(CHARGE_INHIBIT_PIN, 1);
 }
 
 void Io::disable_charge_inhibit(std::string context) {
-    printf("Disabling charge inhibit : %s\n", context.c_str());
-    if ( CHARGE_INHIBIT_ACTIVE_LOW ) {
-        gpio_put(CHARGE_INHIBIT_PIN, 1);
-    } else {
-        gpio_put(CHARGE_INHIBIT_PIN, 0);
-    }
+    printf("    * Disabling charge inhibit : %s\n", context.c_str());
+    gpio_put(CHARGE_INHIBIT_PIN, 0);
 }
 
 bool Io::charge_is_inhibited() {
-    if ( CHARGE_INHIBIT_ACTIVE_LOW ) {
-        return !gpio_get(CHARGE_INHIBIT_PIN);
-    } else {
-        return gpio_get(CHARGE_INHIBIT_PIN);
-    }
+    return gpio_get(CHARGE_INHIBIT_PIN);
 }
 
 // HEATER output
 
 void Io::enable_heater() {
     printf("Enabling heater\n");
-    if ( HEATER_ENABLE_ACTIVE_LOW ) {
-        gpio_put(HEATER_ENABLE_PIN, 0);
-    } else {
-        gpio_put(HEATER_ENABLE_PIN, 1);
-    }
+    gpio_put(HEATER_ENABLE_PIN, 1);
 }
 
 void Io::disable_heater() {
     printf("Disabling heater\n");
-    if ( HEATER_ENABLE_ACTIVE_LOW ) {
-        gpio_put(HEATER_ENABLE_PIN, 1);
-    } else {
-        gpio_put(HEATER_ENABLE_PIN, 0);
-    }
+    gpio_put(HEATER_ENABLE_PIN, 0);
 }
 
 bool Io::heater_is_enabled() {

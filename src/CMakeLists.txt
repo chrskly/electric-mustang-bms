@@ -20,7 +20,6 @@ add_executable(bms
         pack.cpp
         battery.cpp
         bms.cpp
-        comms.cpp
         statemachine.cpp
         led.cpp
         CRC8.cpp
@@ -30,6 +29,6 @@ add_executable(bms
 
 pico_add_extra_outputs(bms)
 
-target_link_libraries(bms pico_stdlib hardware_spi)
+target_link_libraries(bms pico_stdlib hardware_spi pico_multicore)
 
 target_include_directories(bms PRIVATE include . )

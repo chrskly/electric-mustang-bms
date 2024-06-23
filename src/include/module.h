@@ -20,6 +20,8 @@
 #ifndef BMS_SRC_INCLUDE_MODULE_H_
 #define BMS_SRC_INCLUDE_MODULE_H_
 
+
+//#include "include/pack.h"
 #include "settings.h"
 
 class BatteryPack;

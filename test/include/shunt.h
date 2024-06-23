@@ -37,7 +37,10 @@ class Shunt {
       MCP2515* CAN;
 
    public:
-      Shunt(MCP2515* CAN);
+      //Shunt(MCP2515* CAN);
+      Shunt();
+      void set_CAN_port(MCP2515* _CAN);
+      void enable();
       void set_ampSeconds(int32_t newAmpSeconds);
       void send_ampSeconds();
       void set_wattHours(int32_t newWattHours);

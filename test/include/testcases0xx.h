@@ -22,7 +22,7 @@
 
 #include "include/battery.h"
 
-bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* battery);
-bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery);
+bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* battery, Bms* bms);
+bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery, Bms* bms);
 
 #endif // BMS_TEST_INCLUDE_TESTCASES0XX_H_

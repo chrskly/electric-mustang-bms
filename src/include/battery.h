@@ -22,9 +22,12 @@
 
 #include "include/pack.h"
 #include "include/bms.h"
+//#include "include/io.h"
 #include "settings.h"
 
-class Bms;
+//class Bms;
+class Io;
+//class BatteryPack;
 
 class Battery {
    private:
@@ -39,9 +42,13 @@ class Battery {
       float lowestSensorTemperature;   //
       float highestSensorTemperature;  //
       Bms* bms;
+      mutex_t* canMutex;
+      Io* io;
 
    public:
-      Battery();
+      Battery() {};
+      //Battery(mutex_t* _canMutex, Io* _io);
+      Battery(Io* _io);
       void initialise(Bms* _bms);
       int print();
 
@@ -78,8 +85,10 @@ class Battery {
       // Contactors
       void disable_inhibit_for_drive();
       void disable_inhibit_for_charge();
-      void inhibit_contactor_close();
+      void enable_inhibit_contactor_close();
+      void disable_inhibit_contactor_close();
       bool one_or_more_contactors_inhibited();
+      bool all_contactors_inhibited();
 };
 
 #endif  // BMS_SRC_INCLUDE_BATTERY_H_

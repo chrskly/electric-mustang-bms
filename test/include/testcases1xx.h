@@ -22,14 +22,14 @@
 
 #include "include/battery.h"
 
-bool test_case_101_inhibit_battery_contactor_close_when_pack_voltages_differ(Battery* battery);
-bool test_case_102_do_not_inhibit_battery_contactor_close_when_pack_voltage_differ_and_ignition_is_on(Battery* battery);
-bool test_case_103_ignition_turned_on_when_battery_contactors_are_inhibited(Battery* battery);
-bool test_case_104_ignition_turned_off_when_battery_contactors_are_inhibited(Battery* battery);
-bool test_case_105_start_charging_when_battery_contactors_are_inhibited(Battery* battery);
-bool test_case_106_stop_charging_when_battery_contactors_are_inhibited(Battery* battery);
-bool test_case_107_charging_on_one_pack_and_voltage_equalises(Battery* battery);
-bool test_case_108_driving_on_one_pack_and_voltage_equalises(Battery* battery);
-bool test_case_109_driving_on_one_pack_then_begin_charging_while_ignition_still_on(Battery* battery);
+bool test_case_101_inhibit_battery_contactor_close_when_pack_voltages_differ(Battery* battery, Bms* bms);
+bool test_case_102_do_not_inhibit_battery_contactor_close_when_pack_voltage_differ_and_ignition_is_on(Battery* battery, Bms* bms);
+bool test_case_103_ignition_turned_on_when_battery_contactors_are_inhibited(Battery* battery, Bms* bms);
+bool test_case_104_ignition_turned_off_when_battery_contactors_are_inhibited(Battery* battery, Bms* bms);
+bool test_case_105_start_charging_when_battery_contactors_are_inhibited(Battery* battery, Bms* bms);
+bool test_case_106_stop_charging_when_battery_contactors_are_inhibited(Battery* battery, Bms* bms);
+bool test_case_107_charging_on_one_pack_and_voltage_equalises(Battery* battery, Bms* bms);
+bool test_case_108_driving_on_one_pack_and_voltage_equalises(Battery* battery, Bms* bms);
+bool test_case_109_driving_on_one_pack_then_begin_charging_while_ignition_still_on(Battery* battery, Bms* bms);
 
 #endif // BMS_TEST_INCLUDE_TESTCASES1XX_H_

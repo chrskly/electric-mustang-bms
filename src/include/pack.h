@@ -20,24 +20,30 @@
 #ifndef BMS_SRC_INCLUDE_PACK_H_
 #define BMS_SRC_INCLUDE_PACK_H_
 
+#include "pico/multicore.h"
+
 #include "hardware/timer.h"
 #include "mcp2515/mcp2515.h"
 
+//#include "include/bms.h"
 #include "include/module.h"
 #include "include/CRC8.h"
 #include "settings.h"
 
 class Battery;
-class BatteryModule;
+//class BatteryModule;
+class Bms;
 
 const uint8_t finalxor[12] = { 0xCF, 0xF5, 0xBB, 0x81, 0x27, 0x1D, 0x53, 0x69, 0x02, 0x38, 0x76, 0x4C };
 
 class BatteryPack {
+
    public:
       int id;
 
       BatteryPack();
-      BatteryPack(int _id, int CANCSPin, int _contactorPin, int _numModules, int _numCellsPerModule, int _numTemperatureSensorsPerModule);
+      BatteryPack(int _id, int CANCSPin, int _contactorPin, int _numModules, 
+            int _numCellsPerModule, int _numTemperatureSensorsPerModule, mutex_t* _canMutex, Bms* _bms);
 
       void set_battery(Battery* battery) { this->battery = battery; }
 
@@ -45,7 +51,7 @@ class BatteryPack {
       uint8_t getcheck(can_frame &msg, int id);
       void request_data();
       void read_message();
-      void send_message(can_frame *frame);
+      bool send_frame(can_frame *frame);
 
       void set_pack_error_status(int newErrorStatus);
       int get_pack_error_status();
@@ -78,7 +84,9 @@ class BatteryPack {
       bool contactors_are_inhibited();
 
    private:
-      MCP2515 CAN;                                     // CAN bus connection to this pack
+      MCP2515* CAN;                                     // CAN bus connection to this pack
+      mutex_t* canMutex;
+      Bms* bms;
       absolute_time_t lastUpdate;                      // Time we received last update from BMS
       int numModules;                                  //
       int numCellsPerModule;                           //

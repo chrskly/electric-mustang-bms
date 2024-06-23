@@ -21,9 +21,8 @@
 #include "include/io.h"
 #include "include/testcaseutils.h"
 
-bool test_case_201_battery_too_cold_to_charge(Battery* battery) {
+bool test_case_201_battery_too_cold_to_charge(Battery* battery, Bms* bms) {
     printf("Running test [test_case_201_battery_too_cold_to_charge]\n");
-    Bms* bms = battery->get_bms();
 
     // It doesn't matter what state we are in, CHARGE_INHIBIT should always activate when temp is too low
 
@@ -44,9 +43,8 @@ bool test_case_201_battery_too_cold_to_charge(Battery* battery) {
 
 }
 
-bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery) {
+bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery, Bms* bms) {
     printf("Running test [test_case_202_battery_warm_enough_to_charge_again]\n");
-    Bms* bms = battery->get_bms();
 
     // Set the temperature to -1C
     printf("    > Setting all temperatures to -1C\n");
@@ -62,7 +60,6 @@ bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery) {
 
     // Set the temperature to 10C
     printf("    > Setting all temperatures to 10C\n");
-    battery->set_all_temperatures(10);
 
     // Wait for CHARGE_INHIBIT to deactivate
     printf("    > Waiting for CHARGE_INHIBIT to deactivate\n");
@@ -77,14 +74,13 @@ bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery) {
 
 }
 
-bool test_case_203_too_cold_to_charge_but_charge_requested(Battery* battery) {
+bool test_case_203_too_cold_to_charge_but_charge_requested(Battery* battery, Bms* bms) {
     printf("Running test [test_case_203_too_cold_to_charge_but_charge_requested]\n");
-    Bms* bms = battery->get_bms();
 
     // Get into idle state
     printf("    > Setting state to idle\n");
-    bms->set_state(STATE_IDLE);
-    if ( ! wait_for_bms_state(bms, STATE_IDLE, 2000) ) {
+    bms->set_state(STATE_STANDBY);
+    if ( ! wait_for_bms_state(bms, STATE_STANDBY, 2000) ) {
         printf("    > Could not get into idle state\n");
         printf("    > Test failed\n");
         return false;
@@ -115,9 +111,8 @@ bool test_case_203_too_cold_to_charge_but_charge_requested(Battery* battery) {
 
 }
 
-bool test_case_204_battery_too_hot_to_charge(Battery* battery) {
+bool test_case_204_battery_too_hot_to_charge(Battery* battery, Bms* bms) {
     printf("Running test [test_case_204_battery_too_hot_to_charge]\n");
-    Bms* bms = battery->get_bms();
 
     // Set the temperature to 50C
     printf("    > Setting all temperatures to 50C\n");

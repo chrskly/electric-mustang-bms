@@ -19,12 +19,90 @@
 
 #include <stdio.h>
 #include <cstdint>
+#include "pico/multicore.h"
+#include "pico/stdlib.h"
 #include "include/bms.h"
+#include "include/battery.h"
+#include "include/util.h"
+#include "mcp2515/mcp2515.h"
+//#include "include/shunt.h"
+#include "include/util.h"
+
+
+struct repeating_timer handleMainCANMessageTimer;
+
+bool handle_main_CAN_messages(struct repeating_timer *t) {
+    extern Bms bms;
+    can_frame m;
+    zero_frame(&m);
+    if ( bms.read_frame(&m) ){
+        //printf("Message received on mainCAN : %d\n", m.can_id);
+        //print_frame(&m);
+        // If we got a message, handle it
+        switch ( m.can_id ) {
+            // BMS state message
+            case 0x352:
+                bms.set_state(m.data[0]);
+            case 0x521:
+                break;
+            default:
+                break;
+        }
+    }
+    return true;
+}
+
+void enable_handle_main_CAN_messages() {
+    add_repeating_timer_ms(10, handle_main_CAN_messages, NULL, &handleMainCANMessageTimer);
+}
+
 
 Bms::Bms() {}
 
-void Bms::set_state(BmsState new_state) {
-    state = new_state;
+Bms::Bms(Shunt* _shunt) {
+    extern mutex_t canMutex;
+    shunt = _shunt;
+
+    printf("[bms] setting up main CAN port\n");
+    mutex_enter_timeout_ms(&canMutex, 10000);
+    CAN = new MCP2515(SPI_PORT, MAIN_CAN_CS, SPI_MISO, SPI_MOSI, SPI_CLK, 500000);
+    MCP2515::ERROR result = CAN->reset();
+    if ( result != MCP2515::ERROR_OK ) {
+        printf("[bms] error resetting main CAN port : %d\n", result);
+    }
+    result = CAN->setBitrate(CAN_500KBPS, MCP_8MHZ);
+    if ( result != MCP2515::ERROR_OK ) {
+        printf("[bms] WARNING setting bitrate on main CAN port : %d\n", result);
+    }
+    result = CAN->setNormalMode();
+    if ( result != MCP2515::ERROR_OK ) {
+        printf("[bms] WARNING setting normal mode on main CAN port : %d\n", result);
+    }
+    mutex_exit(&canMutex);
+    printf("[bms] main CAN port memory address : %p\n", CAN);
+
+    printf("[bms] sending 5 test messages\n");
+    for ( int i = 0; i < 5; i++ ) {
+        //printf(" * [BMS] Main CAN port status : %d\n", CAN.getStatus());
+        can_frame m;
+        m.can_id = 0x100 + i;
+        m.can_dlc = 8;
+        for ( int j = 0; j < 8; j++ ) {
+            m.data[j] = j;
+        }
+        this->send_frame(&m);
+    }
+
+    shunt->set_CAN_port(CAN);
+    shunt->enable();
+
+    printf("[bms] enabling CAN message handlers\n");
+    // main CAN (in)
+    add_repeating_timer_ms(10, handle_main_CAN_messages, NULL, &handleMainCANMessageTimer);
+}
+
+void Bms::set_state(uint8_t new_state) {
+    state = static_cast<BmsState>(new_state);
 }
 
 BmsState Bms::get_state() {
@@ -113,4 +191,96 @@ void Bms::set_maxDischargeCurrent(int16_t new_maxDischargeCurrent) {
 
 void Bms::set_moduleLiveness(int64_t new_moduleLiveness) {
     moduleLiveness = new_moduleLiveness;
+}
+
+Battery Bms::get_battery() {
+    return battery;
+}
+
+// Comms
+
+bool Bms::send_frame(can_frame* frame) {
+    extern mutex_t canMutex;
+    //printf(" [send_frame] Beginning to send frame\n");
+    for ( int t = 0; t < SEND_FRAME_RETRIES; t++ ) {
+
+        printf("[bms][send_frame] 0x%03X %d [ ", frame->can_id, frame->can_dlc);
+        for ( int i = 0; i < frame->can_dlc; i++ ) {
+            printf("%02X ", frame->data[i]);
+        }
+        printf("]\n");
+
+        // Try to get the mutex.
+        //printf(" [send_frame %d] Trying to get the mutex\n", t);
+        if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
+            //sleep_ms(1);
+            continue;
+        }
+        // Send the message
+        //printf(" [send_frame %d] Sending message\n", t);
+        MCP2515::ERROR result = this->CAN->sendMessage(frame);
+        //printf(" [send_frame %d] Release mutex\n", t);
+        mutex_exit(&canMutex);
+        // Sending failed, try again
+        if ( result != MCP2515::ERROR_OK ) {
+
+            if ( result == MCP2515::ERROR_FAIL ) {
+                printf("[bms][send_frame %d] ERROR_FAIL, try again\n", t);
+            } else if ( result == MCP2515::ERROR_ALLTXBUSY ) {
+                printf("[bms][send_frame %d] ERROR_ALLTXBUSY, try again\n", t);
+            } else if ( result == MCP2515::ERROR_FAILINIT ) {
+                printf("[bms][send_frame %d] ERROR_FAILINIT, try again\n", t);
+            } else if ( result == MCP2515::ERROR_FAILTX ) {
+                printf("[bms][send_frame %d] ERROR_FAILTX, try again\n", t);
+            } else if ( result == MCP2515::ERROR_NOMSG ) {
+                printf("[bms][send_frame %d] ERROR_NOMSG, try again\n", t);
+            }
+
+            //printf(" [send_frame %d] Sending failed, try again\n", t);
+            //sleep_ms(1);
+            continue;
+        }
+        //printf("[bms][send_frame %d] Frame sent\n", t);
+        return true;
+    }
+    // Failed to send after all retries
+    return false;
+}
+
+bool Bms::read_frame(can_frame* frame) {
+    extern mutex_t canMutex;
+    for ( int t = 0; t < READ_FRAME_RETRIES; t++ ) {    
+        if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
+            //sleep_ms(1);
+            return false;
+        }
+        MCP2515::ERROR result = this->CAN->readMessage(frame);
+        mutex_exit(&canMutex);
+        // Reading failed, try again
+        if ( result != MCP2515::ERROR_OK ) {
+            if ( result == MCP2515::ERROR_FAIL ) {
+                printf(" [send_frame %d] ERROR_FAIL, try again\n", t);
+            } else if ( result == MCP2515::ERROR_ALLTXBUSY ) {
+                printf(" [send_frame %d] ERROR_ALLTXBUSY, try again\n", t);
+            } else if ( result == MCP2515::ERROR_FAILINIT ) {
+                printf(" [send_frame %d] ERROR_FAILINIT, try again\n", t);
+            } else if ( result == MCP2515::ERROR_FAILTX ) {
+                printf(" [send_frame %d] ERROR_FAILTX, try again\n", t);
+            } else if ( result == MCP2515::ERROR_NOMSG ) {
+                //printf(" [send_frame %d] ERROR_NOMSG, try again\n", t);
+                return true;
+            }
+            continue;
+        } else {
+            printf("[bms][read_frame] 0x%03X %d [ ", frame->can_id, frame->can_dlc);
+            for ( int i = 0; i < frame->can_dlc; i++ ) {
+                printf("%02X ", frame->data[i]);
+            }
+            printf("]\n");
+            return true;
+        }
+        return true;
+    }
+    // Failed to read after all retries
+    return false;
 }

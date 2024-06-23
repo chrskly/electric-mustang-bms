@@ -20,6 +20,17 @@
 #include <stdio.h>
 
 #include "include/battery.h"
+#include "include/bms.h"
+
+struct repeating_timer handleBatteryCANMessagesTimer;
+
+bool handle_battery_CAN_messages(struct repeating_timer *t) {
+    extern Bms bms;
+    bms.get_battery().read_frame();
+    return true;
+}
+
+Battery::Battery() {}
 
 Battery::Battery(int _numPacks) {
     voltage = 0;
@@ -28,16 +39,24 @@ Battery::Battery(int _numPacks) {
     lowestCellTemperature = 0;
     highestCellTemperature = 0;
     numPacks = _numPacks;
+    printf("[battery] Initialising battery with %d packs\n", numPacks);
+    for ( int p = 0; p < numPacks; p++ ) {
+        printf("[battery] Initialising battery pack %d (cs:%d, cp:%d, mpp:%d, cpm:%d, tpm:%d)\n", p, CS_PINS[p], INHIBIT_CONTACTOR_PINS[p], MODULES_PER_PACK, CELLS_PER_MODULE, TEMPS_PER_MODULE);
+        packs[p] = BatteryPack(p, CS_PINS[p], INHIBIT_CONTACTOR_PINS[p], MODULES_PER_PACK, CELLS_PER_MODULE, TEMPS_PER_MODULE);
+        printf("[battery] Initialisation of battery pack %d complete\n", p);
+        packs[p].set_battery(this);
+    }
+
+    for ( int p = 0 ; p < numPacks; p++ ) {
+        printf("[battery] pack %d id is %d\n", p, packs[p].get_id());
+    }
+
+    add_repeating_timer_ms(5, handle_battery_CAN_messages, NULL, &handleBatteryCANMessagesTimer);
 }
 
-void Battery::initialise() {
-    printf("Initialising battery with %d packs\n", numPacks);
-
+void Battery::print() {
     for ( int p = 0; p < numPacks; p++ ) {
-        printf("Initialising battery pack %d (cs:%d, cp:%d, mpp:%d, cpm:%d, tpm:%d)\n", p, CS_PINS[p], INHIBIT_CONTACTOR_PINS[p], MODULES_PER_PACK, CELLS_PER_MODULE, TEMPS_PER_MODULE);
-        packs[p] = BatteryPack(p, CS_PINS[p], INHIBIT_CONTACTOR_PINS[p], MODULES_PER_PACK, CELLS_PER_MODULE, TEMPS_PER_MODULE);
-        printf("Initialisation of battery pack %d complete\n", p);
-        packs[p].set_battery(this);
+        packs[p].print();
     }
 }
 
@@ -45,8 +64,8 @@ int Battery::get_num_packs() {
     return numPacks;
 }
 
-BatteryPack Battery::get_pack(int pack) {
-    return packs[pack];
+BatteryPack* Battery::get_pack(int pack) {
+    return &packs[pack];
 }
 
 void Battery::set_all_cell_voltages(uint16_t newCellVoltage) {
@@ -60,14 +79,15 @@ uint16_t Battery::get_voltage_from_soc(int8_t soc) {
 }
 
 // Check for and read messages from each pack 
-void Battery::read_message() {
+void Battery::read_frame() {
     for ( int p = 0; p < numPacks; p++ ) {
-        packs[p].read_message();
+        printf("[battery] Reading frame from pack %d\n", p);
+        packs[p].read_frame();
     }
 }
 
 Bms* Battery::get_bms() {
-    return &bms;
+    return bms;
 }
 
 // Set all temperatures in all packs

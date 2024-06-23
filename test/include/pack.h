@@ -33,18 +33,22 @@ class BatteryPack {
       int id;
       BatteryPack();
       BatteryPack(int _id, int CANCSPin, int _contactorPin, int _numModules, int _numCellsPerModule, int _numTemperatureSensorsPerModule);
+      void print();
+      bool send_frame(can_frame* frame);
       void set_all_cell_voltages(uint16_t newVoltage);
       void set_battery(Battery* battery) { this->battery = battery; }
       void send_module_voltages(uint8_t moduleId);
       void send_module_temperatures(uint8_t moduleId);
-      void read_message();
-      void send_message(can_frame *frame);
+      void read_frame();
+      bool send_message(can_frame *frame);
       bool get_inhibit();
       void set_inhibit(bool inhibit);
       void set_all_temperatures(int8_t newTemperature);
 
+      int get_id() { return id; }
+
    private:
-      MCP2515 CAN;                                     // CAN bus connection to this pack
+      MCP2515* CAN;                                // CAN bus connection to this pack
       int numModules;                                  //
       int numCellsPerModule;                           //
       int numTemperatureSensorsPerModule;              //

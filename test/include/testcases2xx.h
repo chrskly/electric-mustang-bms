@@ -22,9 +22,9 @@
 
 #include "include/battery.h"
 
-bool test_case_201_battery_too_cold_to_charge(Battery* battery);
-bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery);
-bool test_case_203_too_cold_to_charge_but_charge_requested(Battery* battery);
-bool test_case_204_battery_too_hot_to_charge(Battery* battery);
+bool test_case_201_battery_too_cold_to_charge(Battery* battery, Bms* bms);
+bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery, Bms* bms);
+bool test_case_203_too_cold_to_charge_but_charge_requested(Battery* battery, Bms* bms);
+bool test_case_204_battery_too_hot_to_charge(Battery* battery, Bms* bms);
 
 #endif // BMS_TEST_INCLUDE_TESTCASES2XX_H_

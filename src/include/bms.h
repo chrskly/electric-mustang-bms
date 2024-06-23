@@ -26,24 +26,38 @@
 #include "include/io.h"
 #include "include/led.h"
 #include "include/battery.h"
+#include "include/shunt.h"
+#include "include/util.h"
 
 
-class Io;
+bool send_limits_message(struct repeating_timer *t);
+bool send_bms_state_message(struct repeating_timer *t);
+bool send_module_liveness_message(struct repeating_timer *t);
+bool send_soc_message(struct repeating_timer *t);
+bool send_status_message(struct repeating_timer *t);
+bool send_alarm_message(struct repeating_timer *t);
+bool handle_main_CAN_messages(struct repeating_timer *t);
+
 
 class Bms {
     private:
         Battery* battery;
         State state;
         Io* io;
+        Shunt* shunt;
         StatusLight statusLight;
         int8_t maxChargeCurrent;     //
         int8_t maxDischargeCurrent;  //
         uint8_t soc;
         bool internalError;
         bool watchdogReboot;
+        clock_t lastTimePackVoltagesMatched;
+        MCP2515* CAN;
+        struct can_frame canFrame;
 
     public:
-        Bms(Battery* battery, Io* io);
+        Bms() {};
+        Bms(Battery* battery, Io* io, Shunt* shunt);
 
         // State and events
         void set_state(State _state, std::string reason);
@@ -94,6 +108,14 @@ class Bms {
 
         // Status light
         void led_blink();
+
+        void pack_voltages_match_heartbeat();
+        bool packs_imbalanced_ttl_expired();
+
+        // CAN
+        bool send_frame(can_frame* frame);
+        bool read_frame(can_frame* frame);
+        void send_shunt_reset_message();
 };
 
 #endif  // BMS_SRC_INCLUDE_BMS_H_

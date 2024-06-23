@@ -20,6 +20,10 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include "mcp2515/mcp2515.h"
+
 clock_t get_clock();
+void zero_frame(can_frame* frame);
+void print_frame(can_frame* frame);
 
 #endif

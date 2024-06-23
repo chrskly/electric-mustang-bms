@@ -27,8 +27,7 @@ BatteryModule::BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _nu
     // Point back to parent pack
     pack = _pack;
     // Initialise all cell voltages to zero
-    // numCells = _numCells;
-    numCells = 16;
+    numCells = _numCells;
     for ( int c = 0; c < numCells; c++ ) {
         cellVoltage[c] = 3450 + c;
     }
@@ -39,14 +38,25 @@ BatteryModule::BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _nu
     }
 }
 
+void BatteryModule::print() {
+    // printf("  %s", id);
+    // for ( int c = 0; c < numCells; c++ ) {
+    //     printf(" %d", cellVoltage[c]);
+    // }
+    // printf("\n");
+}
+
 uint16_t BatteryModule::get_cell_voltage(int cellId) {
     return cellVoltage[cellId];
 }
 
 void BatteryModule::set_all_cell_voltages(uint16_t newVoltage) {
+    //printf("set voltage %d :", id);
     for ( int c = 0; c < numCells; c++ ) {
+        //printf(" %d", newVoltage);
         cellVoltage[c] = newVoltage;
     }
+    //printf("\n");
 }
 
 int8_t BatteryModule::get_cell_temperature(int cellId) {

@@ -14,6 +14,22 @@ The BMS is able to inhibit the closing of the contactors in each battery pack in
 
 The car will also have precharge and main contactors in the HVJB. These are controlled by the inverter.
 
+## Compiling/Installing
+
+### Building the BMS code
+```
+cd src/build
+cmake ../
+make
+```
+
+### Building the test frameworkd code
+```
+cd test/build
+cmake ../
+make
+```
+
 ## State machine
 
 ### States
@@ -98,20 +114,32 @@ The car will also have precharge and main contactors in the HVJB. These are cont
 - A11 : GPIO_12 : IN_2
 - A12 : GPIO_14 : IN_4
 
+- B1 : BATT_2_CAN_H
+- B2 : BATT_1_CAN_H
+- B3 : MAIN_CAN_H
+- B4 : GND
+- B5 : 12V
+- B6 : GND
+- B7 : 5V
+- B8 : 5V
+- B9 : GND
+- B10 : MAIN_CAN_L
+- B11 : BATT_1_CAN_L
+- B12 : BATT_2_CAN_L
+
 ### Tester
 - A1  : GPIO_13 : IN_3  / DRIVE_INHIBIT
 - A2  : GPIO_11 : IN_1  / CHARGE_INHIBIT
 - A3  : GPIO_9  : IN_X  / HEATER_ENABLE
 - A4  : GPIO_6  : OUT_3 / 
-- A5  : GPIO_4  : OUT_1 / 
-- A6  : GPIO_3  : OUT_X / CHARGE_ENABLE
+- A5  : GPIO_4  : OUT_1 / CHARGE_ENABLE
+- A6  : GPIO_3  : OUT_X / 
 - A7  : GPIO_2  : OUT_X / IGNITION_ON
 - A8  : GPIO_5  : OUT_2 / 
-- A9  : GPIO_7  : OUT_4
+- A9  : GPIO_7  : OUT_4 /
 - A10 : GPIO_10 : IN_X  / 
-- A11 : GPIO_12 : IN_2 / BATT_2_INHIBIT
-- A12 : GPIO_14 : IN_4 / BATT_1_INHIBIT
-
+- A11 : GPIO_12 : IN_2  / BATT_2_INHIBIT
+- A12 : GPIO_14 : IN_4  / BATT_1_INHIBIT
 
 - B1 : BATT_2_CAN_H
 - B2 : BATT_1_CAN_H
@@ -152,18 +180,18 @@ The car will also have precharge and main contactors in the HVJB. These are cont
 ## To Do
 
 - [x] Fetch SoC from shunt and store in memory
-- [ ] Broadcast BMS mode
+- [x] Broadcast BMS mode
 - [x] CHARGE_ENABLE input
 - [x] IGNITION_ON input
 - [x] DRIVE_INHIBIT output
 - [ ] Use other core for comms?
 - [ ] Implement balancing
-- [ ] Implement watchdog
+- [x] Implement watchdog
 - [ ] On startup, properly detect the state we should start in and immediately switch to that state
 - [x] Emulate SimpBMS output CAN messages
 - [x] Reset ISA Shunt when battery charged to 100%
 - [x] ISA shunt heartbeat
-- [ ] Warn/alarm flags
+- [x] Warn/alarm flags
 - [x] Warn when modules are missing
 
 ## Credits

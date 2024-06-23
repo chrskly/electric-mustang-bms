@@ -21,6 +21,8 @@
 #ifndef BMS_SRC_INCLUDE_LED_H_
 #define BMS_SRC_INCLUDE_LED_H_
 
+class Bms;
+
 enum LED_MODE {
     STANDBY,
     DRIVE,
@@ -34,9 +36,11 @@ class StatusLight {
         int counter;
         int onDuration;
         int offDuration;
+        Bms* bms;
 
     public:
-        StatusLight();
+        StatusLight() {};
+        StatusLight(Bms* _bms);
         void set_mode(LED_MODE newMode);
         void led_blink();
 };

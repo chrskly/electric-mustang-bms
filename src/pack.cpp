@@ -18,7 +18,8 @@
  */
 
 #include <stdio.h>
-
+#include "pico/stdlib.h"
+#include "pico/multicore.h"
 #include "hardware/gpio.h"
 #include "include/pack.h"
 #include "include/module.h"
@@ -27,17 +28,20 @@
 #include "include/statemachine.h"
 #include "include/bms.h"
 
+#include "settings.h"
+
 
 BatteryPack::BatteryPack() {}
 
-BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _numModules, int _numCellsPerModule, int _numTemperatureSensorsPerModule) {
+BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _numModules, 
+        int _numCellsPerModule, int _numTemperatureSensorsPerModule, mutex_t* _canMutex, Bms* _bms) {
+
     id = _id;
-
-    printf("Initialising BatteryPack %d\n", id);
-
     numModules = _numModules;
     numCellsPerModule = _numCellsPerModule;
     numTemperatureSensorsPerModule = _numTemperatureSensorsPerModule;
+    canMutex = _canMutex;
+    bms = _bms;
 
     // Initialise modules
     for ( int m = 0; m < numModules; m++ ) {
@@ -45,17 +49,39 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _n
     }
 
     // Set up dedicated CAN port for communicating with this pack
-    printf("Creating CAN port (cs:%d, miso:%d, mosi:%d, clk:%d)\n", CANCSPin, SPI_MISO, SPI_MOSI, SPI_CLK);
-    MCP2515 CAN(spi0, CANCSPin, SPI_MISO, SPI_MOSI, SPI_CLK, 500000);
+    printf("[pack%d] creating CAN port\n", id);
+    //mutex_enter_timeout_ms(canMutex, 3000);
+    CAN = new MCP2515(spi0, CANCSPin, SPI_MISO, SPI_MOSI, SPI_CLK, 500000);
+    printf("[pack%d] memory address of CAN port : %p\n", id, CAN);
     MCP2515::ERROR response;
-    if ( CAN.reset() != MCP2515::ERROR_OK ) {
-        printf("ERROR problem resetting battery CAN port %d\n", id);
+    printf("[pack%d] resetting battery CAN port\n", id);
+    response = CAN->reset();
+    if ( response != MCP2515::ERROR_OK ) {
+        printf("[pack%d] WARNING problem resetting battery CAN port: %d\n", id, response);
     }
-    if ( CAN.setBitrate(CAN_500KBPS, MCP_8MHZ) != MCP2515::ERROR_OK ) {
-        printf("ERROR problem setting bitrate on battery CAN port %d\n", id);
+    response = CAN->setBitrate(CAN_500KBPS, MCP_8MHZ);
+    if ( response != MCP2515::ERROR_OK ) {
+        printf("[pack%d] WARNING problem setting bitrate on battery CAN port : %d\n", id, response);
     }
-    if ( CAN.setNormalMode() != MCP2515::ERROR_OK ) {
-        printf("ERROR problem setting normal mode on battery CAN port %d\n", id);
+    response = CAN->setNormalMode();
+    if ( response != MCP2515::ERROR_OK ) {
+        printf("[pack%d] WARNING problem setting normal mode on battery CAN port : %d\n", id, response);
+    }
+    //mutex_exit(canMutex);
+    
+    printf("[pack%d] CAN port status : %d\n", id, CAN->getStatus());
+
+    can_frame testFrame;
+    testFrame.can_id = 0x000;
+    testFrame.can_dlc = 8;
+    for ( int i = 0; i < 8; i++ ) {
+        testFrame.data[i] = 0;
+    }
+    printf("[pack%d] sending 10 test messages\n", id);
+    for ( int i = 0; i < 10; i++ ) {
+        if ( !send_frame(&testFrame) ) {
+            printf("[pack%d] ERROR sending test message %d\n", id, i);
+        }
     }
 
     // Set last update time to now
@@ -66,10 +92,9 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _n
 
     // Set up contactor control.
     contactorInhibitPin = _contactorInhibitPin;
-    printf("Setting up contactor control\n");
+    printf("[pack%d] setting up contactor control\n");
     gpio_init(contactorInhibitPin);
     gpio_set_dir(contactorInhibitPin, GPIO_OUT);
-    gpio_set_pulls(contactorInhibitPin, !INHIBIT_CONTACTOR_ACTIVE_LOW, INHIBIT_CONTACTOR_ACTIVE_LOW);
     gpio_put(contactorInhibitPin, 0);
 
     // Set next balance time to 10 seconds from now
@@ -80,11 +105,11 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _n
 
     crc8.begin();
 
-    printf("Pack %d setup complete\n", id);
+    printf("[pack%d] setup complete\n", id);
 }
 
 void BatteryPack::print() {
-    printf("Pack %d : %3.2fV : Hi %d : Lo %d : %dmV\n", id, (voltage/1000), get_highest_cell_voltage(), get_lowest_cell_voltage(), cellDelta);
+    printf("[pack%d] %3.2fV : Hi %d : Lo %d : %dmV\n", id, (voltage/1000), get_highest_cell_voltage(), get_lowest_cell_voltage(), cellDelta);
     for ( int m = 0; m < numModules; m++ ) {
         modules[m].print();
     }
@@ -138,7 +163,9 @@ void BatteryPack::request_data() {
             pollModuleFrame.data[6] = pollModuleFrame.data[6] + 0x04;
         }
         pollModuleFrame.data[7] = getcheck(pollModuleFrame, m);
-        send_message(&pollModuleFrame);
+        if ( !send_frame(&pollModuleFrame) ) {
+            printf("[pack%d][request_data] ERROR sending poll message to module %d\n", id, m);
+        }
     }
     if ( inStartup && modulePollingCycle == 2 ) {
         inStartup = false;
@@ -151,40 +178,81 @@ void BatteryPack::request_data() {
  * Check for message from battery modules, parse as required.
  */
 void BatteryPack::read_message() {
-    extern Bms bms;
+    extern mutex_t canMutex;
     can_frame frame;
-    if ( CAN.readMessage(&frame) == MCP2515::ERROR_OK ) {
 
-        /*
-        printf("Pack %d received message : id:%02X : ", id, frame.can_id);
-        for ( int i = 0; i < frame.can_dlc; i++ ) {
-            printf("%02X ", frame.data[i]);
-        }
-        printf("\n");
-        */
+    // Try to get the mutex. If we can't, we'll try again next time.
+    if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
+        printf("[pack%d][read_message] failed to get battery pack CAN mutex\n", this->id);
+        return;
+    }
 
-        // Temperature messages
-        if ( (frame.can_id & 0xFF0) == 0x180 ) {
-            decode_temperatures(&frame);
-            bms.send_event(E_TEMPERATURE_UPDATE);
-        }
-        // Voltage messages
-        if (frame.can_id > 0x99 && frame.can_id < 0x180) {
-            decode_voltages(&frame);
-            bms.send_event(E_CELL_VOLTAGE_UPDATE);
-        }
+    // Check for message
+    MCP2515::ERROR result = CAN->readMessage(&frame);
+    mutex_exit(&canMutex);
+
+    // Return if we don't have a message to process
+    if ( result != MCP2515::ERROR_OK ) {
+        return;
+    }
+
+    printf("[pack%d][read_message] received message 0x%03X : ", this->id, frame.can_id);
+    for ( int i = 0; i < frame.can_dlc; i++ ) {
+        printf("%02X ", frame.data[i]);
+    }
+    printf("\n");
+
+    // Temperature messages
+    if ( (frame.can_id & 0xFF0) == 0x180 ) {
+        decode_temperatures(&frame);
+        this->bms->send_event(E_TEMPERATURE_UPDATE);
+    }
+    // Voltage messages
+    if (frame.can_id > 0x99 && frame.can_id < 0x180) {
+        decode_voltages(&frame);
+        this->bms->send_event(E_CELL_VOLTAGE_UPDATE);
     }
 }
 
-void BatteryPack::send_message(can_frame *frame) {
-    /*
-    printf("SEND :: id:%02X  [", frame->can_id);
-    for ( int i = 0; i < frame->can_dlc; i++ ) {
-        printf("%02X ", frame->data[i]);
+bool BatteryPack::send_frame(can_frame *frame) {
+    extern mutex_t canMutex;
+    for ( int i = 0; i < SEND_FRAME_RETRIES; i++ ) {
+
+        printf("[pack%d][send_frame] 0x%03X  [ ", this->id, frame->can_id);
+        for ( int i = 0; i < frame->can_dlc; i++ ) {
+            printf("%02X ", frame->data[i]);
+        }
+        printf("]\n");
+
+        // Try to get the mutex. If we can't, we'll try again next time.
+        if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
+            printf("[pack%d][send_frame] failed to get battery pack CAN mutex\n", this->id);
+            continue;
+        }
+        
+        MCP2515::ERROR result = CAN->sendMessage(frame);
+        mutex_exit(&canMutex);
+
+        switch (result) {
+            case MCP2515::ERROR_FAIL:
+                printf("[pack%d][send_frame] ERROR sending message to battery pack (ERROR_FAIL)\n", this->id);
+                //sleep_ms(2);
+            case MCP2515::ERROR_ALLTXBUSY:
+                printf("[pack%d][send_frame] ERROR sending message to battery pack (ALLTXBUSY)\n", this->id);
+                //sleep_ms(2);
+            case MCP2515::ERROR_FAILINIT:
+                printf("[pack%d][send_frame] ERROR sending message to battery pack (FAILINIT)\n", this->id);
+                //sleep_ms(2);
+            case MCP2515::ERROR_FAILTX:
+                printf("[pack%d][send_frame] ERROR sending message to battery pack (FAILTX)\n", this->id);
+                //sleep_ms(2);
+        }
+
+        if ( result == MCP2515::ERROR_OK) {
+            return true;
+        }
     }
-    printf("]\n");
-    */
-    CAN.sendMessage(frame);
+    return false;
 }
 
 void BatteryPack::set_pack_error_status(int newErrorStatus) {
@@ -306,27 +374,27 @@ void BatteryPack::decode_voltages(can_frame *frame) {
             modules[moduleId].set_cell_voltage(1, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
             modules[moduleId].set_cell_voltage(2, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
             break;
-        case 0x30:
+        case 0x030:
             modules[moduleId].set_cell_voltage(3, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
             modules[moduleId].set_cell_voltage(4, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
             modules[moduleId].set_cell_voltage(5, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
             break;
-        case 0x40:
+        case 0x040:
             modules[moduleId].set_cell_voltage(6, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
             modules[moduleId].set_cell_voltage(7, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
             modules[moduleId].set_cell_voltage(8, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
             break;
-        case 0x50:
+        case 0x050:
             modules[moduleId].set_cell_voltage(9, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
             modules[moduleId].set_cell_voltage(10, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
             modules[moduleId].set_cell_voltage(11, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
             break;
-        case 0x60:
+        case 0x060:
             modules[moduleId].set_cell_voltage(12, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
             modules[moduleId].set_cell_voltage(13, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
             modules[moduleId].set_cell_voltage(14, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
             break;
-        case 0x70:
+        case 0x070:
             modules[moduleId].set_cell_voltage(15, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
             break;
         default:
@@ -421,34 +489,22 @@ void BatteryPack::decode_temperatures(can_frame *temperatureMessageFrame) {
 // Prevent the contactors for this pack from closing
 void BatteryPack::enable_inhibit_contactor_close() {
     if ( !contactors_are_inhibited() ) {
-        printf("Enabling inhibit of contactor close for pack %d\n", id);
-        if ( INHIBIT_CONTACTOR_ACTIVE_LOW ) {
-            gpio_put(INHIBIT_CONTACTOR_PINS[id], 0);
-        } else {
-            gpio_put(INHIBIT_CONTACTOR_PINS[id], 1);
-        }
+        printf("[pack%d][enable_inhibit_contactor_close] Enabling inhibit of contactor close for pack\n", id);
+        gpio_put(INHIBIT_CONTACTOR_PINS[id], 1);
     }
 }
 
 // Allow the contactors for this pack to close
 void BatteryPack::disable_inhibit_contactor_close() {
     if ( contactors_are_inhibited() ) {
-        printf("Disabling inhibit of contactor close for pack %d\n", id);
-        if ( INHIBIT_CONTACTOR_ACTIVE_LOW ) {
-            gpio_put(INHIBIT_CONTACTOR_PINS[id], 1);
-        } else {
-            gpio_put(INHIBIT_CONTACTOR_PINS[id], 0);
-        }
+        printf("[pack%d][disable_inhibit_contactor_close] Disabling inhibit of contactor close for pack\n", id);
+        gpio_put(INHIBIT_CONTACTOR_PINS[id], 0);
     }
 }
 
 // Return true if the contactors for this pack are currently not allowed to close
 bool BatteryPack::contactors_are_inhibited() {
-    if ( INHIBIT_CONTACTOR_ACTIVE_LOW ) {
-        return !gpio_get(INHIBIT_CONTACTOR_PINS[id]);
-    } else {
-        return gpio_get(INHIBIT_CONTACTOR_PINS[id]);
-    }
+    return gpio_get(INHIBIT_CONTACTOR_PINS[id]);
 }
 
 

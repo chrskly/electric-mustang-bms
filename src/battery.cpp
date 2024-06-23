@@ -22,22 +22,13 @@
 
 #include "include/battery.h"
 #include "include/pack.h"
+#include "include/io.h"
 #include "include/statemachine.h"
 
 #include "settings.h"
 
-extern Io io;
 
 struct repeating_timer pollPackTimer;
-
-Battery::Battery() {
-    voltage = 0;
-    lowestCellVoltage = 0;
-    highestCellVoltage = 0;
-    lowestSensorTemperature = 0;
-    highestSensorTemperature = 0;
-    numPacks = NUM_PACKS;
-}
 
 // Send request to each pack to ask for a data update
 bool poll_packs_for_data(struct repeating_timer *t) {
@@ -46,17 +37,38 @@ bool poll_packs_for_data(struct repeating_timer *t) {
     return true;
 }
 
+// Handle the CAN messages that come back from the battery modules
+
+struct repeating_timer handleInboundCANMessagesTimer;
+
+bool handle_inbound_CAN_messages(struct repeating_timer *t) {
+    extern Battery battery;
+    battery.read_message();
+    return true;
+}
+
+
+//Battery::Battery(mutex_t* _canMutex, Io* _io) {
+Battery::Battery(Io* _io) {
+    voltage = 0;
+    lowestCellVoltage = 0;
+    highestCellVoltage = 0;
+    lowestSensorTemperature = 0;
+    highestSensorTemperature = 0;
+    numPacks = NUM_PACKS;
+    io = _io;
+}
+
 // Create all battery packs and modules
 void Battery::initialise(Bms* _bms) {
-    printf("Initialising battery with %d packs\n", numPacks);
 
     bms = _bms;
 
     for ( int p = 0; p < numPacks; p++ ) {
-        printf("Initialising battery pack %d (cs:%d, cp:%d, mpp:%d, cpm:%d, tpm:%d)\n", p, CS_PINS[p], INHIBIT_CONTACTOR_PINS[p], MODULES_PER_PACK, CELLS_PER_MODULE, TEMPS_PER_MODULE);
-        packs[p] = BatteryPack(p, CS_PINS[p], INHIBIT_CONTACTOR_PINS[p], MODULES_PER_PACK, CELLS_PER_MODULE, TEMPS_PER_MODULE);
+        printf("[battery] Initialising battery pack %d (CS:%d, inh:%d, mod/pack:%d, cell/mod:%d, T/mod:%d)\n", p, CS_PINS[p], INHIBIT_CONTACTOR_PINS[p], MODULES_PER_PACK, CELLS_PER_MODULE, TEMPS_PER_MODULE);
+        packs[p] = BatteryPack(p, CS_PINS[p], INHIBIT_CONTACTOR_PINS[p], MODULES_PER_PACK, CELLS_PER_MODULE, TEMPS_PER_MODULE, canMutex, bms);
         packs[p].set_battery(this);
-        printf("Initialisation of battery pack %d complete\n", p);
+        printf("[battery] Initialisation of battery pack %d complete\n", p);
     }
 
     // Precalculate min/max battery voltages
@@ -64,8 +76,10 @@ void Battery::initialise(Bms* _bms) {
     minimumBatteryVoltage = CELL_EMPTY_VOLTAGE * CELLS_PER_MODULE * MODULES_PER_PACK;
 
     // Enable polling of packs for voltage/temperature data
-    printf("Enabling polling of packs for data\n");
-    add_repeating_timer_ms(100, poll_packs_for_data, NULL, &pollPackTimer);
+    printf("[battery] Enabling polling of packs for data\n");
+    //add_repeating_timer_ms(50, poll_packs_for_data, NULL, &pollPackTimer);
+    add_repeating_timer_ms(1000, poll_packs_for_data, NULL, &pollPackTimer);
+    add_repeating_timer_ms(5, handle_inbound_CAN_messages, NULL, &handleInboundCANMessagesTimer);
 }
 
 //
@@ -94,15 +108,15 @@ void Battery::read_message() {
 
 //
 void Battery::send_test_message() {
+    printf("[battery] Sending test messages to all packs\n");
     for ( int p = 0; p < numPacks; p++ ) {
-        // printf("Sending test message to pack %d\n", p);
         can_frame fr;
         fr.can_id = 0x000;
         fr.can_dlc = 3;
         fr.data[0] = 0x7E;
         fr.data[1] = 0x57;
         fr.data[2] = p;
-        packs[p].send_message(&fr);
+        packs[p].send_frame(&fr);
     }
 }
 
@@ -337,7 +351,6 @@ int8_t Battery::get_lowest_sensor_temperature() {
 //// ----
 
 bool Battery::too_cold_to_charge() {
-    //printf("Comparing %f to %f\n", get_lowest_sensor_temperature(), MINIMUM_CHARGING_TEMPERATURE);
     if ( get_lowest_sensor_temperature() < MINIMUM_CHARGING_TEMPERATURE ) {
         return true;
     }
@@ -352,9 +365,21 @@ bool Battery::too_cold_to_charge() {
 //// ----
 
 // Do not allow any contactors to close in any pack
-void Battery::inhibit_contactor_close() {
-    for ( int p = 0; p < numPacks; p++ ) {
-        packs[p].enable_inhibit_contactor_close();
+void Battery::enable_inhibit_contactor_close() {
+    if ( !all_contactors_inhibited() ) {
+        printf("[battery][enable_inhibit_contactor_close] Enabling inhibit contactor close for all packs\n");
+        for ( int p = 0; p < numPacks; p++ ) {
+            packs[p].enable_inhibit_contactor_close();
+        }
+    }
+}
+
+void Battery::disable_inhibit_contactor_close() {
+    if ( one_or_more_contactors_inhibited() ) {
+        printf("[battery][disable_inhibit_contactor_close] Disabling inhibit contactor close for all packs\n");
+        for ( int p = 0; p < numPacks; p++ ) {
+            packs[p].disable_inhibit_contactor_close();
+        }
     }
 }
 
@@ -366,6 +391,15 @@ bool Battery::one_or_more_contactors_inhibited() {
         }
     }
     return false;
+}
+
+bool Battery::all_contactors_inhibited() {
+    for ( int p = 0; p < numPacks; p++ ) {
+        if ( !packs[p].contactors_are_inhibited() ) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // Allow contactors to close for the high pack and any other packs which are

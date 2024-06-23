@@ -38,6 +38,7 @@ class BatteryModule {
    public:
       BatteryModule();
       BatteryModule(int _id, BatteryPack* _pack, int _numCells, int _numTemperatureSensors);
+      void print();
       uint16_t get_cell_voltage(int cellId);
       void set_all_cell_voltages(uint16_t newVoltage);
       int8_t get_cell_temperature(int cellId);

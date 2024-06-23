@@ -39,9 +39,7 @@ const int CS_PINS[2] = { 20, 15 };  // Chip select pins for the CAN controllers 
 
 // Inputs
 #define IGNITION_ENABLE_PIN 10  //
-const bool IGNITION_ENABLE_ACTIVE_LOW = true;  // Is the ignition signal active low?
 #define CHARGE_ENABLE_PIN 9     //
-const bool CHARGE_ENABLE_ACTIVE_LOW = true;    // Is the charge signal active low?
 #define IN_1_PIN 11             // unused
 #define IN_2_PIN 12             // unused
 #define IN_3_PIN 13             // unused
@@ -49,18 +47,14 @@ const bool CHARGE_ENABLE_ACTIVE_LOW = true;    // Is the charge signal active lo
 
 // Outputs
 #define CHARGE_INHIBIT_PIN 4                       // Low-side switch to create CHARGE_INHIBIT signal. a.k.a OUT1
-const bool CHARGE_INHIBIT_ACTIVE_LOW = true;      // Is the charge inhibit signal active low?
 #define HEATER_ENABLE_PIN 5                        // Low-side switch to turn on battery heaters. a.k.a. OUT2
-const bool HEATER_ENABLE_ACTIVE_LOW = true;       // Is the heater signal active low?
 const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallow closing of battery box contactors
-const bool INHIBIT_CONTACTOR_ACTIVE_LOW = true;   // Is the inhibit contactor signal active low?
 #define DRIVE_INHIBIT_PIN 6                        // Low-side switch to disallow driving. a.k.a OUT3
-const bool DRIVE_INHIBIT_ACTIVE_LOW = true;       // Is the drive inhibit signal active low?
 #define OUT_4_PIN 7                                // unused
 
 //
 
-#define NUM_PACKS         2                        // The total number of paralleled packs in this battery
+#define NUM_PACKS         1                        // The total number of paralleled packs in this battery
 #define CELLS_PER_MODULE 16                        // The number of cells in each module
 #define TEMPS_PER_MODULE  4                        // The number of temperature sensors in each module
 #define MODULES_PER_PACK  6                        // The number of modules in each pack
@@ -79,6 +73,9 @@ const bool DRIVE_INHIBIT_ACTIVE_LOW = true;       // Is the drive inhibit signal
 
 #define SAFE_VOLTAGE_DELTA_BETWEEN_PACKS 10        // When closing contactors, the voltage difference between the packs shall not
                                                    // be greater than this voltage, in millivolts.
+
+#define PACKS_IMBALANCED_TTL 3000                  // If the packs are imbalanced for more than PACKS_IMBALANCED_TTL seconds, then
+                                                   // actually inhibit the contactors.
 
 // The capacity of the battery pack
 #define BATTERY_CAPACITY_WH 14800         // 7.4kWh usable per pack, x2 packs
@@ -103,6 +100,11 @@ const bool DRIVE_INHIBIT_ACTIVE_LOW = true;       // Is the drive inhibit signal
 #define CHARGE_CURRENT_MIN 8            // ~3.3kw
 
 #define BALANCE_INTERVAL 1200           // number of seconds between balancing sessions
+
+#define CAN_MUTEX_TIMEOUT_MS 200        // Timeout for the CAN mutex
+
+#define SEND_FRAME_RETRIES 6            // Number of times to retry sending a frame before giving up
+#define READ_FRAME_RETRIES 3
 
 //// ---- CAN message IDs
 

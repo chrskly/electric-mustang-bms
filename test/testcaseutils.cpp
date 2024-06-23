@@ -19,7 +19,7 @@
 
 
 #include <time.h>
-
+#include <string>
 #include "include/util.h"
 #include "include/bms.h"
 #include "include/battery.h"
@@ -37,6 +37,12 @@ bool wait_for_soc(Bms* bms, int soc, int timeout) {
 bool wait_for_drive_inhibit_state(Bms* bms, bool state, int timeout) {
     clock_t startTime = get_clock();
     while (bms->get_inhibitDrive() != state) {
+        std::string currentDriveState = bms->get_inhibitDrive() ? "true" : "false";
+        std::string currentChargeState = bms->get_inhibitCharge() ? "true" : "false";
+        if ( get_clock() % 1000 == 0 ){
+            printf("    * Drive inhibit state: %s\n", currentDriveState.c_str());
+            printf("    * Charge inhibit state: %s\n", currentChargeState.c_str());
+        }
         if (get_clock() - startTime > timeout) {
             return false;
         }
@@ -47,6 +53,12 @@ bool wait_for_drive_inhibit_state(Bms* bms, bool state, int timeout) {
 bool wait_for_charge_inhibit_state(Bms* bms, bool state, int timeout) {
     clock_t startTime = get_clock();
     while (bms->get_inhibitCharge() != state) {
+        std::string currentDriveState = bms->get_inhibitDrive() ? "true" : "false";
+        std::string currentChargeState = bms->get_inhibitCharge() ? "true" : "false";
+        if ( get_clock() % 1000 == 0 ){
+            printf("    * Drive inhibit state: %s\n", currentDriveState.c_str());
+            printf("    * Charge inhibit state: %s\n", currentChargeState.c_str());
+        }
         if (get_clock() - startTime > timeout) {
             return false;
         }
@@ -67,7 +79,7 @@ bool wait_for_bms_state(Bms* bms, BmsState state, int timeout) {
 
 bool wait_for_batt_inhibit_state(Battery* battery, int packId, bool state, int timeout) {
     clock_t startTime = get_clock();
-    while (battery->get_pack(packId).get_inhibit() != state) {
+    while (battery->get_pack(packId)->get_inhibit() != state) {
         if (get_clock() - startTime > timeout) {
             return false;
         }

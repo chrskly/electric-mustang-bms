@@ -20,9 +20,9 @@
 #include "include/battery.h"
 #include "include/testcaseutils.h"
 
-bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* battery) {
+bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* battery, Bms* bms) {
     printf("Running test [test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty]\n");
-    Bms* bms = battery->get_bms();
+    //Bms* bms = battery->get_bms();
     /*
       Preconditions
         1. All cells are above Vmin
@@ -52,7 +52,7 @@ bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* ba
 
     // Make sure DRIVE_INHIBIT goes high
     printf("    > Waiting for DRIVE_INHIBIT to activate\n");
-    if ( ! wait_for_drive_inhibit_state(bms, false, 2000) ) { // active, 2 second timeout
+    if ( ! wait_for_drive_inhibit_state(bms, true, 2000) ) { // active, 2 second timeout
         printf("    > DRIVE_INHIBIT did not activate in time\n");
         printf("    > Test failed\n");
         return false;
@@ -75,9 +75,9 @@ bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* ba
 
 }
 
-bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery) {
+bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery, Bms* bms) {
     printf("Running test [test_case_002_ensure_battery_cannot_be_charged_when_full]\n");
-    Bms* bms = battery->get_bms();
+    //Bms* bms = battery->get_bms();
     /*
       Preconditions
         1. All cells are below Vmax

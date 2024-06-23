@@ -80,7 +80,12 @@ void state_standby(Event event) {
              * another state we'll decide which contactors to allow to close
              * then. This will depend on which state we switch into. */
             if ( battery.packs_are_imbalanced() ) {
-                battery.inhibit_contactor_close();
+                if ( bms.packs_imbalanced_ttl_expired() ) {
+                    battery.enable_inhibit_contactor_close();
+                }
+            } else {
+                bms.pack_voltages_match_heartbeat();
+                battery.disable_inhibit_contactor_close();
             }
             // Battery is empty. Disallow driving.
             if ( battery.has_empty_cell() ) {
@@ -341,7 +346,7 @@ void state_charging(Event event) {
             /* If battery is full (i.e., we've charged to 100%), reset kWh/Ah
              * counters on the ISA shunt. */
             if ( battery.has_full_cell() ) {
-                send_shunt_reset_message();
+                bms.send_shunt_reset_message();
             }
             // If ignition is already on, switch directly to drive mode
             if ( bms.ignition_is_on() ) {
@@ -371,7 +376,7 @@ void state_batteryEmpty(Event event) {
             if ( battery.too_cold_to_charge() ) {
                 bms.enable_charge_inhibit("[036a] too cold to charge");
             } else if ( battery.has_full_cell() ) {
-                bms.enable_charge_inhibit("[036b] full cell");
+                //bms.enable_charge_inhibit("[036b] full cell");
             } else {
                 bms.disable_charge_inhibit("[037] not too cold to charge and no full cell");
             }
@@ -388,7 +393,7 @@ void state_batteryEmpty(Event event) {
             if ( battery.too_cold_to_charge() ) {
                 bms.enable_charge_inhibit("[040a] too cold to charge");
             } else if ( battery.has_full_cell() ) {
-                bms.enable_charge_inhibit("[040b] full cell");
+                //bms.enable_charge_inhibit("[040b] full cell");
             } else {
                 bms.disable_charge_inhibit("[041] not too cold to charge and no full cell");
             }
