@@ -22,12 +22,10 @@
 
 #include "include/pack.h"
 #include "include/bms.h"
-//#include "include/io.h"
 #include "settings.h"
 
-//class Bms;
+
 class Io;
-//class BatteryPack;
 
 class Battery {
    private:
@@ -47,7 +45,6 @@ class Battery {
 
    public:
       Battery() {};
-      //Battery(mutex_t* _canMutex, Io* _io);
       Battery(Io* _io);
       void initialise(Bms* _bms);
       int print();

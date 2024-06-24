@@ -450,7 +450,6 @@ int8_t BatteryPack::get_lowest_temperature() {
             lowestModuleTemperature = modules[m].get_lowest_temperature();
         }
     }
-    //printf("lowest temp : %d\n", lowestModuleTemperature);
     return lowestModuleTemperature;
 }
 
@@ -474,7 +473,6 @@ void BatteryPack::decode_temperatures(can_frame *temperatureMessageFrame) {
     modules[moduleId].heartbeat();
     for ( int t = 0; t < numTemperatureSensorsPerModule; t++ ) {
         float temperature = temperatureMessageFrame->data[t] - 40;
-        //printf("Updating temperature for module %d sensor %d : %2.2f\n", moduleId, t, temperature);
         modules[moduleId].update_temperature(t, temperature);
     }
 }

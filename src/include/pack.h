@@ -24,14 +24,11 @@
 
 #include "hardware/timer.h"
 #include "mcp2515/mcp2515.h"
-
-//#include "include/bms.h"
 #include "include/module.h"
 #include "include/CRC8.h"
 #include "settings.h"
 
 class Battery;
-//class BatteryModule;
 class Bms;
 
 const uint8_t finalxor[12] = { 0xCF, 0xF5, 0xBB, 0x81, 0x27, 0x1D, 0x53, 0x69, 0x02, 0x38, 0x76, 0x4C };

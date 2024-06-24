@@ -22,7 +22,7 @@
 #include "include/statemachine.h"
 #include "include/battery.h"
 #include "include/led.h"
-#include "include/comms.h"
+
 
 extern Battery battery;
 extern Bms bms;

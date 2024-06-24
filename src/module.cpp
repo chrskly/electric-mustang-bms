@@ -95,7 +95,6 @@ uint16_t BatteryModule::get_lowest_cell_voltage() {
             lowestCellVoltage = cellVoltage[c];
         }
     }
-    //printf("lowest cell voltage for module %d is %d\n", id, lowestCellVoltage);
     return lowestCellVoltage;
 }
 
@@ -112,7 +111,6 @@ uint16_t BatteryModule::get_highest_cell_voltage() {
 
 // Update the voltage for a single cell
 void BatteryModule::set_cell_voltage(int cellIndex, uint16_t newCellVoltage) {
-    // printf("module : update_cell_voltage : %d : %.4f\n", cellIndex, newCellVoltage);
     cellVoltage[cellIndex] = newCellVoltage;
 }
 

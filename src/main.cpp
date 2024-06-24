@@ -33,13 +33,10 @@ EV Mustang BMS
 #include "hardware/clocks.h"
 #include "hardware/pll.h"
 #include "hardware/watchdog.h"
-
 #include "mcp2515/mcp2515.h"
-
 #include "include/battery.h"
 #include "include/bms.h"
 #include "include/statemachine.h"
-#include "include/comms.h"
 #include "include/led.h"
 #include "include/io.h"
 #include "include/shunt.h"
@@ -50,7 +47,7 @@ Io io;
 Shunt shunt;
 Battery battery;
 Bms bms;
-//MCP2515 mainCAN;
+
 
 // Watchdog
 
@@ -72,11 +69,9 @@ struct repeating_timer statusPrintTimer;
 bool status_print(struct repeating_timer *t) {
     extern Bms bms;
     bms.print();
-    //battery.print();
     return true;
 }
 
-//
 void enable_status_print() {
     printf(" * Enabling status print\n");
     add_repeating_timer_ms(1000, status_print, NULL, &statusPrintTimer);
@@ -115,7 +110,6 @@ int main() {
     // Initialise all of the objects
     io = Io();
     shunt = Shunt();
-    //battery = Battery(&canMutex, &io);
     battery = Battery(&io);
     bms = Bms(&battery, &io, &shunt);
     battery.initialise(&bms);

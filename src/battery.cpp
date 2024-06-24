@@ -19,12 +19,10 @@
 
 #include <stdio.h>
 #include <string>
-
 #include "include/battery.h"
 #include "include/pack.h"
 #include "include/io.h"
 #include "include/statemachine.h"
-
 #include "settings.h"
 
 
@@ -48,7 +46,6 @@ bool handle_inbound_CAN_messages(struct repeating_timer *t) {
 }
 
 
-//Battery::Battery(mutex_t* _canMutex, Io* _io) {
 Battery::Battery(Io* _io) {
     voltage = 0;
     lowestCellVoltage = 0;
