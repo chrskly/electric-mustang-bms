@@ -27,7 +27,6 @@
 #include "include/util.h"
 #include "settings.h"
 
-//extern mutex_t canMutex;
 
 BatteryPack::BatteryPack() {}
 
@@ -93,11 +92,11 @@ void BatteryPack::print() {
 bool BatteryPack::send_frame(can_frame* frame) {
     extern mutex_t canMutex;
 
-    printf("[pack%d][send_frame] 0x%03X : ", id, frame->can_id);
-    for ( int i = 0; i < frame->can_dlc; i++ ) {
-        printf("%02X ", frame->data[i]);
-    }
-    printf("\n");
+    // printf("[pack%d][send_frame] 0x%03X : ", id, frame->can_id);
+    // for ( int i = 0; i < frame->can_dlc; i++ ) {
+    //     printf("%02X ", frame->data[i]);
+    // }
+    // printf("\n");
 
     // Try to get the mutex. If we can't, we'll try again next time.
     if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
@@ -230,19 +229,19 @@ void BatteryPack::send_module_temperatures(uint8_t moduleId) {
 // Check for message from BMS for battery
 
 void BatteryPack::read_frame() {
-    printf("[pack%d][read_frame] Reading messages from battery pack\n", this->id);
+    //printf("[pack%d][read_frame] Reading messages from battery pack\n", this->id);
     extern mutex_t canMutex;
     can_frame frame;
 
-    printf("[pack%d][read_frame] Acquiring CAN mutex\n", this->id);
+    //printf("[pack%d][read_frame] Acquiring CAN mutex\n", this->id);
     if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
         printf("[pack%d][read_frame] WARNING could not acquire CAN mutex within timeout\n", this->id);
         return;
     }
 
-    printf("[pack%d][read_frame] debug : %p\n", this->CAN);
+    //printf("[pack%d][read_frame] debug : %p\n", this->CAN);
 
-    printf("[pack%d][read_frame] Reading message from pack\n", this->id);
+    //printf("[pack%d][read_frame] Reading message from pack\n", this->id);
     MCP2515::ERROR result = CAN->readMessage(&frame);
     mutex_exit(&canMutex);
 
@@ -252,14 +251,13 @@ void BatteryPack::read_frame() {
     }
 
     if ( result == MCP2515::ERROR_OK ) {
-        printf("[pack%d][read_frame] Received CAN frame 0x%X03\n", this->id, frame.can_id);
-        //print_frame(&frame);
+        //printf("[pack%d][read_frame] Received CAN frame 0x%X03\n", this->id, frame.can_id);
 
-        printf("[pack%d][read_frame] 0x%03X : ", this->id, frame.can_id);
-        for ( int i = 0; i < frame.can_dlc; i++ ) {
-            printf("%02X ", frame.data[i]);
-        }
-        printf("\n");
+        // printf("[pack%d][read_frame] 0x%03X : ", this->id, frame.can_id);
+        // for ( int i = 0; i < frame.can_dlc; i++ ) {
+        //     printf("%02X ", frame.data[i]);
+        // }
+        // printf("\n");
 
         // This is a module polling request from the BMS
         /*if ( (frame.can_id & 0xFF0) == 0x080 ) {

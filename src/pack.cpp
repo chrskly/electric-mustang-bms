@@ -196,11 +196,11 @@ void BatteryPack::read_message() {
         return;
     }
 
-    printf("[pack%d][read_message] received message 0x%03X : ", this->id, frame.can_id);
-    for ( int i = 0; i < frame.can_dlc; i++ ) {
-        printf("%02X ", frame.data[i]);
-    }
-    printf("\n");
+    // printf("[pack%d][read_message] received message 0x%03X : ", this->id, frame.can_id);
+    // for ( int i = 0; i < frame.can_dlc; i++ ) {
+    //     printf("%02X ", frame.data[i]);
+    // }
+    // printf("\n");
 
     // Temperature messages
     if ( (frame.can_id & 0xFF0) == 0x180 ) {
@@ -218,11 +218,11 @@ bool BatteryPack::send_frame(can_frame *frame) {
     extern mutex_t canMutex;
     for ( int i = 0; i < SEND_FRAME_RETRIES; i++ ) {
 
-        printf("[pack%d][send_frame] 0x%03X  [ ", this->id, frame->can_id);
-        for ( int i = 0; i < frame->can_dlc; i++ ) {
-            printf("%02X ", frame->data[i]);
-        }
-        printf("]\n");
+        // printf("[pack%d][send_frame] 0x%03X  [ ", this->id, frame->can_id);
+        // for ( int i = 0; i < frame->can_dlc; i++ ) {
+        //     printf("%02X ", frame->data[i]);
+        // }
+        // printf("]\n");
 
         // Try to get the mutex. If we can't, we'll try again next time.
         if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {

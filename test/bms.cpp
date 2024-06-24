@@ -193,8 +193,12 @@ void Bms::set_moduleLiveness(int64_t new_moduleLiveness) {
     moduleLiveness = new_moduleLiveness;
 }
 
-Battery Bms::get_battery() {
+Battery* Bms::get_battery() {
     return battery;
+}
+
+void Bms::set_battery(Battery* _battery) {
+    battery = _battery;
 }
 
 // Comms
@@ -204,16 +208,15 @@ bool Bms::send_frame(can_frame* frame) {
     //printf(" [send_frame] Beginning to send frame\n");
     for ( int t = 0; t < SEND_FRAME_RETRIES; t++ ) {
 
-        printf("[bms][send_frame] 0x%03X %d [ ", frame->can_id, frame->can_dlc);
-        for ( int i = 0; i < frame->can_dlc; i++ ) {
-            printf("%02X ", frame->data[i]);
-        }
-        printf("]\n");
+        // printf("[bms][send_frame] 0x%03X %d [ ", frame->can_id, frame->can_dlc);
+        // for ( int i = 0; i < frame->can_dlc; i++ ) {
+        //     printf("%02X ", frame->data[i]);
+        // }
+        // printf("]\n");
 
         // Try to get the mutex.
         //printf(" [send_frame %d] Trying to get the mutex\n", t);
         if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
-            //sleep_ms(1);
             continue;
         }
         // Send the message
@@ -251,7 +254,6 @@ bool Bms::read_frame(can_frame* frame) {
     extern mutex_t canMutex;
     for ( int t = 0; t < READ_FRAME_RETRIES; t++ ) {    
         if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
-            //sleep_ms(1);
             return false;
         }
         MCP2515::ERROR result = this->CAN->readMessage(frame);
@@ -272,11 +274,11 @@ bool Bms::read_frame(can_frame* frame) {
             }
             continue;
         } else {
-            printf("[bms][read_frame] 0x%03X %d [ ", frame->can_id, frame->can_dlc);
-            for ( int i = 0; i < frame->can_dlc; i++ ) {
-                printf("%02X ", frame->data[i]);
-            }
-            printf("]\n");
+            // printf("[bms][read_frame] 0x%03X %d [ ", frame->can_id, frame->can_dlc);
+            // for ( int i = 0; i < frame->can_dlc; i++ ) {
+            //     printf("%02X ", frame->data[i]);
+            // }
+            // printf("]\n");
             return true;
         }
         return true;

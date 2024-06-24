@@ -687,11 +687,11 @@ bool Bms::packs_imbalanced_ttl_expired() {
 
 bool Bms::send_frame(can_frame* frame) {
     for ( int t = 0; t < SEND_FRAME_RETRIES; t++ ) {
-        printf("[bms][send_frame] 0x%03X  [ ", frame->can_id);
-        for ( int i = 0; i < frame->can_dlc; i++ ) {
-            printf("%02X ", frame->data[i]);
-        }
-        printf("]\n");
+        // printf("[bms][send_frame] 0x%03X  [ ", frame->can_id);
+        // for ( int i = 0; i < frame->can_dlc; i++ ) {
+        //     printf("%02X ", frame->data[i]);
+        // }
+        // printf("]\n");
 
         if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
             continue;
@@ -744,11 +744,11 @@ bool Bms::read_frame(can_frame* frame) {
             continue;
         }
         // Frame was read, print it out
-        printf("[bms][read_frame] 0x%03X  [ ", frame->can_id);
-        for ( int i = 0; i < frame->can_dlc; i++ ) {
-            printf("%02X ", frame->data[i]);
-        }
-        printf("]\n");
+        // printf("[bms][read_frame] 0x%03X  [ ", frame->can_id);
+        // for ( int i = 0; i < frame->can_dlc; i++ ) {
+        //     printf("%02X ", frame->data[i]);
+        // }
+        // printf("]\n");
         return true;
     }
     // Failed to read after all retries

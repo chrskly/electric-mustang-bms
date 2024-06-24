@@ -56,7 +56,7 @@ class Bms {
         int64_t moduleLiveness;       // Bitfield of module liveness
         MCP2515* CAN;
         Shunt* shunt;
-        Battery battery;
+        Battery* battery;
 
     public:
         Bms();
@@ -84,7 +84,8 @@ class Bms {
         void set_maxChargeCurrent(int16_t new_maxChargeCurrent);
         void set_maxDischargeCurrent(int16_t new_maxDischargeCurrent);
         void set_moduleLiveness(int64_t new_moduleLiveness);
-        Battery get_battery();
+        Battery* get_battery();
+        void set_battery(Battery* _battery);
         bool send_frame(can_frame* frame);
         bool read_frame(can_frame* frame);
 };

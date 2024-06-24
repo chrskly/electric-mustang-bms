@@ -77,8 +77,7 @@ void Battery::initialise(Bms* _bms) {
 
     // Enable polling of packs for voltage/temperature data
     printf("[battery] Enabling polling of packs for data\n");
-    //add_repeating_timer_ms(50, poll_packs_for_data, NULL, &pollPackTimer);
-    add_repeating_timer_ms(1000, poll_packs_for_data, NULL, &pollPackTimer);
+    add_repeating_timer_ms(100, poll_packs_for_data, NULL, &pollPackTimer);
     add_repeating_timer_ms(5, handle_inbound_CAN_messages, NULL, &handleInboundCANMessagesTimer);
 }
 

@@ -26,7 +26,8 @@ struct repeating_timer handleBatteryCANMessagesTimer;
 
 bool handle_battery_CAN_messages(struct repeating_timer *t) {
     extern Bms bms;
-    bms.get_battery().read_frame();
+    //printf("[battery] Reading frame from packs\n");
+    bms.get_battery()->read_frame();
     return true;
 }
 
@@ -51,6 +52,7 @@ Battery::Battery(int _numPacks) {
         printf("[battery] pack %d id is %d\n", p, packs[p].get_id());
     }
 
+    printf("[battery] enabling CAN read polling\n");
     add_repeating_timer_ms(5, handle_battery_CAN_messages, NULL, &handleBatteryCANMessagesTimer);
 }
 
@@ -80,8 +82,7 @@ uint16_t Battery::get_voltage_from_soc(int8_t soc) {
 
 // Check for and read messages from each pack 
 void Battery::read_frame() {
-    for ( int p = 0; p < numPacks; p++ ) {
-        printf("[battery] Reading frame from pack %d\n", p);
+    for ( int p = 0; p < this->numPacks; p++ ) {
         packs[p].read_frame();
     }
 }

@@ -52,13 +52,13 @@ void gpio_callback(uint gpio, uint32_t events) {
         newState = gpio_get(INHIBIT_CONTACTOR_PINS[0]);
         newStateStr = newState == 1 ? "on" : "off";
         printf("    * Battery 1 inhibit signal changed to : %s\n", newStateStr.c_str());
-        bms.get_battery().get_pack(0)->set_inhibit(newState == 1);
+        bms.get_battery()->get_pack(0)->set_inhibit(newState == 1);
     }
     if ( gpio == INHIBIT_CONTACTOR_PINS[1] ) { // batt2 inhibit
         newState = gpio_get(INHIBIT_CONTACTOR_PINS[1]);
         newStateStr = newState == 1 ? "on" : "off";
         printf("    * Battery 2 inhibit signal changed to : %s\n", newStateStr.c_str());
-        bms.get_battery().get_pack(1)->set_inhibit(newState == 1);
+        bms.get_battery()->get_pack(1)->set_inhibit(newState == 1);
     }
 }
 

@@ -83,28 +83,16 @@ int main() {
     shunt = Shunt();
     bms = Bms(&shunt);
     battery = Battery(NUM_PACKS);
+    bms.set_battery(&battery);
 
-    //battery.initialise();
-    //battery = Battery(NUM_PACKS);
+    printf("Enable listening for inputs\n");
+    enable_listen_for_input_signals();
 
-    // printf("Setting up main CAN port (BITRATE:%d:%d)\n", CAN_500KBPS, MCP_8MHZ);
-    // mainCAN.reset();
-    // mainCAN.setBitrate(CAN_500KBPS, MCP_8MHZ);
-    // mainCAN.setNormalMode();
-    // printf("Enabling handling of inbound CAN messages on main bus\n");
-    // enable_handle_main_CAN_messages();
+    gpio_init(IGNITION_ENABLE_PIN);
+    gpio_set_dir(IGNITION_ENABLE_PIN, GPIO_OUT);
 
-    //printf("Enabling handling of inbound CAN messages to the mock batteries\n");
-    //enable_handle_battery_CAN_messages();
-
-    // printf("Enable listening for inputs\n");
-    // enable_listen_for_input_signals();
-
-    // gpio_init(IGNITION_ENABLE_PIN);
-    // gpio_set_dir(IGNITION_ENABLE_PIN, GPIO_OUT);
-
-    // gpio_init(CHARGE_ENABLE_PIN);
-    // gpio_set_dir(CHARGE_ENABLE_PIN, GPIO_OUT);
+    gpio_init(CHARGE_ENABLE_PIN);
+    gpio_set_dir(CHARGE_ENABLE_PIN, GPIO_OUT);
 
     add_repeating_timer_ms(1000, status_print, NULL, &statusPrintTimer);
 
@@ -141,38 +129,38 @@ int main() {
 
         // }
 
-        // printf("========================================\n");
-        // printf("WARMING UP\n");
-        // printf("========================================\n");
+        printf("========================================\n");
+        printf("WARMING UP\n");
+        printf("========================================\n");
 
-        // battery.set_all_cell_voltages(battery.get_voltage_from_soc(50));
-        // set_ignition_state(false);
-        // set_charge_enable_state(false);
-        // printf("Waiting for BMS to enter standby state\n");
-        // wait_for_bms_state(&bms, STATE_STANDBY, 30000);
-        // sleep_ms(20000);
+        battery.set_all_cell_voltages(battery.get_voltage_from_soc(50));
+        set_ignition_state(false);
+        set_charge_enable_state(false);
+        printf("Waiting for BMS to enter standby state\n");
+        wait_for_bms_state(&bms, STATE_STANDBY, 30000);
+        sleep_ms(20000);
 
-        // printf("========================================\n");
-        // printf("STARTING TESTS\n");
-        // printf("========================================\n");
+        printf("========================================\n");
+        printf("STARTING TESTS\n");
+        printf("========================================\n");
 
-        //test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(&battery, &bms);
-        //test_case_002_ensure_battery_cannot_be_charged_when_full(&battery, &bms);
+        test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(&battery, &bms);
+        test_case_002_ensure_battery_cannot_be_charged_when_full(&battery, &bms);
         
-        //test_case_101_inhibit_battery_contactor_close_when_pack_voltages_differ(&battery, &bms);
-        //test_case_102_do_not_inhibit_battery_contactor_close_when_pack_voltage_differ_and_ignition_is_on(&battery, &bms);
-        // test_case_103_ignition_turned_on_when_battery_contactors_are_inhibited(&battery, &bms);
-        // test_case_104_ignition_turned_off_when_battery_contactors_are_inhibited(&battery, &bms);
-        // test_case_105_start_charging_when_battery_contactors_are_inhibited(&battery, &bms);
-        // test_case_106_stop_charging_when_battery_contactors_are_inhibited(&battery, &bms);
-        // test_case_107_charging_on_one_pack_and_voltage_equalises(&battery, &bms);
-        // test_case_108_driving_on_one_pack_and_voltage_equalises(&battery, &bms);
-        // test_case_109_driving_on_one_pack_then_begin_charging_while_ignition_still_on(&battery, &bms);
+        test_case_101_inhibit_battery_contactor_close_when_pack_voltages_differ(&battery, &bms);
+        test_case_102_do_not_inhibit_battery_contactor_close_when_pack_voltage_differ_and_ignition_is_on(&battery, &bms);
+        test_case_103_ignition_turned_on_when_battery_contactors_are_inhibited(&battery, &bms);
+        test_case_104_ignition_turned_off_when_battery_contactors_are_inhibited(&battery, &bms);
+        test_case_105_start_charging_when_battery_contactors_are_inhibited(&battery, &bms);
+        test_case_106_stop_charging_when_battery_contactors_are_inhibited(&battery, &bms);
+        test_case_107_charging_on_one_pack_and_voltage_equalises(&battery, &bms);
+        test_case_108_driving_on_one_pack_and_voltage_equalises(&battery, &bms);
+        test_case_109_driving_on_one_pack_then_begin_charging_while_ignition_still_on(&battery, &bms);
 
-        // test_case_201_battery_too_cold_to_charge(&battery, &bms);
-        // test_case_202_battery_warm_enough_to_charge_again(&battery, &bms);
-        // test_case_203_too_cold_to_charge_but_charge_requested(&battery, &bms);
-        // test_case_204_battery_too_hot_to_charge(&battery, &bms);
+        test_case_201_battery_too_cold_to_charge(&battery, &bms);
+        test_case_202_battery_warm_enough_to_charge_again(&battery, &bms);
+        test_case_203_too_cold_to_charge_but_charge_requested(&battery, &bms);
+        test_case_204_battery_too_hot_to_charge(&battery, &bms);
     }
 
     return 0;
