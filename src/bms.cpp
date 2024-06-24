@@ -160,9 +160,8 @@ bool send_bms_state_message(struct repeating_timer *t) {
     }
 
     bmsStateFrame.data[1] = bms.get_error_byte();
-    bmsStateFrame.data[1] = bms.get_status_byte();
+    bmsStateFrame.data[2] = bms.get_status_byte();
 
-    bmsStateFrame.data[2] = 0x00;
     bmsStateFrame.data[3] = 0x00;
     bmsStateFrame.data[4] = 0x00;
     bmsStateFrame.data[5] = 0x00;

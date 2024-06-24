@@ -36,13 +36,15 @@ bool handle_main_CAN_messages(struct repeating_timer *t) {
     can_frame m;
     zero_frame(&m);
     if ( bms.read_frame(&m) ){
-        //printf("Message received on mainCAN : %d\n", m.can_id);
-        //print_frame(&m);
-        // If we got a message, handle it
         switch ( m.can_id ) {
             // BMS state message
             case 0x352:
                 bms.set_state(m.data[0]);
+                // byte 1 errors
+                // bit 1 internal error
+                // bit 2 packs imbalanced
+                bms.set_packsImbalanced(m.data[1] >> 1 & 0x01);
+                // byte 2 status
             case 0x521:
                 break;
             default:
