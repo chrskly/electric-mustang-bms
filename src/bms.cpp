@@ -57,7 +57,7 @@ void Bms::send_shunt_reset_message() {
     shuntResetFrame.data[5] = 0x00;
     shuntResetFrame.data[6] = 0x00;
     shuntResetFrame.data[7] = 0x00;
-    this->send_frame(&shuntResetFrame);
+    this->send_frame(&shuntResetFrame, false);
 }
 
 
@@ -92,7 +92,7 @@ bool send_limits_message(struct repeating_timer *t) {
     limitsFrame.data[5] = (uint8_t)( bms.get_max_discharge_current() * 10 ) >> 8;
     limitsFrame.data[6] = (uint8_t)( battery.get_min_voltage() * 10 ) && 0xFF;
     limitsFrame.data[7] = (uint8_t)( battery.get_min_voltage() * 10 ) >> 8;
-    bms.send_frame(&limitsFrame);
+    bms.send_frame(&limitsFrame, false);
     return true;
 }
 
@@ -128,6 +128,11 @@ bool send_limits_message(struct repeating_timer *t) {
  *   bit 5 =
  *   bit 6 =
  *   bit 7 =
+ * byte 3
+ * byte 4
+ * byte 5
+ * byte 6
+ * byte 7 = checksum
  */
 
 
@@ -167,7 +172,7 @@ bool send_bms_state_message(struct repeating_timer *t) {
     bmsStateFrame.data[5] = 0x00;
     bmsStateFrame.data[6] = 0x00;
     bmsStateFrame.data[7] = 0x00; // checksum
-    bms.send_frame(&bmsStateFrame);
+    bms.send_frame(&bmsStateFrame, true);
     return true;
 }
 
@@ -184,7 +189,7 @@ bool send_bms_state_message(struct repeating_timer *t) {
  * byte 4 = modules 32-39 heartbeat status (0 alive, 1 dead)
  * byte 5 =
  * byte 6 =
- * byte 7 =
+ * byte 7 = checksum
  */
 
 struct repeating_timer moduleLivenessTimer;
@@ -202,7 +207,7 @@ bool send_module_liveness_message(struct repeating_timer *t) {
     moduleLivenessFrame.data[5] = 0x00;
     moduleLivenessFrame.data[6] = 0x00;
     moduleLivenessFrame.data[7] = 0x00;
-    bms.send_frame(&moduleLivenessFrame);
+    bms.send_frame(&moduleLivenessFrame, true);
     return true;
 }
 
@@ -237,7 +242,7 @@ bool send_soc_message(struct repeating_timer *t) {
     socFrame.data[5] = (uint8_t)( bms.get_soc() * 100 ) >> 8;     // SoC MSB, scaled
     socFrame.data[6] = 0x00;                                      // unused
     socFrame.data[7] = 0x00;                                      // unused
-    bms.send_frame(&socFrame);
+    bms.send_frame(&socFrame, false);
     return true;
 }
 
@@ -273,7 +278,7 @@ bool send_status_message(struct repeating_timer *t) {
     statusFrame.data[5] = (uint8_t)battery.get_highest_sensor_temperature() >> 8;
     statusFrame.data[6] = (uint8_t)( shunt.get_voltage1() * 100 ) && 0xFF;
     statusFrame.data[7] = (uint8_t)( shunt.get_voltage1() * 100 ) >> 8;
-    bms.send_frame(&statusFrame);
+    bms.send_frame(&statusFrame, false);
     return true;
 }
 
@@ -311,7 +316,7 @@ bool send_status_message(struct repeating_timer *t) {
  * byte 5
  *   bit 0 = low temp warn
  * byte 6
- * byte 7
+ * byte 7 = checksum
  */
 
 struct repeating_timer alarmMessageTimer;
@@ -341,7 +346,7 @@ bool send_alarm_message(struct repeating_timer *t) {
     alarmFrame.data[5] = 0x00;
     alarmFrame.data[6] = 0x00;
     alarmFrame.data[7] = 0x00;
-    bms.send_frame(&alarmFrame);
+    bms.send_frame(&alarmFrame, true);
     return true;
 }
 
@@ -444,7 +449,7 @@ Bms::Bms(Battery* _battery, Io* _io, Shunt* _shunt) {
         for ( int j = 0; j < 8; j++ ) {
             m.data[j] = j;
         }
-        this->send_frame(&m);
+        this->send_frame(&m, true);
     }
 
     printf("[bms][init] enabling CAN message handlers\n");
@@ -655,7 +660,7 @@ void Bms::increment_invalid_event_count() {
 
 void Bms::update_max_charge_current() {
     // Set charge current to zero straight away if the battery is too hot
-    if ( battery->has_temperature_sensor_over_max() ) {
+    if ( battery->all_contactors_inhibited() ) {
         maxChargeCurrent = 0;
         return;
     }
@@ -702,13 +707,21 @@ bool Bms::packs_are_imbalanced() {
 
 // Comms
 
-bool Bms::send_frame(can_frame* frame) {
+bool Bms::send_frame(can_frame* frame, bool doChecksum) {
     for ( int t = 0; t < SEND_FRAME_RETRIES; t++ ) {
         // printf("[bms][send_frame] 0x%03X  [ ", frame->can_id);
         // for ( int i = 0; i < frame->can_dlc; i++ ) {
         //     printf("%02X ", frame->data[i]);
         // }
         // printf("]\n");
+
+        if ( doChecksum ) {
+            // Calculate XOR checksum
+            frame->data[7] = 0;
+            for ( int i = 0; i < 7; i++ ) {
+                frame->data[7] ^= frame->data[i];
+            }
+        }
 
         if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
             continue;

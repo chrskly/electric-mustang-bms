@@ -122,7 +122,7 @@ class Bms {
         bool packs_are_imbalanced();
 
         // CAN
-        bool send_frame(can_frame* frame);
+        bool send_frame(can_frame* frame, bool doChecksum);
         bool read_frame(can_frame* frame);
         void send_shunt_reset_message();
 };
