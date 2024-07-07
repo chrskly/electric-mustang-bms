@@ -44,3 +44,11 @@ void print_frame(can_frame* frame) {
     }
     printf("\n");
 }
+
+uint8_t checksum_frame(can_frame* frame) {
+    uint8_t checksum = 0;
+    for ( int i = 0; i < 8; i++ ) {
+        checksum += frame->data[i];
+    }
+    return checksum;
+}

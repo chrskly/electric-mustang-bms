@@ -166,7 +166,7 @@ bool send_bms_state_message(struct repeating_timer *t) {
     bmsStateFrame.data[4] = 0x00;
     bmsStateFrame.data[5] = 0x00;
     bmsStateFrame.data[6] = 0x00;
-    bmsStateFrame.data[7] = 0x00;
+    bmsStateFrame.data[7] = 0x00; // checksum
     bms.send_frame(&bmsStateFrame);
     return true;
 }
@@ -623,11 +623,19 @@ uint8_t Bms::get_error_byte() {
         0x00 | \
         internalError | \
         battery->packs_are_imbalanced() << 1 | \
-        shunt->is_dead() << 2
+        shunt->is_dead() << 2 | \
+        illegalStateTransition << 3
     );
 }
 
-// Combine status bits into status byte to send out in status CAN message
+/* Combine status bits into status byte to send out in status CAN message
+ * bit 0 = charge inhibited
+ * bit 1 = drive inhibited
+ * bit 2 = heater enabled
+ * bit 3 = ignition on
+ * bit 4 = charge enabled
+ * bit 5 =
+ */
 uint8_t Bms::get_status_byte() {
     return (
         0x00 | \
@@ -639,9 +647,19 @@ uint8_t Bms::get_status_byte() {
     );
 }
 
+void Bms::increment_invalid_event_count() {
+    invalidEventCounter++;
+}
+
 // Charging
 
 void Bms::update_max_charge_current() {
+    // Set charge current to zero straight away if the battery is too hot
+    if ( battery->has_temperature_sensor_over_max() ) {
+        maxChargeCurrent = 0;
+        return;
+    }
+    // Scale charge current based on battery temperature
     float highestTemperature = battery->get_highest_sensor_temperature();
     if ( highestTemperature > CHARGE_THROTTLE_TEMP_LOW ) {
         float degreesOver = highestTemperature - CHARGE_THROTTLE_TEMP_LOW;
@@ -677,7 +695,7 @@ void Bms::pack_voltages_match_heartbeat() {
     lastTimePackVoltagesMatched = get_clock();
 }
 
-bool Bms::packs_imbalanced_ttl_expired() {
+bool Bms::packs_are_imbalanced() {
     return ( get_clock() - lastTimePackVoltagesMatched ) > PACKS_IMBALANCED_TTL;
 }
 

@@ -193,6 +193,9 @@ void Battery::process_voltage_update() {
     recalculate_cell_delta();
     recalculate_lowest_cell_voltage();
     recalculate_highest_cell_voltage();
+    if ( !packs_are_imbalanced() ) {
+        this->bms->pack_voltages_match_heartbeat();
+    }
 }
 
 

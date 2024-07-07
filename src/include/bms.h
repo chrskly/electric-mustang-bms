@@ -41,19 +41,21 @@ bool handle_main_CAN_messages(struct repeating_timer *t);
 
 class Bms {
     private:
-        Battery* battery;
-        State state;
-        Io* io;
-        Shunt* shunt;
-        StatusLight statusLight;
-        int8_t maxChargeCurrent;     //
-        int8_t maxDischargeCurrent;  //
-        uint8_t soc;
-        bool internalError;
-        bool watchdogReboot;
-        clock_t lastTimePackVoltagesMatched;
-        MCP2515* CAN;
-        struct can_frame canFrame;
+        Battery* battery;                     //
+        State state;                          //
+        Io* io;                               //
+        Shunt* shunt;                         //
+        StatusLight statusLight;              //
+        int8_t maxChargeCurrent;              // Tell the charger how much current it's allowed to push into the battery
+        int8_t maxDischargeCurrent;           //
+        uint8_t soc;                          // State of charge of the battery
+        bool internalError;                   // 
+        bool watchdogReboot;                  //
+        clock_t lastTimePackVoltagesMatched;  //
+        MCP2515* CAN;                         //
+        struct can_frame canFrame;            //
+        uint16_t invalidEventCounter;         // Count how many times the state machine has seen an invalid event
+        bool illegalStateTransition;          // 
 
     public:
         Bms() {};
@@ -100,6 +102,12 @@ class Bms {
         uint8_t get_error_byte();
         uint8_t get_status_byte();
 
+        void increment_invalid_event_count();
+
+        void set_illegal_state_transition() { illegalStateTransition = true; }
+        void clear_illegal_state_transition() { illegalStateTransition = false; }
+        bool get_illegal_state_transition() { return illegalStateTransition; }
+
         // Charger
         void update_max_charge_current();
         int8_t get_max_charge_current();
@@ -110,7 +118,8 @@ class Bms {
         void led_blink();
 
         void pack_voltages_match_heartbeat();
-        bool packs_imbalanced_ttl_expired();
+        //bool packs_imbalanced_ttl_expired();
+        bool packs_are_imbalanced();
 
         // CAN
         bool send_frame(can_frame* frame);

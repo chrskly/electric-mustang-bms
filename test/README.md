@@ -54,6 +54,19 @@ Event : Any cell is full
 Result : CHARGE_INHIBIT signal activates
 
 
+### Test Case 003
+
+Description : Ensure that shunt gets reset when we complete a charge to 100%
+
+Pre-conditions
+* charge on
+* One or more cells are at Vmax
+
+Event : disable charge
+
+Result : should see the shunt reset message
+
+
 --------------------------------------------------------------------------------
 
 
