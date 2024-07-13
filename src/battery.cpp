@@ -303,43 +303,50 @@ bool Battery::packs_are_imbalanced() {
 //
 //// ----
 
-int8_t Battery::get_highest_sensor_temperature() {
-    //return highestSensorTemperature;
-    float highestSensorTemperature = -126;
-    for ( int p = 0; p < numPacks; p++ ) {
-        if ( packs[p].get_highest_temperature() > highestSensorTemperature ) {
-            highestSensorTemperature = packs[p].get_highest_temperature();
+void Battery::update_highest_sensor_temperature() {
+    float newHighestSensorTemperature = packs[0].get_highest_temperature();
+    for ( int p = 1; p < numPacks; p++ ) {
+        if ( packs[p].get_highest_temperature() > newHighestSensorTemperature ) {
+            newHighestSensorTemperature = packs[p].get_highest_temperature();
         }
     }
     // Saftey check
-    if ( highestSensorTemperature < -20 || highestSensorTemperature > 50 ) {
+    if ( newHighestSensorTemperature < -20 || newHighestSensorTemperature > 50 ) {
         bms->set_internal_error();
     }
+    this->highestSensorTemperature = newHighestSensorTemperature;
+}
+
+int8_t Battery::get_highest_sensor_temperature() {
     return highestSensorTemperature;
 }
 
 // Return true if any sensor in the pack is over the max temperature
-bool Battery::has_temperature_sensor_over_max() {
-    for ( int p = 0; p < numPacks; p++ ) {
-        if ( packs[p].has_temperature_sensor_over_max() ) {
-            return true;
-        }
-    }
-    return false;
+bool Battery::too_hot() {
+    return highestSensorTemperature >= MAXIMUM_TEMPERATURE;
 }
 
-int8_t Battery::get_lowest_sensor_temperature() {
-    float lowestTemperature = 1000;
-    for ( int p = 0; p < numPacks; p++ ) {
-        if ( packs[p].get_lowest_temperature() < lowestTemperature ) {
-            lowestTemperature = packs[p].get_lowest_temperature();
+void Battery::update_lowest_sensor_temperature() {
+    float newLowestSensorTemperature = packs[0].get_lowest_temperature();
+    for ( int p = 1; p < numPacks; p++ ) {
+        if ( packs[p].get_lowest_temperature() < newLowestSensorTemperature ) {
+            newLowestSensorTemperature = packs[p].get_lowest_temperature();
         }
     }
     // Saftey check
-    if ( lowestTemperature < -20 || lowestTemperature > 50 ) {
-        bms->set_internal_error();
+    if ( newLowestSensorTemperature < -20 || newLowestSensorTemperature > 50 ) {
+        this->bms->set_internal_error();
     }
-    return lowestTemperature;
+    this->lowestSensorTemperature = newLowestSensorTemperature;
+}
+
+int8_t Battery::get_lowest_sensor_temperature() {
+    return lowestSensorTemperature;
+}
+
+void Battery::process_temperature_update() {
+    update_lowest_sensor_temperature();
+    update_highest_sensor_temperature();
 }
 
 
@@ -350,10 +357,20 @@ int8_t Battery::get_lowest_sensor_temperature() {
 //// ----
 
 bool Battery::too_cold_to_charge() {
-    if ( get_lowest_sensor_temperature() < MINIMUM_CHARGING_TEMPERATURE ) {
+    if ( get_lowest_sensor_temperature() < CHARGE_TEMPERATURE_MINIMUM ) {
         return true;
     }
     return false;
+}
+
+int8_t Battery::get_max_charge_current() {
+    int8_t newMaxChargeCurrent = packs[0].get_max_charge_current();
+    for ( int p = 1; p < numPacks; p++ ) {
+        if ( packs[p].get_max_charge_current() < newMaxChargeCurrent ) {
+            newMaxChargeCurrent = packs[p].get_max_charge_current();
+        }
+    }
+    return newMaxChargeCurrent;
 }
 
 

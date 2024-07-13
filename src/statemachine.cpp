@@ -47,7 +47,7 @@ extern Bms bms;
  * Charging       : no
  * heater         : off
  * drive inhibit  : off
- * charge inhibit : off
+ * charge inhibit : on / off
  */
 void state_standby(Event event) {
     switch (event) {
@@ -61,14 +61,13 @@ void state_standby(Event event) {
                 bms.disable_charge_inhibit("[S04] not too cold to charge and no full cell");
             }     
             // Battery is overheating. Stop everything.
-            if ( battery.has_temperature_sensor_over_max() ) {
+            if ( battery.too_hot() ) {
                 bms.enable_drive_inhibit("[S05] battery too hot");
                 bms.enable_charge_inhibit("[S06] battery too hot");
                 bms.set_state(&state_overTempFault, "battery too hot");
                 break;
             }
         case E_CELL_VOLTAGE_UPDATE:
-            battery.process_voltage_update();
             if ( battery.too_cold_to_charge() ) {
                 bms.enable_charge_inhibit("[S07] too cold to charge");
             } else if ( battery.has_full_cell() ) {
@@ -150,14 +149,13 @@ void state_drive(Event event) {
                 bms.disable_charge_inhibit("[D03] not too cold to charge");
             }
             // Battery is overheating. Stop everything.
-            if ( battery.has_temperature_sensor_over_max() ) {
+            if ( battery.too_hot() ) {
                 bms.enable_drive_inhibit("[D04] battery too hot");
                 bms.enable_charge_inhibit("[D05] battery too hot");
                 bms.set_state(&state_overTempFault, "battery too hot");
                 break;
             }
         case E_CELL_VOLTAGE_UPDATE:
-            battery.process_voltage_update();
             // FIXME can we disable regen when the battery is full?
 
             /* Battery is empty. Disallow driving (force car into neutral). We
@@ -230,7 +228,7 @@ void state_batteryHeating(Event event) {
         case E_TEMPERATURE_UPDATE:
             /* Important to catch overheating first. We don't want to heat the
              * battery all the way into an overheat situation */
-            if ( battery.has_temperature_sensor_over_max() ) {
+            if ( battery.too_hot() ) {
                 bms.enable_drive_inhibit("[H01] battery too hot");
                 bms.enable_charge_inhibit("[H02] battery too hot");
                 bms.set_state(&state_overTempFault, "battery too hot");
@@ -245,7 +243,6 @@ void state_batteryHeating(Event event) {
             }
             break;
         case E_CELL_VOLTAGE_UPDATE:
-            battery.process_voltage_update();
             /* There's no point in heating the battery to get it ready for charging if it's already full.
              * Charger should pick up on this and stop requesting charge. */
             if ( battery.has_full_cell() ) {
@@ -315,7 +312,7 @@ void state_charging(Event event) {
     switch (event) {
         case E_TEMPERATURE_UPDATE:
             // Battery is overheating. Stop everything.
-            if ( battery.has_temperature_sensor_over_max() ) {
+            if ( battery.too_hot() ) {
                 bms.disable_heater();
                 bms.enable_drive_inhibit("[C01] battery too hot");
                 bms.enable_charge_inhibit("[C02] battery too hot");
@@ -336,7 +333,6 @@ void state_charging(Event event) {
             bms.update_max_charge_current();
             break;
         case E_CELL_VOLTAGE_UPDATE:
-            battery.process_voltage_update();
             /* Prevent cells from getting over-charged */
             if ( battery.has_full_cell() ) {
                 bms.enable_charge_inhibit("[C05] full cell");
@@ -359,7 +355,7 @@ void state_charging(Event event) {
                 bms.send_shunt_reset_message();
             }
             // Battery is overheating, switch directly to overTempFault state
-            if ( battery.has_temperature_sensor_over_max() ) {
+            if ( battery.too_hot() ) {
                 // drive/charge should alredy be inhibited at this point, but just in case
                 bms.enable_drive_inhibit("[C06] battery too hot");
                 bms.enable_charge_inhibit("[C07] battery too hot");
@@ -416,7 +412,7 @@ void state_batteryEmpty(Event event) {
                 bms.disable_charge_inhibit("[E03] not too cold to charge and no full cell");
             }
             // Battery is overheating. Stop everything.
-            if ( battery.has_temperature_sensor_over_max() ) {
+            if ( battery.too_hot() ) {
                 bms.enable_drive_inhibit("[E04] battery too hot");
                 bms.enable_charge_inhibit("[E05] battery too hot");
                 bms.set_state(&state_overTempFault, "battery too hot");
@@ -424,7 +420,6 @@ void state_batteryEmpty(Event event) {
             }
             break;
         case E_CELL_VOLTAGE_UPDATE:
-            battery.process_voltage_update();
             if ( battery.too_cold_to_charge() ) {
                 bms.enable_charge_inhibit("[E06] too cold to charge");
             } else if ( battery.has_full_cell() ) {
@@ -487,17 +482,27 @@ void state_batteryEmpty(Event event) {
  * drive inhibit  : on
  * charge inhibit : on
  *
- * Reasons we can be in this state:
- *   - Batteries are too hot
+ * Notes:
+ * 1. The only way to get out of this state is for the battery to cool down.
+ * 2. If a charge is requested while in this state, we stay here and just
+ *    disallow. We don't switch over to the charging state for safety reasons. 
  */
+//------------------------------------------------------------------------------
 void state_overTempFault(Event event) {
+    // Safeties
+    bms.enable_drive_inhibit("[T00] battery too hot");
+    bms.enable_charge_inhibit("[T00] battery too hot");
+    bms.disable_heater();
+    bms.update_max_charge_current();
+
     switch (event) {
         case E_TEMPERATURE_UPDATE:
             /* Temperature has dropped below max limit. We need to figure out
              * which state to switch to based on the input signals */
-            if ( !battery.has_temperature_sensor_over_max() ) {
+            if ( !battery.too_hot() ) {
                 // Charge mode overrides drive mode
                 if ( bms.charge_is_enabled() ) {
+                    // FIXME only go to charge if all contactors inhibited, otherwise go to fault
                     if ( battery.one_or_more_contactors_inhibited() ) {
                         battery.disable_inhibit_for_charge();
                     }
@@ -507,6 +512,7 @@ void state_overTempFault(Event event) {
                 }
                 // Drive mode
                 if ( bms.ignition_is_on() ) {
+                    // FIXME only go to drive if all contactors inhibited, otherwise go to fault
                     if ( battery.one_or_more_contactors_inhibited() ) {
                         battery.disable_inhibit_for_drive();
                     }
@@ -523,7 +529,6 @@ void state_overTempFault(Event event) {
             }
             break;
         case E_CELL_VOLTAGE_UPDATE:
-            battery.process_voltage_update();
             break;
         case E_IGNITION_ON:
             // Valid event, but we don't need to do anything with it.
@@ -560,7 +565,6 @@ void state_illegalStateTransitionFault(Event event) {
         case E_TEMPERATURE_UPDATE:
             break;
         case E_CELL_VOLTAGE_UPDATE:
-            battery.process_voltage_update();
             if ( !bms.charge_is_inhibited() && battery.has_full_cell() ) {
                 bms.enable_charge_inhibit("[F01] full cell");
             }

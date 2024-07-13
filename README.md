@@ -177,6 +177,46 @@ make
    this, contactors will not be allowed to close.
 4. minChargeTemp - disallow charging at or below this temperature.
 
+## Charging
+
+When in charge mode the BMS will emit a maximum allowed charge current in the
+0x351 CAN message. The chargers will listen for this and adjust their request
+accordingly.
+
+There is a minimum temperature below which we must not charge. So we disallow
+charging at or below -10°C.
+
+Above the minimum, we need to limit the charge current. So we ramp up the
+allowed current as temperature increases. This is between -10°C and 15°C.
+
+In the 'happy temperature' range (between 15°C and 35°C) we allow the full 125A
+(delivered by a 50kw charger). However, if the temperature of the pack increases
+by more than 1°C per minute, derate the charge current by 10% for every degree
+over.
+
+Above 35°C, we ramp back down the current. We also derate based on temperature
+increase on top of that.
+
+It looks something like this.
+
+```
+current
+   ^
+   |
+   |                    /----------------------\
+   |                  /                         \
+   |                /                            \
+   |              /                               \
+   |            /                                  \
+   |          /                                     \
+   |        /                                        \
+   |      /                                           \
+   |    /                                              \
+   |  /                                                 \
+   +-+------------------+---------------------+----------+----> temperature
+    -10°               15°C                  35°C       40°C
+```
+
 ## To Do
 
 - [x] Fetch SoC from shunt and store in memory

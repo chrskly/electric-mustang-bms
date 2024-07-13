@@ -205,11 +205,13 @@ void BatteryPack::read_message() {
     // Temperature messages
     if ( (frame.can_id & 0xFF0) == 0x180 ) {
         decode_temperatures(&frame);
+        this->battery->process_temperature_update();
         this->bms->send_event(E_TEMPERATURE_UPDATE);
     }
     // Voltage messages
     if (frame.can_id > 0x99 && frame.can_id < 0x180) {
         decode_voltages(&frame);
+        this->battery->process_voltage_update();
         this->bms->send_event(E_CELL_VOLTAGE_UPDATE);
     }
 }
@@ -477,6 +479,14 @@ void BatteryPack::decode_temperatures(can_frame *temperatureMessageFrame) {
     }
 }
 
+void BatteryPack::process_temperature_update() {
+    if ( ( get_clock() - lastTemperatureSampleTime ) > PACK_TEMP_SAMPLE_INTERVAL ) {
+        lastTemperatureSampleTime = get_clock();
+        temperatureDelta = get_highest_temperature() - lastTemperatureSample;
+        lastTemperatureSample = get_highest_temperature();
+    }
+}
+
 
 //// ----
 //
@@ -507,3 +517,46 @@ bool BatteryPack::contactors_are_inhibited() {
 
 
 
+// Current
+
+int16_t BatteryPack::get_max_discharge_current() {
+    return 0;
+}
+
+/* Returns the maximum charge current as a function of battery temperature. */
+int16_t BatteryPack::get_max_charge_current() {
+    // Safety checks first
+    if ( has_full_cell() ) {
+        return 0;
+    }
+    if ( has_temperature_sensor_over_max() ) {
+        return 0;
+    }
+    if ( get_lowest_temperature() < CHARGE_TEMPERATURE_MINIMUM) {
+        return 0;
+    }
+
+    /* Allow predefined max current when the temperature is below
+     * CHARGE_TEMPERATURE_DERATING_MINIMUM (15°C) */
+    if ( get_highest_temperature() < CHARGE_TEMPERATURE_DERATING_MINIMUM ) {
+        return chargeCurrentMax[static_cast<int>(get_highest_temperature() + 10)];
+    }
+
+    /* When battery temp is over CHARGE_TEMPERATURE_DERATING_MINIMUM (15°C), 
+     * allow CHARGE_TEMPERATURE_DERATING_THRESHOLD (1°) of temperature increase
+     * per minute. Scale back charge current by 10% for every degree over that.*/
+    else {
+        if ( temperatureDelta < CHARGE_TEMPERATURE_DERATING_THRESHOLD ) {
+            return chargeCurrentMax[static_cast<int>(get_highest_temperature() + 10)];
+        } else {
+            if ( (temperatureDelta - CHARGE_TEMPERATURE_DERATING_THRESHOLD) >= 10 ) {
+                return 0;
+            } else {
+                float derateScaleFactor = (10 - temperatureDelta - CHARGE_TEMPERATURE_DERATING_THRESHOLD) / 100;
+                return chargeCurrentMax[static_cast<int>(get_highest_temperature() + 10)] * derateScaleFactor;
+            }
+        }
+    }
+
+    return 0;
+}

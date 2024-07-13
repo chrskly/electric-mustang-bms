@@ -74,10 +74,14 @@ class Battery {
       bool packs_are_imbalanced(); 
 
       // Temperature
+      void update_highest_sensor_temperature();
       int8_t get_highest_sensor_temperature();
-      bool has_temperature_sensor_over_max();
+      bool too_hot();
+      void update_lowest_sensor_temperature();
       int8_t get_lowest_sensor_temperature();
+      void process_temperature_update();
       bool too_cold_to_charge();
+      int8_t get_max_charge_current();
 
       // Contactors
       void disable_inhibit_for_drive();

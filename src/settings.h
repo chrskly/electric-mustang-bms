@@ -77,6 +77,8 @@ const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallo
 #define PACKS_IMBALANCED_TTL 3000                  // If the packs are imbalanced for more than PACKS_IMBALANCED_TTL seconds, then
                                                    // actually inhibit the contactors.
 
+#define PACK_TEMP_SAMPLE_INTERVAL 60
+
 // The capacity of the battery pack
 #define BATTERY_CAPACITY_WH 14800         // 7.4kWh usable per pack, x2 packs
 #define BATTERY_CAPACITY_AS 187200        // 26Ah per pack (93,600 As), x2 packs
@@ -89,15 +91,12 @@ const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallo
 // Official max pack voltage = 398V. 398 / 6 / 16 = 4.1458333333V
 #define CELL_FULL_VOLTAGE 4000
 
-#define MINIMUM_TEMPERATURE -20         // 
-#define MINIMUM_CHARGING_TEMPERATURE 1  // Disallow charging below this temperature
 #define WARNING_TEMPERATURE 30          // 
 #define MAXIMUM_TEMPERATURE 50          // Stop everything if the battery is above this temperature
 
-#define CHARGE_THROTTLE_TEMP_LOW  20    // Start throttling charge current when battery sensors above this temperature
-#define CHARGE_THROTTLE_TEMP_HIGH 30    // Top of scale. Limit current to CHARGE_CURRENT_MIN at and above this temperature
-#define CHARGE_CURRENT_MAX 125          // ~50kw
-#define CHARGE_CURRENT_MIN 8            // ~3.3kw
+#define CHARGE_TEMPERATURE_MINIMUM -10             // minimum temperature required to allow charging
+#define CHARGE_TEMPERATURE_DERATING_MINIMUM 15     // where temperature based derating kicks in
+#define CHARGE_TEMPERATURE_DERATING_THRESHOLD 1    // Allow temperature to increase this much per minute. Above that, derate.
 
 #define BALANCE_INTERVAL 1200           // number of seconds between balancing sessions
 

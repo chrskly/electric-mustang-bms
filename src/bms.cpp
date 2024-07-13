@@ -337,7 +337,7 @@ bool send_alarm_message(struct repeating_timer *t) {
     }
     alarmFrame.data[1] = 0x00;
     // Set over temp bit (7)
-    if ( battery.has_temperature_sensor_over_max() ) {
+    if ( battery.too_hot() ) {
         alarmFrame.data[1] |= 0x40;
     }
     alarmFrame.data[2] = 0x00;
@@ -659,21 +659,12 @@ void Bms::increment_invalid_event_count() {
 // Charging
 
 void Bms::update_max_charge_current() {
-    // Set charge current to zero straight away if the battery is too hot
-    if ( battery->all_contactors_inhibited() ) {
+    // Safeties
+    if ( battery->too_hot() || charge_is_inhibited() ) {
         maxChargeCurrent = 0;
         return;
     }
-    // Scale charge current based on battery temperature
-    float highestTemperature = battery->get_highest_sensor_temperature();
-    if ( highestTemperature > CHARGE_THROTTLE_TEMP_LOW ) {
-        float degreesOver = highestTemperature - CHARGE_THROTTLE_TEMP_LOW;
-        float scaleFactor = 1 - (degreesOver / (CHARGE_THROTTLE_TEMP_HIGH - CHARGE_THROTTLE_TEMP_LOW));
-        float chargeCurrent = (scaleFactor * (CHARGE_CURRENT_MAX - CHARGE_CURRENT_MIN)) + CHARGE_CURRENT_MIN;
-        maxChargeCurrent = static_cast<int>(chargeCurrent);
-    } else {
-        maxChargeCurrent = static_cast<int>(CHARGE_CURRENT_MAX);
-    }
+    maxChargeCurrent = battery->get_max_charge_current();
 }
 
 int8_t Bms::get_max_charge_current() {

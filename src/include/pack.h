@@ -74,11 +74,15 @@ class BatteryPack {
       int8_t get_lowest_temperature();
       int8_t get_highest_temperature();
       void decode_temperatures(can_frame *temperatureMessageFrame);
+      void process_temperature_update();
 
       // Contactors
       void enable_inhibit_contactor_close();
       void disable_inhibit_contactor_close();
       bool contactors_are_inhibited();
+
+      int16_t get_max_discharge_current();
+      int16_t get_max_charge_current();
 
    private:
       MCP2515* CAN;                                     // CAN bus connection to this pack
@@ -106,6 +110,33 @@ class BatteryPack {
       bool inStartup;
       uint8_t modulePollingCycle;
       can_frame pollModuleFrame;
+
+      uint8_t dischargeCurve[50] = {
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // -10C to -1C
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0C to 9C
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 10C to 19C
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 20C to 29C
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 30C to 39C
+      };
+
+      // C = 26Ah
+      // -10° => +39° => whole charging range
+      // below -10° => no charging, try and heat the battery
+      // -10° to -1° => 3A to 6A
+      //   0° to 15° => 4A to 125A
+      //  16° to 35° => 125A
+      //  36° to 39° => 50A
+      // above 40° => no charging
+      uint8_t chargeCurrentMax[50] = {
+         3, 3, 3, 4, 4, 4, 5, 5, 6, 6,  // -10° to -1°
+         13, 20, 27, 34, 41, 48, 55, 62, 69, 76, 83, 90, 97, 104, 111, 118,  // 0° to 15°
+         125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125,  // 16° to 35°
+         50, 50, 50, 50,  // 36° to 39°
+      };
+
+      clock_t lastTemperatureSampleTime;
+      int8_t lastTemperatureSample;
+      int8_t temperatureDelta;
 };
 
 #endif  // BMS_SRC_INCLUDE_PACK_H_
