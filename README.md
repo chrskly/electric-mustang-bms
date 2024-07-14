@@ -241,6 +241,10 @@ current
 - [x] Warn/alarm flags
 - [x] Warn when modules are missing
 - [ ] Deal with scenario when one pack is full and one pack is empty
+- [ ] Communication error bit(s)
+- [ ] enable/disable regen bit
+- [ ] inhibit function naming confusing
+- [ ] charge_inhibit_reason can msg?
 
 ## Credits
 
