@@ -245,6 +245,7 @@ current
 - [ ] enable/disable regen bit
 - [ ] inhibit function naming confusing
 - [x] charge_inhibit_reason can msg
+- [x] drive_inhibit_reason can msg
 
 ## Credits
 

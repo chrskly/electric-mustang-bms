@@ -67,6 +67,7 @@ void state_standby(Event event) {
             }     
             // Battery is overheating. Stop everything.
             if ( battery.too_hot() ) {
+                bms.set_drive_inhibit_reason(R_TOO_HOT);
                 bms.enable_drive_inhibit("[S05] battery too hot");
                 bms.set_charge_inhibit_reason(R_TOO_HOT);
                 bms.enable_charge_inhibit("[S06] battery too hot");
@@ -95,6 +96,7 @@ void state_standby(Event event) {
             }
             // Battery is empty. Disallow driving.
             if ( battery.has_empty_cell() ) {
+                bms.set_drive_inhibit_reason(R_BATTERY_EMPTY);
                 bms.enable_drive_inhibit("[S10] empty battery");
                 bms.set_state(&state_batteryEmpty, "empty battery");
                 break;
@@ -120,10 +122,12 @@ void state_standby(Event event) {
                 bms.enable_heater();
                 bms.set_charge_inhibit_reason(R_TOO_COLD);
                 bms.enable_charge_inhibit("[S11] too cold to charge");
+                bms.set_drive_inhibit_reason(R_CHARGING);
                 bms.enable_drive_inhibit("[S12] charge requested");
                 bms.set_state(&state_batteryHeating, "charge requested, but too cold to charge");
                 break;
             }
+            bms.set_drive_inhibit_reason(R_CHARGING);
             bms.enable_drive_inhibit("[S13] charge requested");
             bms.set_state(&state_charging, "charge requested");
             break;
@@ -165,6 +169,7 @@ void state_drive(Event event) {
             }
             // Battery is overheating. Stop everything.
             if ( battery.too_hot() ) {
+                bms.set_drive_inhibit_reason(R_TOO_HOT);
                 bms.enable_drive_inhibit("[D04] battery too hot");
                 bms.set_charge_inhibit_reason(R_TOO_HOT);
                 bms.enable_charge_inhibit("[D05] battery too hot");
@@ -175,6 +180,7 @@ void state_drive(Event event) {
             /* Battery is empty. Disallow driving (force car into neutral). We
              * cannot open the contactors as this could blow up the inverter. */
             if ( battery.has_empty_cell() ) {
+                bms.set_drive_inhibit_reason(R_BATTERY_EMPTY);
                 bms.enable_drive_inhibit("[D06] empty battery");
                 bms.set_state(&state_batteryEmpty, "empty battery");
                 break;
@@ -207,6 +213,7 @@ void state_drive(Event event) {
             /* Cannot go straight from drive mode to charge mode when packs are
             * imbalanced. See note 1 above. */
             if ( battery.one_or_more_contactors_inhibited() ) {
+                bms.set_drive_inhibit_reason(R_ILLEGAL_STATE_TRANSITION);
                 bms.enable_drive_inhibit("[D09] imbalanced packs");
                 bms.set_charge_inhibit_reason(R_ILLEGAL_STATE_TRANSITION);
                 bms.enable_charge_inhibit("[D10] imbalanced packs");
@@ -217,6 +224,7 @@ void state_drive(Event event) {
             /* Lets assume that we're not in motion (hopefully a safe 
              * assumption). All contactors are already closed so we can just 
              * switch straight into charge mode. */
+            bms.set_drive_inhibit_reason(R_CHARGING);
             bms.enable_drive_inhibit("[D11] charge mode");
             bms.set_state(&state_charging, "charge requested");
             break;

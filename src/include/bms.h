@@ -38,11 +38,13 @@ bool send_status_message(struct repeating_timer *t);
 bool send_alarm_message(struct repeating_timer *t);
 bool handle_main_CAN_messages(struct repeating_timer *t);
 
-enum ChargeInhibitReason {
+enum InhibitReason {
     R_NONE,
     R_TOO_HOT,
     R_TOO_COLD,
     R_BATTERY_FULL,
+    R_BATTERY_EMPTY,
+    R_CHARGING,
     R_ILLEGAL_STATE_TRANSITION,
 };
 
@@ -63,7 +65,8 @@ class Bms {
         struct can_frame canFrame;            //
         uint16_t invalidEventCounter;         // Count how many times the state machine has seen an invalid event
         bool illegalStateTransition;          //
-        int8_t chargeInhibitReason;           // 
+        int8_t chargeInhibitReason;           //
+        int8_t driveInhibitReason;            //
 
     public:
         Bms() {};
@@ -73,9 +76,6 @@ class Bms {
         void set_state(State _state, std::string reason);
         State get_state();
         void send_event(Event event);
-        void set_charge_inhibit_reason(ChargeInhibitReason reason);
-        void clear_charge_inhibit_reason();
-        int8_t get_charge_inhibit_reason();
         void print();
 
         // Watchdog
@@ -85,11 +85,18 @@ class Bms {
         void enable_drive_inhibit(std::string context);
         void disable_drive_inhibit(std::string context);
         bool drive_is_inhibited();
+        void set_drive_inhibit_reason(InhibitReason reason);
+        void clear_drive_inhibit_reason();
+        int8_t get_drive_inhibit_reason();
 
         // CHARGE_INHIBIT
         void enable_charge_inhibit(std::string context);
         void disable_charge_inhibit(std::string context);
         bool charge_is_inhibited();
+        void set_charge_inhibit_reason(InhibitReason reason);
+        void clear_charge_inhibit_reason();
+        int8_t get_charge_inhibit_reason();
+
 
         // HEATER
         void enable_heater();

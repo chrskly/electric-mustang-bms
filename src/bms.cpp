@@ -129,7 +129,7 @@ bool send_limits_message(struct repeating_timer *t) {
  *   bit 6 =
  *   bit 7 =
  * byte 3 = charge inhibit reason
- * byte 4
+ * byte 4 = drive inhibit reason
  * byte 5
  * byte 6
  * byte 7 = checksum
@@ -167,7 +167,7 @@ bool send_bms_state_message(struct repeating_timer *t) {
     bmsStateFrame.data[1] = bms.get_error_byte();
     bmsStateFrame.data[2] = bms.get_status_byte();
     bmsStateFrame.data[3] = bms.get_charge_inhibit_reason();
-    bmsStateFrame.data[4] = 0x00;
+    bmsStateFrame.data[4] = bms.get_drive_inhibit_reason();
     bmsStateFrame.data[5] = 0x00;
     bmsStateFrame.data[6] = 0x00;
     bmsStateFrame.data[7] = 0x00; // checksum
@@ -507,18 +507,6 @@ void Bms::send_event(Event event) {
     state(event);
 }
 
-void Bms::set_charge_inhibit_reason(ChargeInhibitReason reason) {
-    chargeInhibitReason = reason;
-}
-
-void Bms::clear_charge_inhibit_reason() {
-    chargeInhibitReason = R_NONE;
-}
-
-int8_t Bms::get_charge_inhibit_reason() {
-    return chargeInhibitReason;
-}
-
 void Bms::print() {
     std::string chg_inh = io->charge_is_inhibited() ? "true" : "false";
     std::string drv_inh = io->drive_is_inhibited() ? "true" : "false";
@@ -550,6 +538,7 @@ void Bms::enable_drive_inhibit(std::string context) {
 }
 
 void Bms::disable_drive_inhibit(std::string context) {
+    clear_drive_inhibit_reason();
     if ( drive_is_inhibited() ) {
         io->disable_drive_inhibit(context);
     }
@@ -557,6 +546,18 @@ void Bms::disable_drive_inhibit(std::string context) {
 
 bool Bms::drive_is_inhibited() {
     return io->drive_is_inhibited();
+}
+
+void Bms::set_drive_inhibit_reason(InhibitReason reason) {
+    driveInhibitReason = reason;
+}
+
+void Bms::clear_drive_inhibit_reason() {
+    driveInhibitReason = R_NONE;
+}
+
+int8_t Bms::get_drive_inhibit_reason() {
+    return driveInhibitReason;
 }
 
 // CHARGE_INHIBIT
@@ -578,6 +579,18 @@ void Bms::disable_charge_inhibit(std::string context) {
 
 bool Bms::charge_is_inhibited() {
     return io->charge_is_inhibited();
+}
+
+void Bms::set_charge_inhibit_reason(InhibitReason reason) {
+    chargeInhibitReason = reason;
+}
+
+void Bms::clear_charge_inhibit_reason() {
+    chargeInhibitReason = R_NONE;
+}
+
+int8_t Bms::get_charge_inhibit_reason() {
+    return chargeInhibitReason;
 }
 
 // HEATER
