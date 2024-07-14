@@ -17,13 +17,15 @@ The car will also have precharge and main contactors in the HVJB. These are cont
 ## Compiling/Installing
 
 ### Building the BMS code
+
 ```
 cd src/build
 cmake ../
 make
 ```
 
-### Building the test frameworkd code
+### Building the test framework code
+
 ```
 cd test/build
 cmake ../
@@ -33,6 +35,7 @@ make
 ## State machine
 
 ### States
+
 * standby
 * drive
 * batteryHeating
@@ -42,6 +45,7 @@ make
 * illegalStateTransitionFault
 
 ### Events
+
 * E_TEMPERATURE_UPDATE  - the readings from the battery temperature sensors have
                           updated values.
 * E_CELL_VOLTAGE_UPDATE - the readings from the battery voltage sensors have
@@ -50,7 +54,6 @@ make
 * E_IGNITION_OFF        - the ignition has been turned off.
 * E_CHARGING_INITIATED  - charging has been initiated.
 * E_CHARGING_TERMINATED - charging has been stopped.
-* E_EMERGENCY_SHUTDOWN  - something bad has happened. Shut down as soon as possible.
 
 ## Functionality
 
@@ -101,6 +104,7 @@ make
 ```
 
 ### BMS
+
 - A1  : GPIO_13 : IN_3
 - A2  : GPIO_11 : IN_1
 - A3  : GPIO_9  : IN_X  / CHARGE_ENABLE_IN
@@ -113,6 +117,7 @@ make
 - A10 : GPIO_10 : IN_X  / IGNITION_ON_IN
 - A11 : GPIO_12 : IN_2
 - A12 : GPIO_14 : IN_4
+
 
 - B1 : BATT_2_CAN_H
 - B2 : BATT_1_CAN_H
@@ -128,6 +133,7 @@ make
 - B12 : BATT_2_CAN_L
 
 ### Tester
+
 - A1  : GPIO_13 : IN_3  / DRIVE_INHIBIT
 - A2  : GPIO_11 : IN_1  / CHARGE_INHIBIT
 - A3  : GPIO_9  : IN_X  / HEATER_ENABLE
@@ -140,6 +146,7 @@ make
 - A10 : GPIO_10 : IN_X  / 
 - A11 : GPIO_12 : IN_2  / BATT_2_INHIBIT
 - A12 : GPIO_14 : IN_4  / BATT_1_INHIBIT
+
 
 - B1 : BATT_2_CAN_H
 - B2 : BATT_1_CAN_H
@@ -233,6 +240,7 @@ current
 - [x] ISA shunt heartbeat
 - [x] Warn/alarm flags
 - [x] Warn when modules are missing
+- [ ] Deal with scenario when one pack is full and one pack is empty
 
 ## Credits
 
