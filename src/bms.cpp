@@ -128,7 +128,7 @@ bool send_limits_message(struct repeating_timer *t) {
  *   bit 5 =
  *   bit 6 =
  *   bit 7 =
- * byte 3
+ * byte 3 = charge inhibit reason
  * byte 4
  * byte 5
  * byte 6
@@ -166,8 +166,7 @@ bool send_bms_state_message(struct repeating_timer *t) {
 
     bmsStateFrame.data[1] = bms.get_error_byte();
     bmsStateFrame.data[2] = bms.get_status_byte();
-
-    bmsStateFrame.data[3] = 0x00;
+    bmsStateFrame.data[3] = bms.get_charge_inhibit_reason();
     bmsStateFrame.data[4] = 0x00;
     bmsStateFrame.data[5] = 0x00;
     bmsStateFrame.data[6] = 0x00;
@@ -423,6 +422,7 @@ Bms::Bms(Battery* _battery, Io* _io, Shunt* _shunt) {
     shunt = _shunt;
     internalError = false;
     statusLight = StatusLight(this);
+    chargeInhibitReason = R_NONE;
 
     printf("[bms][init] setting up main CAN port\n");
     CAN = new MCP2515(SPI_PORT, MAIN_CAN_CS, SPI_MISO, SPI_MOSI, SPI_CLK, 500000);
@@ -507,6 +507,18 @@ void Bms::send_event(Event event) {
     state(event);
 }
 
+void Bms::set_charge_inhibit_reason(ChargeInhibitReason reason) {
+    chargeInhibitReason = reason;
+}
+
+void Bms::clear_charge_inhibit_reason() {
+    chargeInhibitReason = R_NONE;
+}
+
+int8_t Bms::get_charge_inhibit_reason() {
+    return chargeInhibitReason;
+}
+
 void Bms::print() {
     std::string chg_inh = io->charge_is_inhibited() ? "true" : "false";
     std::string drv_inh = io->drive_is_inhibited() ? "true" : "false";
@@ -558,6 +570,7 @@ void Bms::enable_charge_inhibit(std::string context) {
 
 void Bms::disable_charge_inhibit(std::string context) {
     //printf("    * Disabling charge inhibit\n");
+    clear_charge_inhibit_reason();
     if ( charge_is_inhibited() ) {
         io->disable_charge_inhibit(context);
     }

@@ -244,7 +244,7 @@ current
 - [ ] Communication error bit(s)
 - [ ] enable/disable regen bit
 - [ ] inhibit function naming confusing
-- [ ] charge_inhibit_reason can msg?
+- [x] charge_inhibit_reason can msg
 
 ## Credits
 
