@@ -84,8 +84,8 @@ class Battery {
       int8_t get_max_charge_current();
 
       // Contactors
-      void disable_inhibit_for_drive();
-      void disable_inhibit_for_charge();
+      void disable_inhibit_contactors_for_drive();
+      void disable_inhibit_contactors_for_charge();
       void enable_inhibit_contactor_close();
       void disable_inhibit_contactor_close();
       bool one_or_more_contactors_inhibited();

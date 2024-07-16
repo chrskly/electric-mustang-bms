@@ -107,7 +107,7 @@ void state_standby(Event event) {
              * close. Since we're going into drive mode, we want to pick the
              * high pack(s). */
             if ( battery.one_or_more_contactors_inhibited() ) {
-                battery.disable_inhibit_for_drive();
+                battery.disable_inhibit_contactors_for_drive();
             }
             bms.set_state(&state_drive, "ignition turned on");
             break;
@@ -195,7 +195,7 @@ void state_drive(Event event) {
              * the high pack(s) enough that its/their voltage matches the low
              * pack(s), allow the contactors to close on the low pack(s). */
             if ( battery.one_or_more_contactors_inhibited() ) {
-                battery.disable_inhibit_for_drive();
+                battery.disable_inhibit_contactors_for_drive();
             }
             break;
         case E_IGNITION_ON:
@@ -542,7 +542,7 @@ void state_overTempFault(Event event) {
                 if ( bms.charge_is_enabled() ) {
                     // FIXME only go to charge if all contactors inhibited, otherwise go to fault
                     if ( battery.one_or_more_contactors_inhibited() ) {
-                        battery.disable_inhibit_for_charge();
+                        battery.disable_inhibit_contactors_for_charge();
                     }
                     bms.disable_charge_inhibit("[T01] battery has cooled");
                     bms.set_state(&state_charging, "battery has cooled");
@@ -552,7 +552,7 @@ void state_overTempFault(Event event) {
                 if ( bms.ignition_is_on() ) {
                     // FIXME only go to drive if all contactors inhibited, otherwise go to fault
                     if ( battery.one_or_more_contactors_inhibited() ) {
-                        battery.disable_inhibit_for_drive();
+                        battery.disable_inhibit_contactors_for_drive();
                     }
                     bms.disable_charge_inhibit("[T02] battery has cooled");
                     bms.disable_drive_inhibit("[T03] battery has cooled");

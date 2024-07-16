@@ -420,7 +420,7 @@ bool Battery::all_contactors_inhibited() {
 
 // Allow contactors to close for the high pack and any other packs which are
 // within SAFE_VOLTAGE_DELTA_BETWEEN_PACKS volts.
-void Battery::disable_inhibit_for_drive() {
+void Battery::disable_inhibit_contactors_for_drive() {
     int highPackId = get_index_of_high_pack();
     uint32_t highPackVoltage = packs[highPackId].get_voltage();
     uint32_t targetVoltage = highPackVoltage - SAFE_VOLTAGE_DELTA_BETWEEN_PACKS;
@@ -437,7 +437,7 @@ void Battery::disable_inhibit_for_drive() {
 
 // Allow contactors to close for the low pack and any other packs which are
 // within SAFE_VOLTAGE_DELTA_BETWEEN_PACKS volts.
-void Battery::disable_inhibit_for_charge() {
+void Battery::disable_inhibit_contactors_for_charge() {
     int lowPackId = get_index_of_low_pack();
     uint32_t lowPackVoltage = packs[lowPackId].get_voltage();
     uint32_t targetVoltage = lowPackVoltage + SAFE_VOLTAGE_DELTA_BETWEEN_PACKS;
