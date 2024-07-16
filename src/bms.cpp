@@ -114,7 +114,7 @@ bool send_limits_message(struct repeating_timer *t) {
  *   bit 0 = internalError   - something has gone wrong in the BMS
  *   bit 1 = packsImbalanced - the voltage between two or more packs varies by an unsafe amount
  *   bit 2 = shuntIsDead     - the shunt has not sent a message in SHUNT_TTL seconds
- *   bit 3 = 
+ *   bit 3 = disableRegen    - regen is disabled
  *   bit 4 =
  *   bit 5 =
  *   bit 6 =
@@ -655,7 +655,8 @@ uint8_t Bms::get_error_byte() {
         internalError | \
         battery->packs_are_imbalanced() << 1 | \
         shunt->is_dead() << 2 | \
-        illegalStateTransition << 3
+        illegalStateTransition << 3 | \
+        regen_not_allowed() << 4
     );
 }
 

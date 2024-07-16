@@ -242,7 +242,7 @@ current
 - [x] Warn when modules are missing
 - [ ] Deal with scenario when one pack is full and one pack is empty
 - [ ] Communication error bit(s)
-- [ ] enable/disable regen bit
+- [x] enable/disable regen bit
 - [x] inhibit function naming confusing
 - [x] charge_inhibit_reason can msg
 - [x] drive_inhibit_reason can msg

@@ -120,6 +120,8 @@ class Bms {
         uint8_t get_error_byte();
         uint8_t get_status_byte();
 
+        bool regen_not_allowed() { return soc > 90; };
+
         void increment_invalid_event_count();
 
         void set_illegal_state_transition() { illegalStateTransition = true; }
