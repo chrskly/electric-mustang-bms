@@ -127,6 +127,10 @@ uint8_t BatteryPack::getcheck(can_frame &msg, int id) {
     return (crc8.get_crc8(canmes, meslen, finalxor[id]));
 }
 
+int8_t BatteryPack::get_module_liveness(int8_t moduleId) {
+    return modules[moduleId].is_alive();
+}
+
 /*
  *
  * Contents of message

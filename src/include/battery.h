@@ -90,6 +90,8 @@ class Battery {
       void disable_inhibit_contactor_close();
       bool one_or_more_contactors_inhibited();
       bool all_contactors_inhibited();
+
+      int8_t get_module_liveness_byte(int8_t moduleId);
 };
 
 #endif  // BMS_SRC_INCLUDE_BATTERY_H_

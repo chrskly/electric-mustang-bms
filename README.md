@@ -246,6 +246,7 @@ current
 - [x] inhibit function naming confusing
 - [x] charge_inhibit_reason can msg
 - [x] drive_inhibit_reason can msg
+- [x] transmit module liveness over can
 
 ## Credits
 

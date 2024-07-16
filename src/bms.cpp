@@ -195,14 +195,15 @@ struct repeating_timer moduleLivenessTimer;
 
 bool send_module_liveness_message(struct repeating_timer *t) {
     extern Bms bms;
+    extern Battery battery;
     struct can_frame moduleLivenessFrame;
     zero_frame(&moduleLivenessFrame);
     moduleLivenessFrame.can_id = 0x353;
-    moduleLivenessFrame.data[0] = 0x00;
-    moduleLivenessFrame.data[1] = 0x00;
-    moduleLivenessFrame.data[2] = 0x00;
-    moduleLivenessFrame.data[3] = 0x00;
-    moduleLivenessFrame.data[4] = 0x00;
+    moduleLivenessFrame.data[0] = battery.get_module_liveness_byte(0);
+    moduleLivenessFrame.data[1] = battery.get_module_liveness_byte(8);
+    moduleLivenessFrame.data[2] = battery.get_module_liveness_byte(16);
+    moduleLivenessFrame.data[3] = battery.get_module_liveness_byte(24);
+    moduleLivenessFrame.data[4] = battery.get_module_liveness_byte(32);
     moduleLivenessFrame.data[5] = 0x00;
     moduleLivenessFrame.data[6] = 0x00;
     moduleLivenessFrame.data[7] = 0x00;
