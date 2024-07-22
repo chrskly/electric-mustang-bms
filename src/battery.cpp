@@ -63,7 +63,7 @@ void Battery::initialise(Bms* _bms) {
 
     for ( int p = 0; p < numPacks; p++ ) {
         printf("[battery] Initialising battery pack %d (CS:%d, inh:%d, mod/pack:%d, cell/mod:%d, T/mod:%d)\n", p, CS_PINS[p], INHIBIT_CONTACTOR_PINS[p], MODULES_PER_PACK, CELLS_PER_MODULE, TEMPS_PER_MODULE);
-        packs[p] = BatteryPack(p, CS_PINS[p], INHIBIT_CONTACTOR_PINS[p], MODULES_PER_PACK, CELLS_PER_MODULE, TEMPS_PER_MODULE, canMutex, bms);
+        packs[p] = BatteryPack(p, CS_PINS[p], INHIBIT_CONTACTOR_PINS[p], CONTACTOR_FEEDBACK_PINS[p], MODULES_PER_PACK, CELLS_PER_MODULE, TEMPS_PER_MODULE, canMutex, bms);
         packs[p].set_battery(this);
         printf("[battery] Initialisation of battery pack %d complete\n", p);
     }
@@ -470,4 +470,8 @@ int8_t Battery::get_module_liveness_byte(int8_t moduleId) {
         }
     }
     return livenessByte;
+}
+
+bool Battery::contactor_is_welded(uint8_t packId) {
+    return packs[packId].contactors_are_welded();
 }

@@ -33,8 +33,8 @@
 
 BatteryPack::BatteryPack() {}
 
-BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _numModules, 
-        int _numCellsPerModule, int _numTemperatureSensorsPerModule, mutex_t* _canMutex, Bms* _bms) {
+BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _contactorFeedbackPin,
+        int _numModules, int _numCellsPerModule, int _numTemperatureSensorsPerModule, mutex_t* _canMutex, Bms* _bms) {
 
     id = _id;
     numModules = _numModules;
@@ -96,6 +96,12 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _n
     gpio_init(contactorInhibitPin);
     gpio_set_dir(contactorInhibitPin, GPIO_OUT);
     gpio_put(contactorInhibitPin, 0);
+
+    // Set up contactor feedback
+    contactorFeedbackPin = _contactorFeedbackPin;
+    gpio_init(NEG_CONTACTOR_FEEDBACK_PIN);
+    gpio_set_dir(NEG_CONTACTOR_FEEDBACK_PIN, GPIO_IN);
+    gpio_set_irq_enabled(NEG_CONTACTOR_FEEDBACK_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
 
     // Set next balance time to 10 seconds from now
     nextBalanceTime = delayed_by_us(get_absolute_time(), 10000);
@@ -517,6 +523,10 @@ void BatteryPack::disable_inhibit_contactor_close() {
 // Return true if the contactors for this pack are currently not allowed to close
 bool BatteryPack::contactors_are_inhibited() {
     return gpio_get(INHIBIT_CONTACTOR_PINS[id]);
+}
+
+bool BatteryPack::contactors_are_welded() {
+    return gpio_get(contactorFeedbackPin);
 }
 
 

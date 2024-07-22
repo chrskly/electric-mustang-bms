@@ -111,26 +111,30 @@ bool send_limits_message(struct repeating_timer *t) {
  *   05 = illegalStateTransitionFault
  *   FF = Undefined error
  * byte 1 = error bits
- *   bit 0 = internalError   - something has gone wrong in the BMS
- *   bit 1 = packsImbalanced - the voltage between two or more packs varies by an unsafe amount
- *   bit 2 = shuntIsDead     - the shunt has not sent a message in SHUNT_TTL seconds
- *   bit 3 = disableRegen    - regen is disabled
- *   bit 4 =
- *   bit 5 =
- *   bit 6 =
- *   bit 7 =
+ *   bit 0 = internalError          - something has gone wrong in the BMS
+ *   bit 1 = packsImbalanced        - the voltage between two or more packs varies by an unsafe amount
+ *   bit 2 = shuntIsDead            - the shunt has not sent a message in SHUNT_TTL seconds
+ *   bit 3 = illegalStateTransition - We tried to transistion between states in an illegal way
+ *   bit 4 = 
+ *   bit 5 = 
+ *   bit 6 = 
+ *   bit 7 = 
  * byte 2 = status bits
  *   bit 0 = inhibitCharge
  *   bit 1 = inhibitDrive
  *   bit 2 = heaterEnabled
  *   bit 3 = ignitionOn
  *   bit 4 = chargeEnable
- *   bit 5 =
+ *   bit 5 = disableRegen
  *   bit 6 =
  *   bit 7 =
  * byte 3 = charge inhibit reason
  * byte 4 = drive inhibit reason
- * byte 5
+ * byte 5 = welding bits
+ *   bit 0 = posContactorWelded   - the positive contactor is welded shut
+ *   bit 1 = negContactorWelded   - the negative contactor is welded shut
+ *   bit 2 = batt1ContactorWelded - the battery 1 contactor is welded shut
+ *   bit 3 = batt2ContactorWelded - the battery 2 contactor is welded shut
  * byte 6
  * byte 7 = checksum
  */
@@ -168,7 +172,7 @@ bool send_bms_state_message(struct repeating_timer *t) {
     bmsStateFrame.data[2] = bms.get_status_byte();
     bmsStateFrame.data[3] = bms.get_charge_inhibit_reason();
     bmsStateFrame.data[4] = bms.get_drive_inhibit_reason();
-    bmsStateFrame.data[5] = 0x00;
+    bmsStateFrame.data[5] = bms.get_welding_byte();
     bmsStateFrame.data[6] = 0x00;
     bmsStateFrame.data[7] = 0x00; // checksum
     bms.send_frame(&bmsStateFrame, true);
@@ -656,8 +660,7 @@ uint8_t Bms::get_error_byte() {
         internalError | \
         battery->packs_are_imbalanced() << 1 | \
         shunt->is_dead() << 2 | \
-        illegalStateTransition << 3 | \
-        regen_not_allowed() << 4
+        illegalStateTransition << 3 
     );
 }
 
@@ -667,7 +670,9 @@ uint8_t Bms::get_error_byte() {
  * bit 2 = heater enabled
  * bit 3 = ignition on
  * bit 4 = charge enabled
- * bit 5 =
+ * bit 5 = regen not allowed
+ * bit 6 =
+ * bit 7 =
  */
 uint8_t Bms::get_status_byte() {
     return (
@@ -676,12 +681,32 @@ uint8_t Bms::get_status_byte() {
         drive_is_inhibited() << 1 | \
         heater_is_enabled() << 2 | \
         ignition_is_on() << 3 | \
-        charge_is_enabled() << 4
+        charge_is_enabled() << 4 | \
+        regen_not_allowed() << 5
     );
 }
 
 void Bms::increment_invalid_event_count() {
     invalidEventCounter++;
+}
+
+uint8_t Bms::get_welding_byte() {
+    return (
+        0x00 | \
+        posContactorWelded | \
+        negContactorWelded << 1 | \
+        packContactorsWelded[0] << 2 | \
+        packContactorsWelded[1] << 3
+    );
+
+}
+
+void Bms::do_welding_checks() {
+    posContactorWelded = io->pos_contactor_is_welded();
+    negContactorWelded = io->neg_contactor_is_welded();
+    for ( int p = 0; p < 3; p++ ) {
+        packContactorsWelded[p] = battery->contactor_is_welded(p);
+    }
 }
 
 // Charging
@@ -803,4 +828,3 @@ bool Bms::read_frame(can_frame* frame) {
     // Failed to read after all retries
     return false;
 }
-

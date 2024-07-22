@@ -105,8 +105,8 @@ make
 
 ### BMS
 
-- A1  : GPIO_13 : IN_3
-- A2  : GPIO_11 : IN_1
+- A1  : GPIO_13 : IN_3  / BATT1_CONTACTOR_FEEDBACK
+- A2  : GPIO_11 : IN_1  / POS_CONTACTOR_FEEDBACK
 - A3  : GPIO_9  : IN_X  / CHARGE_ENABLE_IN
 - A4  : GPIO_6  : OUT_3 / DRIVE_INHIBIT
 - A5  : GPIO_4  : OUT_1 / CHARGE_INHIBIT
@@ -115,8 +115,8 @@ make
 - A8  : GPIO_5  : OUT_2 / HEATER_ENABLE
 - A9  : GPIO_7  : OUT_4
 - A10 : GPIO_10 : IN_X  / IGNITION_ON_IN
-- A11 : GPIO_12 : IN_2
-- A12 : GPIO_14 : IN_4
+- A11 : GPIO_12 : IN_2  / NEG_CONTACTOR_FEEDBACK
+- A12 : GPIO_14 : IN_4  / BATT2_CONTACTOR_FEEDBACK
 
 
 - B1 : BATT_2_CAN_H
@@ -224,6 +224,30 @@ current
     -10°               15°C                  35°C       40°C
 ```
 
+## Welded Contactor Detection
+
+There are four inputs on the BMS for welded contactor detection.
+
+1. HVJB positive contactor
+2. HVJB negative contactor
+3. Battery 1 contactors
+4. Battery 2 contactors
+
+There are four bits in the status CAN message (0x352) for reporting
+welded contactors (one bit for each of the above).
+
+The weld detection only runs when the car is in standby mode (the
+only time it makes sense).
+
+Both the positive and negative contactos in the HVJB have dedicated
+feedback inputs. The switched side of the auxiliary side of the
+contactor should be fed into this input. I.e., feed it 12V when the
+contactor is closed.
+
+The battery contactors just have one input each. We can use diodes to
+report if either of the battery contactors (positive or negative) are
+welded.
+
 ## To Do
 
 - [x] Fetch SoC from shunt and store in memory
@@ -246,7 +270,8 @@ current
 - [x] inhibit function naming confusing
 - [x] charge_inhibit_reason can msg
 - [x] drive_inhibit_reason can msg
-- [x] transmit module liveness over can
+- [x] transmit module liveness over can   
+- [x] welded contactor detection
 
 ## Credits
 

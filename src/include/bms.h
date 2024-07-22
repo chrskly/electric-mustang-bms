@@ -67,6 +67,9 @@ class Bms {
         bool illegalStateTransition;          //
         int8_t chargeInhibitReason;           //
         int8_t driveInhibitReason;            //
+        bool posContactorWelded;              //
+        bool negContactorWelded;              //
+        bool packContactorsWelded[NUM_PACKS];  //
 
     public:
         Bms() {};
@@ -123,6 +126,8 @@ class Bms {
         bool regen_not_allowed() { return soc > 90; };
 
         void increment_invalid_event_count();
+        uint8_t get_welding_byte();
+        void do_welding_checks();
 
         void set_illegal_state_transition() { illegalStateTransition = true; }
         void clear_illegal_state_transition() { illegalStateTransition = false; }

@@ -71,6 +71,16 @@ Io::Io() {
     gpio_set_dir(CHARGE_ENABLE_PIN, GPIO_IN);
     gpio_set_irq_enabled(CHARGE_ENABLE_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
 
+    // POS_CONTACTOR_FEEDBACK input
+    gpio_init(POS_CONTACTOR_FEEDBACK_PIN);
+    gpio_set_dir(POS_CONTACTOR_FEEDBACK_PIN, GPIO_IN);
+    gpio_set_irq_enabled(POS_CONTACTOR_FEEDBACK_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
+
+    // NEG_CONTACTOR_FEEDBACK input
+    gpio_init(NEG_CONTACTOR_FEEDBACK_PIN);
+    gpio_set_dir(NEG_CONTACTOR_FEEDBACK_PIN, GPIO_IN);
+    gpio_set_irq_enabled(NEG_CONTACTOR_FEEDBACK_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
+
     // DRIVE_INHIBIT output
     gpio_init(DRIVE_INHIBIT_PIN);
     gpio_set_dir(DRIVE_INHIBIT_PIN, GPIO_OUT);
@@ -149,4 +159,10 @@ bool Io::charge_enable_is_on() {
     return gpio_get(CHARGE_ENABLE_PIN);
 }
 
+bool Io::pos_contactor_is_welded() {
+    return gpio_get(POS_CONTACTOR_FEEDBACK_PIN);
+}
 
+bool Io::neg_contactor_is_welded() {
+    return gpio_get(NEG_CONTACTOR_FEEDBACK_PIN);
+}

@@ -39,7 +39,7 @@ class BatteryPack {
       int id;
 
       BatteryPack();
-      BatteryPack(int _id, int CANCSPin, int _contactorPin, int _numModules, 
+      BatteryPack(int _id, int CANCSPin, int _contactorPin, int _contactorFeedbackPin, int _numModules,
             int _numCellsPerModule, int _numTemperatureSensorsPerModule, mutex_t* _canMutex, Bms* _bms);
 
       void set_battery(Battery* battery) { this->battery = battery; }
@@ -81,6 +81,7 @@ class BatteryPack {
       void enable_inhibit_contactor_close();
       void disable_inhibit_contactor_close();
       bool contactors_are_inhibited();
+      bool contactors_are_welded();
 
       int16_t get_max_discharge_current();
       int16_t get_max_charge_current();
@@ -99,6 +100,7 @@ class BatteryPack {
 
       // contactors
       int contactorInhibitPin;                         // Pin on the pico which controls contactors for this pack
+      int contactorFeedbackPin;                        // Pin on the pick where feedback from the contactors is read
 
       int balanceStatus;                               //
       int errorStatus;

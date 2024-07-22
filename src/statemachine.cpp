@@ -52,6 +52,7 @@ extern Bms bms;
 void state_standby(Event event) {
     // Safeties
     bms.disable_heater();
+    bms.do_welding_checks();
 
     switch (event) {
         case E_TEMPERATURE_UPDATE:

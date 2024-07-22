@@ -44,6 +44,8 @@ class Io {
 
         bool ignition_is_on();
         bool charge_enable_is_on();
+        bool pos_contactor_is_welded();
+        bool neg_contactor_is_welded();
 };
 
 #endif  // BMS_SRC_INCLUDE_IO_H_

@@ -92,6 +92,7 @@ class Battery {
       bool all_contactors_inhibited();
 
       int8_t get_module_liveness_byte(int8_t moduleId);
+      bool contactor_is_welded(uint8_t packId);
 };
 
 #endif  // BMS_SRC_INCLUDE_BATTERY_H_
