@@ -455,19 +455,25 @@ void Battery::disable_inhibit_contactors_for_charge() {
 /* Returns a byte representing the liveness of modules starting at moduleId.
  * Zero is alive, one is dead. moduleId is index of the across the whole pack,
  * rather than indexed by pack and then module. */
-int8_t Battery::get_module_liveness_byte(int8_t moduleId) {
+int8_t Battery::get_module_liveness_byte(int8_t startModuleId) {
     int8_t livenessByte = 0;
     // If the module ID is out of range, return 0
-    if ( moduleId > ( NUM_PACKS * MODULES_PER_PACK ) ) {
+    if ( startModuleId > ( NUM_PACKS * MODULES_PER_PACK ) ) {
         return livenessByte;
     }
-    int8_t startPackId = ( NUM_PACKS * MODULES_PER_PACK ) / moduleId;
-    int8_t startModuleId = ( NUM_PACKS * MODULES_PER_PACK ) % moduleId;
+    int8_t packId = ( NUM_PACKS * MODULES_PER_PACK ) / startModuleId;
+    int8_t moduleId = ( NUM_PACKS * MODULES_PER_PACK ) % startModuleId;
     int8_t count = 0;
     while ( count < 8 ) {
-        if ( !packs[startPackId].get_module_liveness(startModuleId) ) {
+        if ( !packs[packId].get_module_liveness(moduleId) ) {
             livenessByte |= 1 << count;
         }
+        moduleId += 1;
+        if ( moduleId >= MODULES_PER_PACK ) {
+            moduleId = 0;
+            packId += 1;
+        }
+        count += 1;
     }
     return livenessByte;
 }
