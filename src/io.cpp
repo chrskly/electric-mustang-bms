@@ -136,13 +136,17 @@ bool Io::charge_is_inhibited() {
 // HEATER output
 
 void Io::enable_heater() {
-    printf("Enabling heater\n");
-    gpio_put(HEATER_ENABLE_PIN, 1);
+    if ( !gpio_get(HEATER_ENABLE_PIN) ) {
+        printf("Enabling heater\n");
+        gpio_put(HEATER_ENABLE_PIN, 1);
+    }
 }
 
 void Io::disable_heater() {
-    printf("Disabling heater\n");
-    gpio_put(HEATER_ENABLE_PIN, 0);
+    if ( gpio_get(HEATER_ENABLE_PIN) ) {
+        printf("Disabling heater\n");
+        gpio_put(HEATER_ENABLE_PIN, 0);
+    }
 }
 
 bool Io::heater_is_enabled() {
