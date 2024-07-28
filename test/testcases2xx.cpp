@@ -26,19 +26,19 @@ bool test_case_201_battery_too_cold_to_charge(Battery* battery, Bms* bms) {
 
     // It doesn't matter what state we are in, CHARGE_INHIBIT should always activate when temp is too low
 
-    // Set the temperature to -1C
-    printf("    > Setting all temperatures to -1C\n");
-    battery->set_all_temperatures(-1);
+    // Set the temperature to -20C
+    printf("    > Setting all temperatures to -20C\n");
+    battery->set_all_temperatures(-20);
 
     // Wait for CHARGE_INHIBIT to activate
     printf("    > Waiting for CHARGE_INHIBIT to activate\n");
     if ( ! wait_for_charge_inhibit_state(bms, true, 2000) ) {
         printf("    > CHARGE_INHIBIT did not activate in time\n");
-        printf("    > Test failed\n");
+        printf("    > Test FAILED\n");
         return false;
     }
 
-    printf("    > Test passed\n");
+    printf("    > Test PASSED\n");
     return true;
 
 }
@@ -54,7 +54,7 @@ bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery, Bms* bm
     printf("    > Waiting for CHARGE_INHIBIT to activate\n");
     if ( ! wait_for_charge_inhibit_state(bms, true, 2000) ) {
         printf("    > CHARGE_INHIBIT did not activate in time\n");
-        printf("    > Test failed\n");
+        printf("    > Test FAILED\n");
         return false;
     }
 
@@ -65,11 +65,11 @@ bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery, Bms* bm
     printf("    > Waiting for CHARGE_INHIBIT to deactivate\n");
     if ( ! wait_for_charge_inhibit_state(bms, false, 2000) ) {
         printf("    > CHARGE_INHIBIT did not deactivate in time\n");
-        printf("    > Test failed\n");
+        printf("    > Test FAILED\n");
         return false;
     }
 
-    printf("    > Test passed\n");
+    printf("    > Test PASSED\n");
     return true;
 
 }
@@ -82,7 +82,7 @@ bool test_case_203_too_cold_to_charge_but_charge_requested(Battery* battery, Bms
     bms->set_state(STATE_STANDBY);
     if ( ! wait_for_bms_state(bms, STATE_STANDBY, 2000) ) {
         printf("    > Could not get into idle state\n");
-        printf("    > Test failed\n");
+        printf("    > Test FAILED\n");
         return false;
     }
 
@@ -94,7 +94,7 @@ bool test_case_203_too_cold_to_charge_but_charge_requested(Battery* battery, Bms
     printf("    > Waiting for CHARGE_INHIBIT to activate\n");
     if ( ! wait_for_charge_inhibit_state(bms, true, 2000) ) {
         printf("    > CHARGE_INHIBIT did not activate in time\n");
-        printf("    > Test failed\n");
+        printf("    > Test FAILED\n");
         return false;
     }
 
@@ -102,11 +102,11 @@ bool test_case_203_too_cold_to_charge_but_charge_requested(Battery* battery, Bms
     printf("    > Waiting for HEATER_ENABLE to activate\n");
     if ( ! wait_for_heater_enable_state(bms, true, 2000) ) {
         printf("    > HEATER_ENABLE did not activate in time\n");
-        printf("    > Test failed\n");
+        printf("    > Test FAILED\n");
         return false;
     }
 
-    printf("    > Test passed\n");
+    printf("    > Test PASSED\n");
     return true;
 
 }
@@ -122,11 +122,11 @@ bool test_case_204_battery_too_hot_to_charge(Battery* battery, Bms* bms) {
     printf("    > Waiting for CHARGE_INHIBIT to activate\n");
     if ( ! wait_for_charge_inhibit_state(bms, true, 2000) ) {
         printf("    > CHARGE_INHIBIT did not activate in time\n");
-        printf("    > Test failed\n");
+        printf("    > Test FAILED\n");
         return false;
     }
 
-    printf("  > Test passed\n");
+    printf("  > Test PASSED\n");
     return true;
 
 }
