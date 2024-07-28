@@ -128,6 +128,9 @@ void state_standby(Event event) {
                 bms.set_state(&state_batteryHeating, "charge requested, but too cold to charge");
                 break;
             }
+            if ( battery.one_or_more_contactors_inhibited() ) {
+                battery.disable_inhibit_contactors_for_charge();
+            }
             bms.set_drive_inhibit_reason(R_CHARGING);
             bms.enable_drive_inhibit("[S13] charge requested");
             bms.set_state(&state_charging, "charge requested");
