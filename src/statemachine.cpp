@@ -370,6 +370,10 @@ void state_charging(Event event) {
                 bms.set_charge_inhibit_reason(R_BATTERY_FULL);
                 bms.enable_charge_inhibit("[C05] full cell");
             }
+            // If packs have equalised, re-evaluate which contactors to allow to close
+            if ( !battery.packs_are_imbalanced() ) {
+                battery.disable_inhibit_contactors_for_charge();
+            }
             break;
         case E_IGNITION_ON:
             // Valid event, but we don't need to do anything with it.
