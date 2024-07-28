@@ -22,33 +22,41 @@
 
 bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* battery, Bms* bms) {
     printf("Running test [test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty]\n");
-    //Bms* bms = battery->get_bms();
-    /*
-      Preconditions
-        1. All cells are above Vmin
-        2. DRIVE_INHIBIT signal is not active
-        3. Temperatures in normal range
-     */
 
-    // Set SoC to 50%
-    uint16_t newCellVoltage = battery->get_voltage_from_soc(50);
-    printf("    > Setting all cell voltages to %dmV (approx 50%% soc)\n", newCellVoltage);
+    /*
+     * Check from STANDBY state
+     */
+    transition_to_standby_state(bms);
+
+    // 0% SoC
+    newCellVoltage = static_cast<uint16_t>(CELL_EMPTY_VOLTAGE);
+    printf("    > Setting all cell voltages to %dmV (0%% soc)\n", newCellVoltage);
     battery->set_all_cell_voltages(newCellVoltage);
 
-    // Set temperatures to normal range
-    printf("    > Setting all temperatures to 20C\n");
-    battery->set_all_temperatures(20);
-
-    printf("    > Waiting for DRIVE_INHIBIT to deactivate\n");
-    if ( ! wait_for_drive_inhibit_state(bms, false, 2000) ) {
-        printf("    > DRIVE_INHIBIT did not deactivate in time\n");
+    // Make sure DRIVE_INHIBIT goes high
+    printf("    > Waiting for DRIVE_INHIBIT to activate\n");
+    if ( ! wait_for_drive_inhibit_state(bms, true, 2000) ) { // active, 2 second timeout
+        printf("    > DRIVE_INHIBIT did not activate in time\n");
         printf("    > Test FAILED\n");
         return false;
     } else {
-        printf("    > DRIVE_INHIBIT deactivated\n");
+        printf("    > DRIVE_INHIBIT activated\n");
     }
 
-    // Execute test - drop cell voltage to Vmin
+    // Make sure CAN messages show the car has switched to batteryEmpty state
+    printf("    > Waiting for BMS state to change to batteryEmpty\n");
+    if ( ! wait_for_bms_state(bms, STATE_BATTERY_EMPTY, 2000) ) { // BmsState, 2 second timeout
+        printf("    > BMS state did not change to batteryEmpty in time\n");
+        printf("    > Test FAILED\n");
+        return false;
+    } else {
+        printf("    > BMS state changed to batteryEmpty\n");
+    }
+
+    /* 
+     * Check from DRIVE state
+     */
+    transition_to_drive_state(bms);
 
     // 0% SoC
     newCellVoltage = static_cast<uint16_t>(CELL_EMPTY_VOLTAGE);
@@ -82,28 +90,11 @@ bool test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(Battery* ba
 
 bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery, Bms* bms) {
     printf("Running test [test_case_002_ensure_battery_cannot_be_charged_when_full]\n");
-    //Bms* bms = battery->get_bms();
+
     /*
-      Preconditions
-        1. All cells are below Vmax
-        2. CHARGE_INHIBIT signal is not active
-    */
-
-    // Set SoC to 50%
-    uint16_t newCellVoltage = battery->get_voltage_from_soc(50);
-    printf("    > Setting all cell voltages to %dmV (approx 50%% soc)\n", newCellVoltage);
-    battery->set_all_cell_voltages(newCellVoltage);
-
-    printf("    > Waiting for CHARGE_INHIBIT to deactivate\n");
-    if ( ! wait_for_charge_inhibit_state(bms, false, 5000) ) {
-        printf("    > CHARGE_INHIBIT did not deactivate in time\n");
-        printf("    > Test FAILED\n");
-        return false;
-    } else {
-        printf("    > CHARGE_INHIBIT deactivated\n");
-    }
-
-    // Execute test - raise cell voltage to Vmax
+     * Check from STANDBY state
+     */
+    transition_to_standby_state(bms);
 
     // 100% SoC
     newCellVoltage = static_cast<uint16_t>(CELL_FULL_VOLTAGE+10);
@@ -121,6 +112,26 @@ bool test_case_002_ensure_battery_cannot_be_charged_when_full(Battery* battery, 
     }
 
     // No need to check BMS state, as it does not need to be a specific state
+
+    /* 
+     * Check from DRIVE state
+     */
+    transition_to_drive_state(bms);
+
+    // 100% SoC
+    newCellVoltage = static_cast<uint16_t>(CELL_FULL_VOLTAGE+10);
+    printf("    > Setting all cell voltages to %dmV (100%% soc)\n", newCellVoltage);
+    battery->set_all_cell_voltages(newCellVoltage);
+
+    // Make sure CHARGE_INHIBIT goes high
+    printf("    > Waiting for CHARGE_INHIBIT to activate\n");
+    if ( ! wait_for_charge_inhibit_state(bms, true, 5000) ) { // active, 2 second timeout
+        printf("    > CHARGE_INHIBIT did not activate in time\n");
+        printf("    > Test FAILED\n");
+        return false;
+    } else {
+        printf("    > CHARGE_INHIBIT activated\n");
+    }
 
     printf("    > Test PASSED\n");
     return true;

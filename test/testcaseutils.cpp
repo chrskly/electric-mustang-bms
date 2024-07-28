@@ -23,6 +23,56 @@
 #include "include/util.h"
 #include "include/bms.h"
 #include "include/battery.h"
+#include "include/io.h"
+
+void transition_to_standby_state(Bms* bms) {
+    // Set SoC to 50%
+    uint16_t newCellVoltage = bms->get_battery()->get_voltage_from_soc(50);
+    printf("    > Setting all cell voltages to %dmV (approx 50%% soc)\n", newCellVoltage);
+    bms->get_battery()->set_all_cell_voltages(newCellVoltage);
+    // Turn off ignition and charging
+    printf("    > Setting ignition and charge enable to false\n");
+    set_ignition_state(false);
+    set_charge_enable_state(false);
+    // Ensure DRIVE_INHIBIT is disabled
+    printf("    > Waiting for DRIVE_INHIBIT to deactivate\n");
+    if ( ! wait_for_drive_inhibit_state(bms, false, 2000) ) {
+        printf("    > DRIVE_INHIBIT did not deactivate in time\n");
+        printf("    > Test FAILED\n");
+        return false;
+    } else {
+        printf("    > DRIVE_INHIBIT deactivated\n");
+    }
+    // Set temperature to something normal
+    printf("    > Setting all temperatures to 20C\n");
+    bms->get_battery()->set_all_temperatures(20);
+    wait_for_bms_state(bms, STATE_BATTERY_STANDBY, 2000);
+}
+
+void transition_to_drive_state(Bms* bms) {
+    // Set SoC to 50%
+    uint16_t newCellVoltage = bms->get_battery()->get_voltage_from_soc(50);
+    printf("    > Setting all cell voltages to %dmV (approx 50%% soc)\n", newCellVoltage);
+    bms->get_battery()->set_all_cell_voltages(newCellVoltage);
+    // Turn on ignition
+    printf("    > Turining on ignition\n");
+    set_ignition_state(true);
+    printf("    > Turning off charge\n");
+    set_charge_enable_state(false);
+    // Ensure DRIVE_INHIBIT is disabled
+    printf("    > Waiting for DRIVE_INHIBIT to deactivate\n");
+    if ( ! wait_for_drive_inhibit_state(bms, false, 2000) ) {
+        printf("    > DRIVE_INHIBIT did not deactivate in time\n");
+        printf("    > Test FAILED\n");
+        return false;
+    } else {
+        printf("    > DRIVE_INHIBIT deactivated\n");
+    }
+    // Set temperature to something normal
+    printf("    > Setting all temperatures to 20C\n");
+    bms->get_battery()->set_all_temperatures(20);
+    wait_for_bms_state(bms, STATE_BATTERY_DRIVE, 2000);
+}
 
 bool wait_for_soc(Bms* bms, int soc, int timeout) {
     clock_t startTime = get_clock();
