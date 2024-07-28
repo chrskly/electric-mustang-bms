@@ -63,19 +63,24 @@ void gpio_callback(uint gpio, uint32_t events) {
 }
 
 void enable_listen_for_input_signals() {
+    extern Bms bms;
     printf("Enabling input signal listeners\n");
     
     gpio_init(DRIVE_INHIBIT_PIN);
     gpio_set_dir(DRIVE_INHIBIT_PIN, GPIO_IN);
+    bms.set_inhibitDrive(gpio_get(DRIVE_INHIBIT_PIN));
 
     gpio_init(CHARGE_INHIBIT_PIN);
     gpio_set_dir(CHARGE_INHIBIT_PIN, GPIO_IN);
+    bms.set_inhibitCharge(gpio_get(CHARGE_INHIBIT_PIN));
 
     gpio_init(INHIBIT_CONTACTOR_PINS[0]);
     gpio_set_dir(INHIBIT_CONTACTOR_PINS[0], GPIO_IN);
+    bms.get_battery()->get_pack(0)->set_inhibit(gpio_get(INHIBIT_CONTACTOR_PINS[0]));
 
     gpio_init(INHIBIT_CONTACTOR_PINS[1]);
     gpio_set_dir(INHIBIT_CONTACTOR_PINS[1], GPIO_IN);
+    bms.get_battery()->get_pack(1)->set_inhibit(gpio_get(INHIBIT_CONTACTOR_PINS[1]));
 
     gpio_set_irq_enabled_with_callback(DRIVE_INHIBIT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
     gpio_set_irq_enabled(CHARGE_INHIBIT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
