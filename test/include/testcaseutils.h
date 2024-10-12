@@ -25,10 +25,15 @@
 
 bool wait_for_soc(Bms* bms, int soc, int timeout);
 bool wait_for_drive_inhibit_state(Bms* bms, bool state, int timeout);
+bool assert_drive_inhibit_state(Bms* bms, bool state);
 bool wait_for_charge_inhibit_state(Bms* bms, bool state, int timeout);
+bool assert_charge_inhibit_state(Bms* bms, bool state);
 bool wait_for_bms_state(Bms* bms, BmsState state, int timeout);
+bool assert_bms_state(Bms* bms, BmsState state);
 bool wait_for_batt_inhibit_state(Battery* battery, int packId, bool state, int timeout);
 bool wait_for_packs_imbalanced_state(Bms* bms, bool state, int timeout);
 bool wait_for_heater_enable_state(Bms* bms, bool state, int timeout);
+bool transition_to_standby_state(Bms* bms);
+bool transition_to_drive_state(Bms* bms);
 
 #endif // BMS_TEST_INCLUDE_TESTCASEUTILS_H_ 

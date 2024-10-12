@@ -25,54 +25,7 @@
 #include "include/battery.h"
 #include "include/io.h"
 
-void transition_to_standby_state(Bms* bms) {
-    // Set SoC to 50%
-    uint16_t newCellVoltage = bms->get_battery()->get_voltage_from_soc(50);
-    printf("    > Setting all cell voltages to %dmV (approx 50%% soc)\n", newCellVoltage);
-    bms->get_battery()->set_all_cell_voltages(newCellVoltage);
-    // Turn off ignition and charging
-    printf("    > Setting ignition and charge enable to false\n");
-    set_ignition_state(false);
-    set_charge_enable_state(false);
-    // Ensure DRIVE_INHIBIT is disabled
-    printf("    > Waiting for DRIVE_INHIBIT to deactivate\n");
-    if ( ! wait_for_drive_inhibit_state(bms, false, 2000) ) {
-        printf("    > DRIVE_INHIBIT did not deactivate in time\n");
-        printf("    > Test FAILED\n");
-        return false;
-    } else {
-        printf("    > DRIVE_INHIBIT deactivated\n");
-    }
-    // Set temperature to something normal
-    printf("    > Setting all temperatures to 20C\n");
-    bms->get_battery()->set_all_temperatures(20);
-    wait_for_bms_state(bms, STATE_BATTERY_STANDBY, 2000);
-}
 
-void transition_to_drive_state(Bms* bms) {
-    // Set SoC to 50%
-    uint16_t newCellVoltage = bms->get_battery()->get_voltage_from_soc(50);
-    printf("    > Setting all cell voltages to %dmV (approx 50%% soc)\n", newCellVoltage);
-    bms->get_battery()->set_all_cell_voltages(newCellVoltage);
-    // Turn on ignition
-    printf("    > Turining on ignition\n");
-    set_ignition_state(true);
-    printf("    > Turning off charge\n");
-    set_charge_enable_state(false);
-    // Ensure DRIVE_INHIBIT is disabled
-    printf("    > Waiting for DRIVE_INHIBIT to deactivate\n");
-    if ( ! wait_for_drive_inhibit_state(bms, false, 2000) ) {
-        printf("    > DRIVE_INHIBIT did not deactivate in time\n");
-        printf("    > Test FAILED\n");
-        return false;
-    } else {
-        printf("    > DRIVE_INHIBIT deactivated\n");
-    }
-    // Set temperature to something normal
-    printf("    > Setting all temperatures to 20C\n");
-    bms->get_battery()->set_all_temperatures(20);
-    wait_for_bms_state(bms, STATE_BATTERY_DRIVE, 2000);
-}
 
 bool wait_for_soc(Bms* bms, int soc, int timeout) {
     clock_t startTime = get_clock();
@@ -100,6 +53,17 @@ bool wait_for_drive_inhibit_state(Bms* bms, bool state, int timeout) {
     return true;
 }
 
+bool assert_drive_inhibit_state(Bms* bms, bool state) {
+    std::string desiredState = state ? "active" : "inactive";
+    if (wait_for_drive_inhibit_state(bms, state, 2000)) {
+        printf("    > DRIVE_INHIBIT transitioned to state %s\n", desiredState.c_str());
+        return true;
+    } else {
+        printf("    > DRIVE_INHIBIT did NOT transistion to state %s\n", desiredState.c_str());
+        return false;
+    }
+}
+
 bool wait_for_charge_inhibit_state(Bms* bms, bool state, int timeout) {
     clock_t startTime = get_clock();
     while (bms->get_inhibitCharge() != state) {
@@ -116,6 +80,17 @@ bool wait_for_charge_inhibit_state(Bms* bms, bool state, int timeout) {
     return true;
 }
 
+bool assert_charge_inhibit_state(Bms* bms, bool state) {
+    std::string desiredState = state ? "active" : "inactive";
+    if (wait_for_charge_inhibit_state(bms, state, 2000)) {
+        printf("    > CHARGE_INHIBIT transitioned to state %s\n", desiredState.c_str());
+        return true;
+    } else {
+        printf("    > CHARGE_INHIBIT did NOT transistion to state %s\n", desiredState.c_str());
+        return false;
+    }
+}
+
 bool wait_for_bms_state(Bms* bms, BmsState state, int timeout) {
     clock_t startTime = get_clock();
     while (bms->get_state() != state) {
@@ -125,6 +100,16 @@ bool wait_for_bms_state(Bms* bms, BmsState state, int timeout) {
         }
     }
     return true;
+}
+
+bool assert_bms_state(Bms* bms, BmsState state) {
+    if (wait_for_bms_state(bms, state, 2000)) {
+        printf("    > BMS state transitioned to state %d\n", state);
+        return true;
+    } else {
+        printf("    > BMS state did NOT transistion to state %d\n", state);
+        return false;
+    }
 }
 
 bool wait_for_batt_inhibit_state(Battery* battery, int packId, bool state, int timeout) {
@@ -153,6 +138,89 @@ bool wait_for_heater_enable_state(Bms* bms, bool state, int timeout) {
         if (get_clock() - startTime > timeout) {
             return false;
         }
+    }
+    return true;
+}
+
+
+bool transition_to_standby_state(Bms* bms) {
+    // Set SoC to 50%
+    uint16_t newCellVoltage = bms->get_battery()->get_voltage_from_soc(50);
+    printf("    > Setting all cell voltages to %dmV (approx 50%% soc)\n", newCellVoltage);
+    bms->get_battery()->set_all_cell_voltages(newCellVoltage);
+    // Wait for all battery inhibit signals to disable
+    for ( int p = 0; p < bms->get_battery()->get_num_packs(); p++ ) {
+        printf("    > Waiting for BATT%d_INHIBIT to deactivate\n", p+1);
+        if ( ! wait_for_batt_inhibit_state(bms->get_battery(), p, false, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not deactivate in time\n", p+1);
+            printf("    > Test FAILED\n");
+            return false;
+        }
+    }
+    // Turn off ignition and charging
+    printf("    > Turning off ignition\n");
+    set_ignition_state(false);
+    printf("    > Turning off charge\n");
+    set_charge_enable_state(false);
+    // Ensure DRIVE_INHIBIT is disabled
+    printf("    > Waiting for DRIVE_INHIBIT to deactivate\n");
+    if ( ! assert_drive_inhibit_state(bms, false) ) {
+        printf("    > Test FAILED\n");
+        return false;
+    }
+    // Make sure CHARGE_INHIBIT is disabled
+    printf("    > Waiting for CHARGE_INHIBIT to deactivate\n");
+    if ( ! assert_charge_inhibit_state(bms, false) ) {
+        printf("    > Test FAILED\n");
+        return false;
+    }
+    // Set temperature to something normal
+    printf("    > Setting all temperatures to 20C\n");
+    bms->get_battery()->set_all_temperatures(20);
+    if ( ! assert_bms_state(bms, STATE_STANDBY) ) {
+        printf("    > Test FAILED\n");
+        return false;
+    }
+    return true;
+}
+
+bool transition_to_drive_state(Bms* bms) {
+    // Set SoC to 50%
+    uint16_t newCellVoltage = bms->get_battery()->get_voltage_from_soc(50);
+    printf("    > Setting all cell voltages to %dmV (approx 50%% soc)\n", newCellVoltage);
+    bms->get_battery()->set_all_cell_voltages(newCellVoltage);
+    // Wait for all battery inhibit signals to disable
+    for ( int p = 0; p < bms->get_battery()->get_num_packs(); p++ ) {
+        printf("    > Waiting for BATT%d_INHIBIT to deactivate\n", p+1);
+        if ( ! wait_for_batt_inhibit_state(bms->get_battery(), p, false, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not deactivate in time\n", p+1);
+            printf("    > Test FAILED\n");
+            return false;
+        }
+    }
+    // Turn on ignition
+    printf("    > Turning on ignition\n");
+    set_ignition_state(true);
+    printf("    > Turning off charge\n");
+    set_charge_enable_state(false);
+    // Ensure DRIVE_INHIBIT is disabled
+    printf("    > Waiting for DRIVE_INHIBIT to deactivate\n");
+    if ( ! assert_drive_inhibit_state(bms, false) ) {
+        printf("    > Test FAILED\n");
+        return false;
+    }
+    // Make sure CHARGE_INHIBIT is disabled
+    printf("    > Waiting for CHARGE_INHIBIT to deactivate\n");
+    if ( ! assert_charge_inhibit_state(bms, false) ) {
+        printf("    > Test FAILED\n");
+        return false;
+    }
+    // Set temperature to something normal
+    printf("    > Setting all temperatures to 20C\n");
+    bms->get_battery()->set_all_temperatures(20);
+    if ( ! assert_bms_state(bms, STATE_DRIVE) ) {
+        printf("    > Test FAILED\n");
+        return false;
     }
     return true;
 }

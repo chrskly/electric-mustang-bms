@@ -144,8 +144,12 @@ int main() {
         printf("STARTING TESTS\n");
         printf("========================================\n");
 
-        test_case_001_ensure_car_cannot_be_driven_when_battery_is_empty(&battery, &bms);
-        test_case_002_ensure_battery_cannot_be_charged_when_full(&battery, &bms);
+        test_case_001(&battery, &bms);
+        test_case_002(&battery, &bms);
+        test_case_003(&battery, &bms);
+        test_case_004(&battery, &bms);
+        test_case_005(&battery, &bms);
+        test_case_006(&battery, &bms);
         
         test_case_101_inhibit_battery_contactor_close_when_pack_voltages_differ(&battery, &bms);
         test_case_102_do_not_inhibit_battery_contactor_close_when_pack_voltage_differ_and_ignition_is_on(&battery, &bms);
