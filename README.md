@@ -8,7 +8,7 @@ The BMS is always on.
 
 The battery is made up of two BMW PHEV battery packs.
 
-Each battery pack has a positive and negative contactor which are activated by either the ignition key or the charger.
+Each battery pack has a positive and negative contactor which are activated by either the ignition key or when charging.
 
 The BMS is able to inhibit the closing of the contactors in each battery pack individually. It only does this when the contactors are already open.
 
@@ -118,7 +118,6 @@ make
 - A11 : GPIO_12 : IN_2  / NEG_CONTACTOR_FEEDBACK
 - A12 : GPIO_14 : IN_4  / BATT2_CONTACTOR_FEEDBACK
 
-
 - B1 : BATT_2_CAN_H
 - B2 : BATT_1_CAN_H
 - B3 : MAIN_CAN_H
@@ -147,7 +146,6 @@ make
 - A11 : GPIO_12 : IN_2  / BATT_2_INHIBIT
 - A12 : GPIO_14 : IN_4  / BATT_1_INHIBIT
 
-
 - B1 : BATT_2_CAN_H
 - B2 : BATT_1_CAN_H
 - B3 : MAIN_CAN_H
@@ -163,18 +161,31 @@ make
 
 ## CAN messages consumed by BMS
 
-1. kWh, Ah, current, voltage data from ISA shunt to calculate SoC.
+- Shunt messages - kWh, Ah, current, voltage (0x521 - 0x528)
 
 ## CAN messages produced by BMS
 
-1. Computed value of max charge or discharge current (or power) available from
-   pack.
-2. Overcurrent warning message.
-3. Over/under voltage warning/alarm.
-4. Over/under temp warning/alarm.
-5. Cell delta voltage warning/alarm.
-6. Max/min pack voltage.
-7. SoC
+- Shunt reset message
+- Min battery voltage (0x351)
+- Max battery voltage (0x351)
+- Max charge current (0x351)
+- Max discharge current (0x351) [ not implemented yet ]
+- BMS state - standby, drive, ... (0x352)
+- Errors flags - internalError, packsImbalanced, shuntIsDead, illegalStateTransition (0x352)
+- Status flags - inhibitCharge, inhibitDrive, heaterEnabled, ignitionOn, chargeEnable, disableRegen (0x352)
+- Charge inhibit reason - none, too hot, too cold, battery full, battery empty, charging, illegal state transition (0x352)
+- Drive inhibit reason - as above (0x352)
+- Welding bits - posContactorWelded, negContactorWelded, batt1ContactorWelded, batt2ContactorWelded (0x352)
+- Module liveness (0x353)
+- SoC (0x355)
+- Battery voltage - as reported by BMS and as reported by shunt (0x356)
+- Battery current - as reported by shunt (0x356)
+- Battery highest temperature (0x356)
+- High cell voltage alarm, warn (0x35A)
+- Low cell voltage alarm, warn (0x35A)
+- High temp alarm, warn (0x35A)
+- Low temp alarm, warn (0x35A) [ not implemented yet ]
+- Cell delta alarm (0x35A)
 
 ## Configurables
 
@@ -239,7 +250,7 @@ welded contactors (one bit for each of the above).
 The weld detection only runs when the car is in standby mode (the
 only time it makes sense).
 
-Both the positive and negative contactos in the HVJB have dedicated
+Both the positive and negative contactors in the HVJB have dedicated
 feedback inputs. The switched side of the auxiliary side of the
 contactor should be fed into this input. I.e., feed it 12V when the
 contactor is closed.
@@ -266,12 +277,14 @@ welded.
 - [x] Warn when modules are missing
 - [ ] Deal with scenario when one pack is full and one pack is empty
 - [ ] Communication error bit(s)
+- [ ] Counter for failed CAN messages received (checksum?), sent
 - [x] enable/disable regen bit
 - [x] inhibit function naming confusing
 - [x] charge_inhibit_reason can msg
 - [x] drive_inhibit_reason can msg
 - [x] transmit module liveness over can   
 - [x] welded contactor detection
+- [ ] manual battery pre-heat
 
 ## Credits
 
