@@ -333,7 +333,7 @@ void Battery::update_lowest_sensor_temperature() {
             newLowestSensorTemperature = packs[p].get_lowest_temperature();
         }
     }
-    // Saftey check
+    // Safety check
     if ( newLowestSensorTemperature < -20 || newLowestSensorTemperature > 50 ) {
         this->bms->set_internal_error();
     }
