@@ -129,13 +129,20 @@ bool send_limits_message(struct repeating_timer *t) {
  *   bit 6 =
  *   bit 7 =
  * byte 3 = charge inhibit reason
+ *   00 = R_NONE
+ *   01 = R_TOO_HOT
+ *   02 = R_TOO_COLD
+ *   03 = R_BATTERY_FULL
+ *   04 = R_BATTERY_EMPTY
+ *   05 = R_CHARGING
+ *   06 = R_ILLEGAL_STATE_TRANSITION
  * byte 4 = drive inhibit reason
  * byte 5 = welding bits
  *   bit 0 = posContactorWelded   - the positive contactor is welded shut
  *   bit 1 = negContactorWelded   - the negative contactor is welded shut
  *   bit 2 = batt1ContactorWelded - the battery 1 contactor is welded shut
  *   bit 3 = batt2ContactorWelded - the battery 2 contactor is welded shut
- * byte 6
+ * byte 6 = unused
  * byte 7 = checksum
  */
 
@@ -190,8 +197,8 @@ bool send_bms_state_message(struct repeating_timer *t) {
  * byte 2 = modules 16-23 heartbeat status (0 alive, 1 dead)
  * byte 3 = modules 24-31 heartbeat status (0 alive, 1 dead)
  * byte 4 = modules 32-39 heartbeat status (0 alive, 1 dead)
- * byte 5 =
- * byte 6 =
+ * byte 5 = unused
+ * byte 6 = unused
  * byte 7 = checksum
  */
 
