@@ -85,7 +85,7 @@ class Bms {
         void set_watchdog_reboot(bool value);
 
         // DRIVE_INHIBIT
-        void enable_drive_inhibit(std::string context);
+        void enable_drive_inhibit(std::string context, InhibitReason reason);
         void disable_drive_inhibit(std::string context);
         bool drive_is_inhibited();
         void set_drive_inhibit_reason(InhibitReason reason);
@@ -93,7 +93,7 @@ class Bms {
         int8_t get_drive_inhibit_reason();
 
         // CHARGE_INHIBIT
-        void enable_charge_inhibit(std::string context);
+        void enable_charge_inhibit(std::string context, InhibitReason reason);
         void disable_charge_inhibit(std::string context);
         bool charge_is_inhibited();
         void set_charge_inhibit_reason(InhibitReason reason);

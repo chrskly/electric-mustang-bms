@@ -543,8 +543,9 @@ void Bms::set_watchdog_reboot(bool value) {
 
 // DRIVE_INHIBIT
 
-void Bms::enable_drive_inhibit(std::string context) {
+void Bms::enable_drive_inhibit(std::string context, InhibitReason reason) {
     if ( !drive_is_inhibited() ) {
+        set_drive_inhibit_reason(reason);
         io->enable_drive_inhibit(context);
     }
 }
@@ -574,9 +575,10 @@ int8_t Bms::get_drive_inhibit_reason() {
 
 // CHARGE_INHIBIT
 
-void Bms::enable_charge_inhibit(std::string context) {
+void Bms::enable_charge_inhibit(std::string context, InhibitReason reason) {
     //printf("    * Enabling charge inhibit\n");
     if ( !charge_is_inhibited() ) {
+        set_charge_inhibit_reason(reason);
         io->enable_charge_inhibit(context);
     }
 }
