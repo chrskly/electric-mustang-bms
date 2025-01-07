@@ -201,6 +201,8 @@ When in charge mode the BMS will emit a maximum allowed charge current in the
 0x351 CAN message. The chargers will listen for this and adjust their request
 accordingly.
 
+### Temperature derating
+
 There is a minimum temperature below which we must not charge. So we disallow
 charging at or below -10°C.
 
@@ -234,6 +236,10 @@ current
    +-+------------------+---------------------+----------+----> temperature
     -10°               15°C                  35°C       40°C
 ```
+
+### SoC derating
+
+TODO : just go slow about 80%?
 
 ## Welded Contactor Detection
 
