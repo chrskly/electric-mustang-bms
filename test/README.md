@@ -24,6 +24,8 @@
 
 Description : Ensure car cannot be driven when battery is empty
 
+* start in overtemp
+
 Pre-conditions
 * ignition on
 * charge off

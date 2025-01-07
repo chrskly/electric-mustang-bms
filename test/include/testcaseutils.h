@@ -35,5 +35,6 @@ bool wait_for_packs_imbalanced_state(Bms* bms, bool state, int timeout);
 bool wait_for_heater_enable_state(Bms* bms, bool state, int timeout);
 bool transition_to_standby_state(Bms* bms);
 bool transition_to_drive_state(Bms* bms);
+bool transition_to_charging_state(Bms* bms);
 
 #endif // BMS_TEST_INCLUDE_TESTCASEUTILS_H_ 

@@ -22,49 +22,37 @@
 #include "include/testcaseutils.h"
 
 /*
---------------------------------------------------------------------------------
-  Test that the inhibition of contactor close is working as intended.
+ * Test cases relating to contactor control
+ */
 
-  Inhibition should be allowed from standby state. Inhibition should not be
-  allowed from any other state yet. FIXME : in certain circumstances, we may
-  allow inhibition from other states.
-
-  Preconditions
-    1. We're in state standby
-    2. DRIVE_INHIBIT signal is not active
-    3. batt1 inhibit off
-    4. batt2 inhibit off
+/*
+ * Test case 101
+ * -----------------------------------------------------------------------------
+ * Description: When in standby state, and the pack voltages differ, the BMS
+ *              should inhibit the battery contactor close.
+ * Preconditions
+ *   1. BMS state == STANDBY
+ *   2. DRIVE_INHIBIT signal is inactive
+ *   3. Temperature is normal
+ *   4. batt1 inhibit off
+ *   5. batt2 inhibit off
+ * Actions:
+ *   1. Set pack 1 to 25% soc
+ * Postconditions:
+ *   1. BMS state == STANDBY
+ *   1. batt1 inhibit on
+ *   2. batt2 inhibit on
+ *   3. packsImbalanced flag set in BMS CAN messages
 */
-bool test_case_101_inhibit_battery_contactor_close_when_pack_voltages_differ(Battery* battery, Bms* bms) {
-    printf("Running test [test_case_101_inhibit_battery_contactor_close_when_pack_voltages_differ]\n");
+bool test_case_101(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_101] : inhibit battery contactor close when pack voltages differ, from standby state\n");
 
-    // Get into idle state
-    printf("    > Moving to idle state\n");
-    set_ignition_state(false);
-    set_charge_enable_state(false);
-    if ( ! wait_for_bms_state(bms, STATE_STANDBY, 2000) ) {
-        printf("    > BMS state did not change to standby in time\n");
-        printf("    > Test FAILED\n");
+    if ( ! transition_to_standby_state(bms) ) {
         return false;
     }
 
-    // Ensure no delta between packs by setting all cell voltages to 50% soc
-    uint16_t newCellVoltage = battery->get_voltage_from_soc(50);
-    printf("    > Setting all cell voltages to %dmV (approx 50%% soc)\n", newCellVoltage);
-    battery->set_all_cell_voltages(newCellVoltage);
-
-    // Wait for all battery inhibit signals to disable
-    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
-        printf("    > Waiting for BATT%d_INHIBIT to deactivate\n", p+1);
-        if ( ! wait_for_batt_inhibit_state(battery, p, false, 5000) ) {
-            printf("    > BATT%d_INHIBIT did not deactivate in time\n", p+1);
-            printf("    > Test FAILED\n");
-            return false;
-        }
-    }
-
     // Execute test - set pack 1 to 25% soc
-    newCellVoltage = battery->get_voltage_from_soc(25);
+    uint16_t newCellVoltage = battery->get_voltage_from_soc(25);
     printf("    > Setting all cell voltages to %dmV (25%% soc) for pack 1\n", newCellVoltage);
     battery->get_pack(0)->set_all_cell_voltages(newCellVoltage);
 
@@ -90,60 +78,38 @@ bool test_case_101_inhibit_battery_contactor_close_when_pack_voltages_differ(Bat
 }
 
 /*
---------------------------------------------------------------------------------
-  The contactors should not open when in drive state.
-
-  Preconditions
-    1. Packs start balanced
-    2. In drive mode
-    3. batt1 inhibit off
-    4. batt2 inhibit off
+ * Test case 102
+ * -----------------------------------------------------------------------------
+ * Description: When in drive state, and the pack voltages differ, the BMS 
+ *              should not inhibit the battery contactor close. I.e., don't open
+ *              the contactors when driving.
+ * Preconditions
+ *   1. BMS state == DRIVE
+ *   2. DRIVE_INHIBIT signal is inactive
+ *   3. Temperature is normal
+ *   4. batt1 inhibit off
+ *   5. batt2 inhibit off
+ * Actions:
+ *   1. Set batt1 to 25% soc
+ * Postconditions:
+ *   1. BMS state == DRIVE
+ *   2. batt1 inhibit off
+ *   3. batt2 inhibit off
+ *   4. packsImbalanced flag set in BMS CAN messages
 */
-bool test_case_102_do_not_inhibit_battery_contactor_close_when_pack_voltage_differ_and_ignition_is_on(Battery* battery, Bms* bms) {
-    printf("Running test [test_case_102_do_not_inhibit_battery_contactor_close_when_pack_voltage_differ_and_ignition_is_on]\n");
+bool test_case_102(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_102] : do not inhibit battery contactor close when pack voltages differ and ignition is on\n");
 
-    // Ensure no delta between packs by setting all cell voltages to 50% soc
-    uint16_t newCellVoltage = battery->get_voltage_from_soc(50);
-    printf("    > Setting all cell voltages to %dmV (approx 50%% soc)\n", newCellVoltage);
-    battery->set_all_cell_voltages(newCellVoltage);
-
-    // Get into idle state
-    printf("    > Moving to idle state\n");
-    set_ignition_state(false);
-    set_charge_enable_state(false);
-    if ( ! wait_for_bms_state(bms, STATE_STANDBY, 2000) ) {
-        printf("    > BMS state did not change to standby in time\n");
-        printf("    > Test FAILED\n");
-        return false;
-    }
-
-    // Wait for all battery inhibit signals to disable
-    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
-        printf("    > Waiting for BATT%d_INHIBIT to deactivate\n", p+1);
-        if ( ! wait_for_batt_inhibit_state(battery, p, false, 2000) ) {
-            printf("    > BATT%d_INHIBIT did not deactivate in time\n", p+1);
-            printf("    > Test FAILED\n");
-            return false;
-        }
-    }
-
-    // Go into the drive state
-    printf("    > Moving to drive state\n");
-    set_ignition_state(true);
-    set_charge_enable_state(false);
-    if ( ! wait_for_bms_state(bms, STATE_DRIVE, 2000) ) {
-        printf("    > BMS state did not change to DRIVE in time\n");
-        printf("    > Test FAILED\n");
+    if ( ! transition_to_drive_state(bms) ) { 
         return false;
     }
 
     // Execute test - set pack 1 to 25% soc
-    newCellVoltage = battery->get_voltage_from_soc(25);
+    uint16_t newCellVoltage = battery->get_voltage_from_soc(25);
     printf("    > Setting all cell voltages to %dmV (25%% soc) for pack 1\n", newCellVoltage);
     battery->get_pack(0)->set_all_cell_voltages(newCellVoltage);
 
     // Make sure neither pack is inhibited
-    //printf("    > Ensuring BATT_INHIBIT does not activate for either pack\n");
     for ( int p = 0; p < battery->get_num_packs(); p++ ) {
         printf("    > Waiting 5s to ensure BATT%d_INHIBIT does not activate\n", p+1);
         if ( wait_for_batt_inhibit_state(battery, p, true, 5000) ) {
@@ -153,26 +119,42 @@ bool test_case_102_do_not_inhibit_battery_contactor_close_when_pack_voltage_diff
         }
     }
 
+    // Make sure CAN messages show the imbalanced state
+    if ( ! wait_for_packs_imbalanced_state(bms, true, 2000) ) { // BmsState, 2 second timeout
+        printf("    > BMS did not flag the packsImbalanced state in time\n");
+        printf("    > Test FAILED\n");
+        return false;
+    }
+
     printf("    > Test PASSED\n");
     return true;
 
 }
 
 /*
---------------------------------------------------------------------------------
-  When packs are imbalanced, and we go into drive mode, only high pack should be
-  enabled. Low pack should remain inhibited.
-*/
-bool test_case_103_ignition_turned_on_when_battery_contactors_are_inhibited(Battery* battery, Bms* bms) {
-    printf("Running test [test_case_103_ignition_turned_on_when_battery_contactors_are_inhibited]\n");
+ * Test case 103
+ * -----------------------------------------------------------------------------
+ * Description: When packs are imbalanced, and we go into drive mode from
+ *              standby, only high pack should be enabled. Low pack should
+ *              remain inhibited.
+ * Preconditions
+ *   1. BMS state == STANDBY
+ *   2. DRIVE_INHIBIT signal is inactive
+ *   3. Temperature is normal
+ *   4. batt1 inhibit on
+ *   5. batt2 inhibit on
+ * Actions:
+ *   1. Turn ignition on
+ * Postconditions:
+ *   1. BMS state == DRIVE
+ *   1. batt1 inhibit on
+ *   2. batt2 inhibit off
+ *   3. packsImbalanced flag set in BMS CAN messages
+ */
+bool test_case_103(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_103] : ignition turned on when battery contactors are inhibited\n");
 
-    // Start in idle state
-    printf("    > Moving to idle state\n");
-    set_ignition_state(false);
-    set_charge_enable_state(false);
-    if ( ! wait_for_bms_state(bms, STATE_STANDBY, 2000) ) {
-        printf("    > BMS state did not change to idle in time\n");
-        printf("    > Test FAILED\n");
+    if ( ! transition_to_standby_state(bms) ) {
         return false;
     }
 
@@ -191,22 +173,59 @@ bool test_case_103_ignition_turned_on_when_battery_contactors_are_inhibited(Batt
         }
     }
 
+    // Turn ignition on
+    printf("    > Turning ignition on\n");
+    set_ignition_state(true);
+    if ( ! wait_for_bms_state(bms, STATE_DRIVE, 2000) ) {
+        printf("    > BMS state did not change to 'drive' in time\n");
+        printf("    > Test FAILED\n");
+        return false;
+    }
+
+    // Pack 0 should still be inhibitited and pack 1 should not
+    printf("    > Ensuring BATT_INHIBIT is activated for pack 0\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 0, true, 2000) ) {
+        printf("    > BATT1_INHIBIT did not activate in time\n");
+        printf("    > Test FAILED\n");
+        return false;
+    }
+
+    printf("    > Ensuring BATT_INHIBIT is deactivated for pack 1\n");
+    if ( ! wait_for_batt_inhibit_state(battery, 1, false, 2000) ) {
+        printf("    > BATT2_INHIBIT did not deactivate in time\n");
+        printf("    > Test FAILED\n");
+        return false;
+    }
+
     printf("    > Test PASSED\n");
     return true;
 
 }
 
 
-bool test_case_104_ignition_turned_off_when_battery_contactors_are_inhibited(Battery* battery, Bms* bms) {
-    printf("Running test [test_case_104_Ignition turned off when battery contactors are inhibited]\n");
+/*
+ * Test case 104
+ * -----------------------------------------------------------------------------
+ * Description: When packs are imbalanced, and we go into standby mode from
+ *              drive mode, both packs should be inhibited.
+ * Preconditions
+ *   1. BMS state == DRIVE
+ *   2. DRIVE_INHIBIT signal is inactive
+ *   3. Temperature is normal
+ *   4. batt1 inhibit off
+ *   5. batt2 inhibit off
+ * Actions:
+ *   1. Turn ignition off
+ * Postconditions:
+ *   1. BMS state == STANDBY
+ *   2. batt1 inhibit on
+ *   3. batt2 inhibit on
+ *   4. packsImbalanced flag set in BMS CAN messages
+ */
+bool test_case_104(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_104] : ignition turned off when battery contactors are inhibited\n");
 
-    // Start in idle state
-    printf("    > Moving to idle state\n");
-    set_ignition_state(false);
-    set_charge_enable_state(false);
-    if ( ! wait_for_bms_state(bms, STATE_STANDBY, 2000) ) {
-        printf("    > BMS state did not change to 'idle' in time\n");
-        printf("    > Test FAILED\n");
+    if ( ! transition_to_standby_state(bms) ) {
         return false;
     }
 
@@ -273,18 +292,31 @@ bool test_case_104_ignition_turned_off_when_battery_contactors_are_inhibited(Bat
 
 }
 
-bool test_case_105_start_charging_when_battery_contactors_are_inhibited(Battery* battery, Bms* bms) {
-    printf("Running test [test_case_105_start_charging_when_battery_contactors_are_inhibited]\n");
+/*
+ * Test case 105
+ * -----------------------------------------------------------------------------
+ * Description: When packs are imbalanced, and we go into charging mode from
+ *              standby mode, only the low pack should be enabled. High pack
+ *              should remain inhibited.
+ * Preconditions
+ *   1. BMS state == STANDBY
+ *   2. DRIVE_INHIBIT signal is inactive
+ *   3. Temperature is normal
+ *   4. batt1 inhibit on
+ *   5. batt2 inhibit on
+ * Actions:
+ *   1. Start charging
+ * Postconditions:
+ *   1. batt1 inhibit off
+ *   2. batt2 inhibit on
+ *   3. packsImbalanced flag set in BMS CAN messages
+ *   4. BMS state == CHARGING
+ *   5. DRIVE_INHIBIT signal is active
+ */
+bool test_case_105(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_105] : start charging when battery contactors are inhibited\n");
 
-    // Start in idle state
-    printf("    > Moving to idle state\n");
-    set_ignition_state(false);
-    set_charge_enable_state(false);
-    if ( ! wait_for_bms_state(bms, STATE_STANDBY, 2000) ) {
-        printf("    > BMS state did not change to 'idle' in time\n");
-        printf("    > Test FAILED\n");
-        return false;
-    }
+    transition_to_standby_state(bms);
 
     // Set packs imbalanced (pack 0 low, pack 1 high)
     printf("    > Setting packs imbalanced\n");
@@ -331,18 +363,24 @@ bool test_case_105_start_charging_when_battery_contactors_are_inhibited(Battery*
 
 }
 
-bool test_case_106_stop_charging_when_battery_contactors_are_inhibited(Battery* battery, Bms* bms) {
-    printf("Running test [test_case_106_stop_charging_when_battery_contactors_are_inhibited]\n");
+/*
+ * Test case 106
+ * -----------------------------------------------------------------------------
+ * Description: When packs are imbalanced, and we stop charging, both packs
+ *              should be inhibited.
+ * Preconditions:
+ *   1. BMS state == CHARGING
+ *   2. Packs are imbalanced
+ * Actions:
+ *   1. Stop charging
+ * Postconditions:
+ *   1. batt1 inhibit on
+ *   2. batt2 inhibit on
+ */
+bool test_case_106(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_106] : stop charging when battery contactors are inhibited\n");
 
-    // Start in idle state
-    printf("    > Moving to idle state\n");
-    set_ignition_state(false);
-    set_charge_enable_state(false);
-    if ( ! wait_for_bms_state(bms, STATE_STANDBY, 2000) ) {
-        printf("    > BMS state did not change to 'idle' in time\n");
-        printf("    > Test FAILED\n");
-        return false;
-    }
+    transition_to_standby_state(bms);
 
     // Set packs imbalanced (pack 0 low, pack 1 high)
     printf("    > Setting packs imbalanced\n");
@@ -409,18 +447,24 @@ bool test_case_106_stop_charging_when_battery_contactors_are_inhibited(Battery* 
 }
 
 
-bool test_case_107_charging_on_one_pack_and_voltage_equalises(Battery* battery, Bms* bms) {
-    printf("Running test [test_case_107_charging_on_one_pack_and_voltage_equalises]\n");
+/*
+ * Test case 107
+ * -----------------------------------------------------------------------------
+ * Description: When we are charging on imbalanced packs, and the voltages
+ *              equalise, both packs should be uninhibited.
+ * Preconditions:
+ *   1. BMS state == CHARGING
+ *   2. Packs are imbalanced
+ * Actions:
+ *   1. Set voltages of both packs to be equal
+ * Postconditions:
+ *   1. batt1 inhibit off
+ *   2. batt2 inhibit off
+ */
+bool test_case_107(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_107] : charging on one pack and voltage equalises\n");
 
-    // Start in idle state
-    printf("    > Moving to idle state\n");
-    set_ignition_state(false);
-    set_charge_enable_state(false);
-    if ( ! wait_for_bms_state(bms, STATE_STANDBY, 2000) ) {
-        printf("    > BMS state did not change to 'idle' in time\n");
-        printf("    > Test FAILED\n");
-        return false;
-    }
+    transition_to_standby_state(bms);
 
     // Set packs imbalanced (pack 0 low, pack 1 high)
     printf("    > Setting packs imbalanced\n");
@@ -482,18 +526,24 @@ bool test_case_107_charging_on_one_pack_and_voltage_equalises(Battery* battery, 
 }
 
 
-bool test_case_108_driving_on_one_pack_and_voltage_equalises(Battery* battery, Bms* bms) {
-    printf("Running test [test_case_108_driving_on_one_pack_and_voltage_equalises]\n");
+/*
+ * Test case 108
+ * -----------------------------------------------------------------------------
+ * Description: When we are driving on imbalanced packs, and the voltages
+ *              equalise, both packs should be uninhibited.
+ * Preconditions:
+ *   1. BMS state == DRIVE
+ *   2. Packs are imbalanced
+ * Actions:
+ *   1. Set voltages of both packs to be equal
+ * Postconditions:
+ *   1. batt1 inhibit off
+ *   2. batt2 inhibit off
+ */
+bool test_case_108(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_108] : driving on one pack and voltage equalises\n");
 
-    // Start in idle state
-    printf("    > Moving to idle state\n");
-    set_ignition_state(false);
-    set_charge_enable_state(false);
-    if ( ! wait_for_bms_state(bms, STATE_STANDBY, 2000) ) {
-        printf("    > BMS state did not change to 'idle' in time\n");
-        printf("    > Test FAILED\n");
-        return false;
-    }
+    transition_to_standby_state(bms);
 
     // Set packs imbalanced (pack 0 low, pack 1 high)
     printf("    > Setting packs imbalanced\n");
@@ -554,18 +604,26 @@ bool test_case_108_driving_on_one_pack_and_voltage_equalises(Battery* battery, B
 
 }
 
-bool test_case_109_driving_on_one_pack_then_begin_charging_while_ignition_still_on(Battery* battery, Bms* bms) {
-    printf("Running test [test_case_109_driving_on_one_pack_then_begin_charging_while_ignition_still_on]\n");
+/*
+ * Test case 109
+ * -----------------------------------------------------------------------------
+ * Description: When we are driving on imbalanced packs, and we start charging,
+ *              the BMS should inhibit the charging and driving and go into an
+ *              error state (illegal state transition fault).
+ * Preconditions:
+ *   1. BMS state == DRIVE
+ *   2. Packs are imbalanced
+ * Actions:
+ *   1. Start charging
+ * Postconditions:
+ *   1. DRIVE_INHIBIT signal is active
+ *   2. CHARGE_INHIBIT signal is active
+ *   3. BMS state == ILLEGAL_STATE_TRANSITION_FAULT
+ */
+bool test_case_109(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_109] : driving on one pack then begin charging while ignition still on\n");
 
-    // Start in idle state
-    printf("    > Moving to idle state\n");
-    set_ignition_state(false);
-    set_charge_enable_state(false);
-    if ( ! wait_for_bms_state(bms, STATE_STANDBY, 2000) ) {
-        printf("    > BMS state did not change to 'idle' in time\n");
-        printf("    > Test FAILED\n");
-        return false;
-    }
+    transition_to_standby_state(bms);
 
     // Set packs imbalanced (pack 0 low, pack 1 high)
     printf("    > Setting packs imbalanced\n");
@@ -643,4 +701,95 @@ bool test_case_109_driving_on_one_pack_then_begin_charging_while_ignition_still_
     printf("    > Test PASSED\n");
     return true;
 
+}
+/*
+ * Test case 110
+ * -----------------------------------------------------------------------------
+ * Description: When in standby state, with imabalanced packs, and the voltages
+ *              equalise, the BMS should disable the contactor inhibition.
+ * Preconditions:
+ *   1. BMS state == STANDBY
+ *   2. Packs are imbalanced
+ * Actions:
+ *   1. Set voltages of both packs to be equal
+ * Postconditions:
+ *   1. batt1 inhibit off
+ *   2. batt2 inhibit off
+ */
+bool test_case_110(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_110] : imbalanced packs equalise while in standby\n");
+
+    transition_to_standby_state(bms);
+
+    // Set packs imbalanced (pack 0 low, pack 1 high)
+    printf("    > Setting packs imbalanced\n");
+    battery->get_pack(0)->set_all_cell_voltages(battery->get_voltage_from_soc(25));
+    battery->get_pack(1)->set_all_cell_voltages(battery->get_voltage_from_soc(50));
+
+    // Both packs should be inhibited
+    printf("    > Waiting for BATT_INHIBIT to activate on both packs\n");
+    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
+        if ( ! wait_for_batt_inhibit_state(battery, p, true, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not activate in time\n", p+1);
+            printf("    > Test FAILED\n");
+            return false;
+        }
+    }
+
+    // Set pack 0 to 50% soc
+    printf("    > Setting pack 0 to 50%% soc\n");
+    battery->get_pack(0)->set_all_cell_voltages(battery->get_voltage_from_soc(50));
+
+    // Both packs should be uninhibited
+    printf("    > Waiting for BATT_INHIBIT to deactivate on both packs\n");
+    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
+        if ( ! wait_for_batt_inhibit_state(battery, p, false, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not deactivate in time\n", p+1);
+            printf("    > Test FAILED\n");
+            return false;
+        }
+    }
+
+    printf("    > Test PASSED\n");
+    return true;
+}
+
+/*
+ * Test case 111
+ * -----------------------------------------------------------------------------
+ * Description: When charging, and packs go into imbalanced state, the BMS
+ *              should not inhibit contactor close. I.e., don't open the
+ *              contactors when charging.
+ */
+bool test_case_111(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_111] : do not inhibit battery contactor close when pack voltages differ and charging\n");
+
+    transition_to_standby_state(bms);
+
+    // Start charging
+    printf("    > Start charging\n");
+    set_charge_enable_state(true);
+    if ( ! wait_for_bms_state(bms, STATE_CHARGING, 2000) ) {
+        printf("    > BMS state did not change to 'charging' in time\n");
+        printf("    > Test FAILED\n");
+        return false;
+    }
+
+    // Set packs imbalanced (pack 0 low, pack 1 high)
+    printf("    > Setting packs imbalanced\n");
+    battery->get_pack(0)->set_all_cell_voltages(battery->get_voltage_from_soc(25));
+    battery->get_pack(1)->set_all_cell_voltages(battery->get_voltage_from_soc(50));
+
+    // Both packs should NOT be inhibited
+    printf("    > Waiting for BATT_INHIBIT to deactivate on both packs\n");
+    for ( int p = 0; p < battery->get_num_packs(); p++ ) {
+        if ( ! wait_for_batt_inhibit_state(battery, p, false, 2000) ) {
+            printf("    > BATT%d_INHIBIT did not deactivate in time\n", p+1);
+            printf("    > Test FAILED\n");
+            return false;
+        }
+    }
+
+    printf("    > Test PASSED\n");
+    return true;
 }

@@ -287,6 +287,8 @@ bool test_case_005(Battery* battery, Bms* bms) {
         printf("    > Test FAILED\n");
         return false;
     }
+
+    return true;
 }
 
 /*
@@ -325,3 +327,5 @@ bool test_case_006(Battery* battery, Bms* bms) {
     printf("    > Test PASSED\n");
     return true;
 }
+
+// when charging, if the battery is full, the charge inhibit signal should be active

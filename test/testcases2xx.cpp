@@ -21,10 +21,30 @@
 #include "include/io.h"
 #include "include/testcaseutils.h"
 
-bool test_case_201_battery_too_cold_to_charge(Battery* battery, Bms* bms) {
-    printf("Running test [test_case_201_battery_too_cold_to_charge]\n");
+/*
+ * Test cases relating to battery temperature
+ */
 
-    // It doesn't matter what state we are in, CHARGE_INHIBIT should always activate when temp is too low
+/*
+ * Test case 201
+ * -----------------------------------------------------------------------------
+ * Description: When the battery is too cold to charge, the BMS should inhibit
+ *              charging. Start in STANDBY state.
+ * Preconditions:
+ *   1. BMS is in STANDBY state
+ *   2. CHARGE_INHIBIT signal is inactive
+ *   3. Temperature is normal
+ * Actions:
+ *   1. Set all temperatures to -20C
+ * Postconditions:
+ *   1. CHARGE_INHIBIT signal is active
+ */
+bool test_case_201(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_201] : battery too cold to charge (standby)\n");
+
+    if ( ! transition_to_standby_state(bms) ) {
+        return false;
+    }
 
     // Set the temperature to -20C
     printf("    > Setting all temperatures to -20C\n");
@@ -43,12 +63,30 @@ bool test_case_201_battery_too_cold_to_charge(Battery* battery, Bms* bms) {
 
 }
 
-bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery, Bms* bms) {
-    printf("Running test [test_case_202_battery_warm_enough_to_charge_again]\n");
+/*
+ * Test case 202
+ * -----------------------------------------------------------------------------
+ * Description: When the battery is too cold to charge, the BMS should inhibit
+ *              charging. Start in DRIVE state.
+ * Preconditions:
+ *   1. BMS state == DRIVE
+ *   2. CHARGE_INHIBIT signal is inactive
+ *   3. Temperature is normal
+ * Actions:
+ *   1. Set all temperatures to -20C
+ * Postconditions:
+ *   1. CHARGE_INHIBIT signal is active
+ */
+bool test_case_202(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_202] : battery too cold to charge (drive)\n");
 
-    // Set the temperature to -1C
-    printf("    > Setting all temperatures to -1C\n");
-    battery->set_all_temperatures(-1);
+    if ( ! transition_to_drive_state(bms) ) {
+        return false;
+    }
+
+    // Set the temperature to -20C
+    printf("    > Setting all temperatures to -20C\n");
+    battery->set_all_temperatures(-20);
 
     // Wait for CHARGE_INHIBIT to activate
     printf("    > Waiting for CHARGE_INHIBIT to activate\n");
@@ -57,6 +95,47 @@ bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery, Bms* bm
         printf("    > Test FAILED\n");
         return false;
     }
+
+    printf("    > Test PASSED\n");
+    return true;
+
+}
+
+/*
+ * Test case 203
+ * -----------------------------------------------------------------------------
+ * Description: when charge in inhibited due to the battery being too cold, if
+ *              the battery warms up sufficiently, the BMS should allow charging
+ *              to resume.
+ * 
+ * Preconditions:
+ *   1. BMS is in batteryHeating state
+ *   2. CHARGE_INHIBIT signal is active
+ *   3. Temperature is -20C
+ * Actions:
+ *   1. Set all temperatures to normal (20C)
+ * Postconditions:
+ *   1. CHARGE_INHIBIT signal is inactive
+ *   2. BMS is in CHARGING state
+ */
+bool test_case_203(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_203] : battery warm enough to charge again\n");
+
+    transition_to_charging_state(bms);
+
+    // Set the temperature to -20C
+    printf("    > Setting all temperatures to -20C\n");
+    battery->set_all_temperatures(-20);
+
+    // Wait for CHARGE_INHIBIT to activate
+    printf("    > Waiting for CHARGE_INHIBIT to activate\n");
+    if ( ! wait_for_charge_inhibit_state(bms, true, 2000) ) {
+        printf("    > CHARGE_INHIBIT did not activate in time\n");
+        printf("    > Test FAILED\n");
+        return false;
+    }
+
+    // FIXME check for heater enabled
 
     // Set the temperature to 10C
     printf("    > Setting all temperatures to 10C\n");
@@ -74,21 +153,28 @@ bool test_case_202_battery_warm_enough_to_charge_again(Battery* battery, Bms* bm
 
 }
 
-bool test_case_203_too_cold_to_charge_but_charge_requested(Battery* battery, Bms* bms) {
-    printf("Running test [test_case_203_too_cold_to_charge_but_charge_requested]\n");
+/*
+ * Test case 204
+ * -----------------------------------------------------------------------------
+ * Description: When the battery is too cold to charge, the BMS should inhibit
+ *              charging. (standby state)
+ * Preconditions:
+ *   1. BMS is in STANDBY state
+ *   2. CHARGE_INHIBIT signal is inactive
+ *   3. Temperature is normal
+ * Actions:
+ *   1. Set all temperatures to -20C
+ * Postconditions:
+ *   1. CHARGE_INHIBIT signal is active
+ */
+bool test_case_204(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_204] : too cold to charge but charge requested\n");
 
-    // Get into idle state
-    printf("    > Setting state to idle\n");
-    bms->set_state(STATE_STANDBY);
-    if ( ! wait_for_bms_state(bms, STATE_STANDBY, 2000) ) {
-        printf("    > Could not get into idle state\n");
-        printf("    > Test FAILED\n");
-        return false;
-    }
+    transition_to_standby_state(bms);
 
     // Set the temperature to -1C
-    printf("    > Setting all temperatures to -1C\n");
-    battery->set_all_temperatures(-1);
+    printf("    > Setting all temperatures to -20C\n");
+    battery->set_all_temperatures(-20);
 
     // Wait for CHARGE_INHIBIT to activate
     printf("    > Waiting for CHARGE_INHIBIT to activate\n");
@@ -111,8 +197,21 @@ bool test_case_203_too_cold_to_charge_but_charge_requested(Battery* battery, Bms
 
 }
 
-bool test_case_204_battery_too_hot_to_charge(Battery* battery, Bms* bms) {
-    printf("Running test [test_case_204_battery_too_hot_to_charge]\n");
+/*
+ * Test case 205
+ * -----------------------------------------------------------------------------
+ * Description: When the battery is too hot to charge, the BMS should inhibit
+ *              charging.
+ * Preconditions:
+ *   1. BMS is in standby state
+ *   2. CHARGE_INHIBIT signal is inactive
+ */
+bool test_case_205(Battery* battery, Bms* bms) {
+    printf("Running test [test_case_205] : battery too hot to charge\n");
+
+    if ( ! transition_to_standby_state(bms) ) {
+        return false;
+    }
 
     // Set the temperature to 50C
     printf("    > Setting all temperatures to 50C\n");

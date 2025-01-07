@@ -224,3 +224,18 @@ bool transition_to_drive_state(Bms* bms) {
     }
     return true;
 }
+
+bool transition_to_charging_state(Bms* bms) {
+    transition_to_standby_state(bms);
+
+    // Start charging
+    printf("    > Start charging\n");
+    set_charge_enable_state(true);
+    if ( ! wait_for_bms_state(bms, STATE_CHARGING, 2000) ) {
+        printf("    > BMS state did not change to 'charging' in time\n");
+        printf("    > Test FAILED\n");
+        return false;
+    }
+
+    return true;
+}

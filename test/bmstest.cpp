@@ -151,20 +151,24 @@ int main() {
         test_case_005(&battery, &bms);
         test_case_006(&battery, &bms);
         
-        test_case_101_inhibit_battery_contactor_close_when_pack_voltages_differ(&battery, &bms);
-        test_case_102_do_not_inhibit_battery_contactor_close_when_pack_voltage_differ_and_ignition_is_on(&battery, &bms);
-        test_case_103_ignition_turned_on_when_battery_contactors_are_inhibited(&battery, &bms);
-        test_case_104_ignition_turned_off_when_battery_contactors_are_inhibited(&battery, &bms);
-        test_case_105_start_charging_when_battery_contactors_are_inhibited(&battery, &bms);
-        test_case_106_stop_charging_when_battery_contactors_are_inhibited(&battery, &bms);
-        test_case_107_charging_on_one_pack_and_voltage_equalises(&battery, &bms);
-        test_case_108_driving_on_one_pack_and_voltage_equalises(&battery, &bms);
-        test_case_109_driving_on_one_pack_then_begin_charging_while_ignition_still_on(&battery, &bms);
+        test_case_101(&battery, &bms);
+        test_case_102(&battery, &bms);
+        test_case_103(&battery, &bms);
+        test_case_104(&battery, &bms);
+        test_case_105(&battery, &bms);
+        test_case_106(&battery, &bms);
+        test_case_107(&battery, &bms);
+        test_case_108(&battery, &bms);
+        test_case_109(&battery, &bms);
+        test_case_110(&battery, &bms);
+        test_case_111(&battery, &bms);
 
-        test_case_201_battery_too_cold_to_charge(&battery, &bms);
-        test_case_202_battery_warm_enough_to_charge_again(&battery, &bms);
-        test_case_203_too_cold_to_charge_but_charge_requested(&battery, &bms);
-        test_case_204_battery_too_hot_to_charge(&battery, &bms);
+        test_case_201(&battery, &bms);
+        test_case_202(&battery, &bms);
+        test_case_203(&battery, &bms);
+        test_case_204(&battery, &bms);
+        test_case_205(&battery, &bms);
+
     }
 
     return 0;
