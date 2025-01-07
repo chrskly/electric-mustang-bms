@@ -538,7 +538,7 @@ int16_t BatteryPack::get_max_discharge_current() {
 }
 
 /* Returns the maximum charge current as a function of battery temperature. */
-int16_t BatteryPack::get_max_charge_current() {
+int16_t BatteryPack::get_max_charge_current_by_temperature() {
     // Safety checks first
     if ( has_full_cell() ) {
         return 0;

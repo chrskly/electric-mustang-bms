@@ -720,13 +720,17 @@ void Bms::do_welding_checks() {
 
 // Charging
 
+int8_t Bms::get_max_charge_current_by_soc() {
+    return 0;
+}
+
 void Bms::update_max_charge_current() {
     // Safeties
     if ( battery->too_hot() || charge_is_inhibited() ) {
         maxChargeCurrent = 0;
         return;
     }
-    maxChargeCurrent = battery->get_max_charge_current();
+    maxChargeCurrent = std::min(battery->get_max_charge_current_by_temperature(), get_max_charge_current_by_soc());
 }
 
 int8_t Bms::get_max_charge_current() {

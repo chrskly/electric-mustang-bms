@@ -134,6 +134,7 @@ class Bms {
         bool get_illegal_state_transition() { return illegalStateTransition; }
 
         // Charger
+        int8_t get_max_charge_current_by_soc();
         void update_max_charge_current();
         int8_t get_max_charge_current();
         void update_max_discharge_current();

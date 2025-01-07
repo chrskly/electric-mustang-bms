@@ -363,11 +363,11 @@ bool Battery::too_cold_to_charge() {
     return false;
 }
 
-int8_t Battery::get_max_charge_current() {
-    int8_t newMaxChargeCurrent = packs[0].get_max_charge_current();
+int8_t Battery::get_max_charge_current_by_temperature() {
+    int8_t newMaxChargeCurrent = packs[0].get_max_charge_current_by_temperature();
     for ( int p = 1; p < numPacks; p++ ) {
-        if ( packs[p].get_max_charge_current() < newMaxChargeCurrent ) {
-            newMaxChargeCurrent = packs[p].get_max_charge_current();
+        if ( packs[p].get_max_charge_current_by_temperature() < newMaxChargeCurrent ) {
+            newMaxChargeCurrent = packs[p].get_max_charge_current_by_temperature();
         }
     }
     return newMaxChargeCurrent;

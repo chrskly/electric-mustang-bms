@@ -84,7 +84,7 @@ class BatteryPack {
       bool contactors_are_welded();
 
       int16_t get_max_discharge_current();
-      int16_t get_max_charge_current();
+      int16_t get_max_charge_current_by_temperature();
 
    private:
       MCP2515* CAN;                                     // CAN bus connection to this pack
