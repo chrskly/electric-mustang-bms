@@ -137,6 +137,15 @@ int8_t BatteryPack::get_module_liveness(int8_t moduleId) {
     return modules[moduleId].is_alive();
 }
 
+bool BatteryPack::is_alive() {
+    for ( int m = 0; m < numModules; m++ ) {
+        if ( !modules[m].is_alive() ) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /*
  *
  * Contents of message

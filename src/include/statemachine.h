@@ -21,6 +21,17 @@
 #define BMS_SRC_INCLUDE_STATEMACHINE_H_
 
 enum Event {
+    E_TOO_HOT,                // battery is too hot
+    E_TOO_COLD_TO_CHARGE,     // battery is too cold to charge
+    E_TEMPERATURE_OK,         // battery temperature is within acceptable range
+
+    E_BATTERY_EMPTY,          // battery is empty
+    E_BATTERY_NOT_EMPTY,      // battery is not empty
+    E_BATTERY_FULL,           // battery is full
+
+    E_PACKS_IMBALANCED,       // packs are imbalanced
+    E_PACKS_NOT_IMBALANCED,   // packs are not imbalanced
+
     E_TEMPERATURE_UPDATE,     // a battery temperature update has been received
     E_CELL_VOLTAGE_UPDATE,    // a cell voltage update has been received
     E_IGNITION_ON,            // Ignition was turned on
@@ -28,6 +39,10 @@ enum Event {
     E_CHARGING_INITIATED,     // charging has been initiated
     E_CHARGING_TERMINATED,    // charging has stopped
     E_EMERGENCY_SHUTDOWN,     //
+    E_MODULE_UNRESPONSIVE,    //
+    E_MODULES_ALL_RESPONSIVE, //
+    E_SHUNT_UNRESPONSIVE,     //
+    E_SHUNT_RESPONSIVE,       //
 };
 
 typedef void (*State)(Event);
@@ -39,6 +54,7 @@ void state_charging(Event event);
 void state_batteryEmpty(Event event);
 void state_overTempFault(Event event);
 void state_illegalStateTransitionFault(Event event);
+void state_criticalFault(Event event);
 
 const char* get_state_name(State state);
 

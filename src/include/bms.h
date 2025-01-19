@@ -37,6 +37,7 @@ bool send_soc_message(struct repeating_timer *t);
 bool send_status_message(struct repeating_timer *t);
 bool send_alarm_message(struct repeating_timer *t);
 bool handle_main_CAN_messages(struct repeating_timer *t);
+bool check_liveness(struct repeating_timer *t);
 
 enum InhibitReason {
     R_NONE,
@@ -46,6 +47,9 @@ enum InhibitReason {
     R_BATTERY_EMPTY,
     R_CHARGING,
     R_ILLEGAL_STATE_TRANSITION,
+    R_MODULE_UNRESPONSIVE,
+    R_SHUNT_UNRESPONSIVE,
+    R_CRITICAL_FAULT
 };
 
 class Bms {

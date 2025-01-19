@@ -47,6 +47,7 @@ class BatteryPack {
       void print();
       uint8_t getcheck(can_frame &msg, int id);
       int8_t get_module_liveness(int8_t moduleId);
+      bool is_alive();
       void request_data();
       void read_message();
       bool send_frame(can_frame *frame);

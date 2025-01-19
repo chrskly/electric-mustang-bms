@@ -25,11 +25,64 @@
 
 extern mutex_t canMutex;
 
+/*
+ * Recalculate the SoC of the battery periodically.
+ */
+
 struct repeating_timer updateSocTimer;
 
 bool update_soc(struct repeating_timer *t) {
     extern Bms bms;
     bms.recalculate_soc();
+    return true;
+}
+
+/*
+ * Perform all health checks periodically.
+ */
+
+struct repeating_timer healthCheckTimer;
+
+bool run_health_checks(struct repeating_timer *t) {
+    extern Bms bms;
+    extern Battery battery;
+    extern Shunt shunt;
+
+    // Temperature
+    if ( battery.too_hot() ) {
+        bms.send_event(E_TOO_HOT);
+    } else if ( battery.too_cold_to_charge() ) {
+        bms.send_event(E_TOO_COLD_TO_CHARGE);
+    } else {
+        bms.send_event(E_TEMPERATURE_OK);
+    }
+
+    // Voltage
+    if ( battery.has_empty_cell() ) {
+        bms.send_event(E_BATTERY_EMPTY);
+    } else {
+        bms.send_event(E_BATTERY_NOT_EMPTY);
+    }
+
+    if ( bms.packs_are_imbalanced() ) {
+        bms.send_event(E_PACKS_IMBALANCED);
+    } else {
+        bms.send_event(E_PACKS_NOT_IMBALANCED);
+    }
+
+    // Module liveness
+    if ( ! battery.is_alive() ) {
+        bms.send_event(E_MODULE_UNRESPONSIVE);
+    } else {
+        bms.send_event(E_MODULES_ALL_RESPONSIVE);
+    }
+
+    // Shunt liveness
+    if ( shunt.is_dead() ) {
+        bms.send_event(E_SHUNT_UNRESPONSIVE);
+    } else {
+        bms.send_event(E_SHUNT_RESPONSIVE);
+    }
     return true;
 }
 
@@ -427,6 +480,8 @@ bool handle_main_CAN_messages(struct repeating_timer *t) {
 }
 
 
+
+
 Bms::Bms(Battery* _battery, Io* _io, Shunt* _shunt) {
     battery = _battery;
     state = &state_standby;
@@ -484,6 +539,9 @@ Bms::Bms(Battery* _battery, Io* _io, Shunt* _shunt) {
     // shunt. Just update at a regular interval.
     printf("[bms][init] enabling SoC update timer\n");
     add_repeating_timer_ms(500, update_soc, NULL, &updateSocTimer);
+
+    // health checks
+    add_repeating_timer_ms(100, run_health_checks, NULL, &healthCheckTimer);
 }
 
 void Bms::set_state(State newState, std::string reason) {
@@ -720,6 +778,7 @@ void Bms::do_welding_checks() {
 
 // Charging
 
+// FIXME account for inhibited packs
 int8_t Bms::get_max_charge_current_by_soc() {
     return 0;
 }

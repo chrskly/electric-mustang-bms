@@ -32,6 +32,31 @@ cmake ../
 make
 ```
 
+## High Voltage wiring
+
+```
+       +--------- fuse --- batt1-pos-cont ---+
+       |                                     |
+       |     +--- fuse --- batt2-pos-cont ---+
+       |     |                               |
+       |     |                               +--- precharge ---+
+batt1 ---   --- batt2                        |                 |
+       -     -                               +--- main-cont ---+--->
+       |     |
+       |     |
+       |     +------------ batt2-neg-cont ---+---- neg-cont ------->
+       |                                     |
+       +------------------ batt1-neg-cont ---+
+```
+
+* batt1-pos-cont, batt1-neg-cont, batt2-pos-cont, and batt2-neg-cont are
+  contactors located inside the respective battery boxes. They are powered by
+  ignition on or by charging on.
+* The power for the battery contactors passes through the normally closed side
+  of a relay. The BMS can inhibit the closing of the contactors in either
+  battery separately by closing the respective relay.
+* The inverter controls the precharge, main and neg contactors.
+
 ## State machine
 
 ### States
@@ -57,27 +82,35 @@ make
 
 ## Functionality
 
-1. Provide protection for issues relating to paralleling packs. Deny contactor
-   close when pack voltages (not cell voltages) differ by more than a certain
-   number of mV. Instead, when going into drive mode, only close the
-   contactors for the pack with the highest voltage and, when going into charge
-   mode, only close the contactors for the pack with the lowest voltage. Car
-   will still be drivable and full battery capacity will still be usable (by
-   turning ignition off and on again).
-2. When driving on a subset of packs, allow contactors to close when the pack
-   voltages get back into alignment.
-3. When charging on a subset of packs, allow contactors to close when the pack
-   voltages get back into alignment.
-4. Send CAN message to warn when cell(s) near overvolt.
-5. Deny charging when cell(s) overvolt.
-6. Warn when cell(s) near undervolt.
-7. Deny drive when cell(s) undervolt.
-8. When cells are below 0 degrees c, turn on heaters and deny charge until warm
-   enough.
-9. Deny drive when temperature over XX degress c.
-10. Report range estimate.
-11. Provide max charging rate value to charger.
-12. Reset ISA shunt counter when battery has been charged to 100%.
+### General
+* Provide SoC estimate (based on shunt data)
+* Provide range estimate [TODO]
+
+### Charging
+* Provide max charge current value based on temperature and SoC
+* Protect cells by disallowing charging at high/low temperatures
+* Disallow charging when battery is full
+
+### Driving
+* Protect cells by disallowing driving at high temperatures
+* Disallow driving when battery is empty
+
+### Paralleling packs
+* Provide protection for issues relating to paralleling packs. Deny contactor
+  close when pack voltages (not cell voltages) differ by more than a certain
+  number of mV. Instead, when going into drive mode, only close the
+  contactors for the pack with the highest voltage and, when going into charge
+  mode, only close the contactors for the pack with the lowest voltage. Car
+  will still be drivable and full battery capacity will still be usable (by
+  turning ignition off and on again).
+* When driving on a subset of packs, allow contactors to close when the pack
+  voltages get back into alignment.
+* When charging on a subset of packs, allow contactors to close when the pack
+  voltages get back into alignment.
+
+### ISA Shunt
+* Read CAN messages from shunt to track of voltage, current, kwh
+* Reset shunt counters when battery has been charged to 100%
 
 ## Connections
 
@@ -291,6 +324,8 @@ welded.
 - [x] transmit module liveness over can   
 - [x] welded contactor detection
 - [ ] manual battery pre-heat
+- [ ] Disallow charging when BMS cannot 'see' shunt
+- [ ] Provide range estimate
 
 ## Credits
 

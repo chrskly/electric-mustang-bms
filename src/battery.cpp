@@ -363,6 +363,7 @@ bool Battery::too_cold_to_charge() {
     return false;
 }
 
+// FIXME account for inhibited packs
 int8_t Battery::get_max_charge_current_by_temperature() {
     int8_t newMaxChargeCurrent = packs[0].get_max_charge_current_by_temperature();
     for ( int p = 1; p < numPacks; p++ ) {
@@ -476,6 +477,15 @@ int8_t Battery::get_module_liveness_byte(int8_t startModuleId) {
         count += 1;
     }
     return livenessByte;
+}
+
+bool Battery::is_alive() {
+    for ( int p = 0; p < numPacks; p++ ) {
+        if ( !packs[p].is_alive() ) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool Battery::contactor_is_welded(uint8_t packId) {
