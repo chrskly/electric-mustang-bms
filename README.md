@@ -68,17 +68,26 @@ batt1 ---   --- batt2                        |                 |
 * batteryEmpty
 * overTempFault
 * illegalStateTransitionFault
+* criticalFault
 
 ### Events
 
-* E_TEMPERATURE_UPDATE  - the readings from the battery temperature sensors have
-                          updated values.
-* E_CELL_VOLTAGE_UPDATE - the readings from the battery voltage sensors have
-                          updated values.
-* E_IGNITION_ON         - the ignition has been turned on.
-* E_IGNITION_OFF        - the ignition has been turned off.
-* E_CHARGING_INITIATED  - charging has been initiated.
-* E_CHARGING_TERMINATED - charging has been stopped.
+* E_TOO_HOT                - The battery is overheating.
+* E_TOO_COLD_TO_CHARGE     - The battery temperature is too cold.
+* E_TEMPERATURE_OK         - The battery temperature is in an OK range.
+* E_BATTERY_EMPTY          - The battery has one or more 'empty' cells.
+* E_BATTERY_NOT_EMPTY      - The battery charge is in an OK range.
+* E_BATTERY_FULL           - The battery has one or more 'full' cells.
+* E_PACKS_IMBALANCED       - The voltage of the two packs differ.
+* E_PACKS_NOT_IMBALANCED   - The voltage of the two packs are the same.
+* E_IGNITION_ON            - the ignition has been turned on.
+* E_IGNITION_OFF           - the ignition has been turned off.
+* E_CHARGING_INITIATED     - charging has been initiated.
+* E_CHARGING_TERMINATED    - charging has been stopped.
+* E_MODULE_UNRESPONSIVE    - One or battery modules are not reporting in to the BMS.
+* E_MODULES_ALL_RESPONSIVE - All battery modules are reporting in to the BMS.
+* E_SHUNT_UNRESPONSIVE     - The ISA shunt is not transmitting updates.
+* E_SHUNT_RESPONSIVE       - The ISA shunt is transmitting updates.
 
 ## Functionality
 
