@@ -160,10 +160,12 @@ bool send_limits_message(struct repeating_timer *t) {
  * byte 0 = bms state
  *   00 = standby
  *   01 = drive
- *   02 = charging
- *   03 = batteryEmpty
- *   04 = overTempFault
- *   05 = illegalStateTransitionFault
+ *   02 = batteryHeating
+ *   03 = charging
+ *   04 = batteryEmpty
+ *   05 = overTempFault
+ *   06 = illegalStateTransitionFault
+ *   07 = criticalFault
  *   FF = Undefined error
  * byte 1 = error bits
  *   bit 0 = internalError          - something has gone wrong in the BMS
@@ -227,6 +229,8 @@ bool send_bms_state_message(struct repeating_timer *t) {
         bmsStateFrame.data[0] = 0x05;
     } else if ( bms.get_state() == &state_illegalStateTransitionFault ) {
         bmsStateFrame.data[0] = 0x06;
+    } else if ( bms.get_state() == &state_criticalFault ) {
+        bmsStateFrame.data[0] = 0x07;
     } else {
         bmsStateFrame.data[0] = 0xFF;
     }
