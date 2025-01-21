@@ -192,6 +192,7 @@ bool send_limits_message(struct repeating_timer *t) {
  *   05 = R_CHARGING
  *   06 = R_ILLEGAL_STATE_TRANSITION
  * byte 4 = drive inhibit reason
+ *   Same mapping as charge inhibit reason
  * byte 5 = welding bits
  *   bit 0 = posContactorWelded   - the positive contactor is welded shut
  *   bit 1 = negContactorWelded   - the negative contactor is welded shut
