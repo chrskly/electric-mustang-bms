@@ -257,8 +257,8 @@ bool send_bms_state_message(struct repeating_timer *t) {
  * byte 2 = modules 16-23 heartbeat status (0 alive, 1 dead)
  * byte 3 = modules 24-31 heartbeat status (0 alive, 1 dead)
  * byte 4 = modules 32-39 heartbeat status (0 alive, 1 dead)
- * byte 5 = unused
- * byte 6 = unused
+ * byte 5 = invalidEventCounter LSB
+ * byte 6 = invalidEventCounter MSB
  * byte 7 = checksum
  */
 
@@ -275,9 +275,9 @@ bool send_module_liveness_message(struct repeating_timer *t) {
     moduleLivenessFrame.data[2] = battery.get_module_liveness_byte(16);
     moduleLivenessFrame.data[3] = battery.get_module_liveness_byte(24);
     moduleLivenessFrame.data[4] = battery.get_module_liveness_byte(32);
-    moduleLivenessFrame.data[5] = 0x00;
-    moduleLivenessFrame.data[6] = 0x00;
-    moduleLivenessFrame.data[7] = 0x00;
+    moduleLivenessFrame.data[5] = (uint8_t)bms.get_invalid_event_count() && 0xFF;
+    moduleLivenessFrame.data[6] = (uint8_t)bms.get_invalid_event_count() >> 8;
+    moduleLivenessFrame.data[7] = 0x00;  // checksum
     bms.send_frame(&moduleLivenessFrame, true);
     return true;
 }

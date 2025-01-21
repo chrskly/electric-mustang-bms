@@ -104,7 +104,6 @@ class Bms {
         void clear_charge_inhibit_reason();
         int8_t get_charge_inhibit_reason();
 
-
         // HEATER
         void enable_heater();
         void disable_heater();
@@ -130,6 +129,7 @@ class Bms {
         bool regen_not_allowed() { return soc > 90; };
 
         void increment_invalid_event_count();
+        uint16_t get_invalid_event_count() { return invalidEventCounter; };
         uint8_t get_welding_byte();
         void do_welding_checks();
 
