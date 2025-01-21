@@ -72,6 +72,8 @@ batt1 ---   --- batt2                        |                 |
 
 ### Events
 
+| Event | Description |
+| --- | --- |
 | E_TOO_HOT | The battery is overheating. |
 | E_TOO_COLD_TO_CHARGE | The battery temperature is too cold. |
 | E_TEMPERATURE_OK | The battery temperature is in an OK range. |
