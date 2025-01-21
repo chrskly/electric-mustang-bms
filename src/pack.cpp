@@ -225,13 +225,11 @@ void BatteryPack::read_message() {
     if ( (frame.can_id & 0xFF0) == 0x180 ) {
         decode_temperatures(&frame);
         this->battery->process_temperature_update();
-        this->bms->send_event(E_TEMPERATURE_UPDATE);
     }
     // Voltage messages
     if (frame.can_id > 0x99 && frame.can_id < 0x180) {
         decode_voltages(&frame);
         this->battery->process_voltage_update();
-        this->bms->send_event(E_CELL_VOLTAGE_UPDATE);
     }
 }
 

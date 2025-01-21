@@ -24,25 +24,19 @@ enum Event {
     E_TOO_HOT,                // battery is too hot
     E_TOO_COLD_TO_CHARGE,     // battery is too cold to charge
     E_TEMPERATURE_OK,         // battery temperature is within acceptable range
-
     E_BATTERY_EMPTY,          // battery is empty
     E_BATTERY_NOT_EMPTY,      // battery is not empty
     E_BATTERY_FULL,           // battery is full
-
     E_PACKS_IMBALANCED,       // packs are imbalanced
     E_PACKS_NOT_IMBALANCED,   // packs are not imbalanced
-
-    E_TEMPERATURE_UPDATE,     // a battery temperature update has been received
-    E_CELL_VOLTAGE_UPDATE,    // a cell voltage update has been received
     E_IGNITION_ON,            // Ignition was turned on
     E_IGNITION_OFF,           // Ignition was turned off
     E_CHARGING_INITIATED,     // charging has been initiated
     E_CHARGING_TERMINATED,    // charging has stopped
-    E_EMERGENCY_SHUTDOWN,     //
-    E_MODULE_UNRESPONSIVE,    //
-    E_MODULES_ALL_RESPONSIVE, //
-    E_SHUNT_UNRESPONSIVE,     //
-    E_SHUNT_RESPONSIVE,       //
+    E_MODULE_UNRESPONSIVE,    // one or module battery modules are unresponsive
+    E_MODULES_ALL_RESPONSIVE, // all battery modules are responsive
+    E_SHUNT_UNRESPONSIVE,     // the shunt is unresponsive
+    E_SHUNT_RESPONSIVE,       // the shunt is responsive
 };
 
 typedef void (*State)(Event);
