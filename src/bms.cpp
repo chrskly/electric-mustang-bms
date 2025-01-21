@@ -60,6 +60,8 @@ bool run_health_checks(struct repeating_timer *t) {
     // Voltage
     if ( battery.has_empty_cell() ) {
         bms.send_event(E_BATTERY_EMPTY);
+    } else if ( battery.has_full_cell() ) {
+        bms.send_event(E_BATTERY_FULL);
     } else {
         bms.send_event(E_BATTERY_NOT_EMPTY);
     }
