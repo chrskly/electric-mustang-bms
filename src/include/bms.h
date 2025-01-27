@@ -148,7 +148,6 @@ class Bms {
         void led_blink();
 
         void pack_voltages_match_heartbeat();
-        //bool packs_imbalanced_ttl_expired();
         bool packs_are_imbalanced();
 
         // CAN
