@@ -502,15 +502,15 @@ Bms::Bms(Battery* _battery, Io* _io, Shunt* _shunt) {
     CAN = new MCP2515(SPI_PORT, MAIN_CAN_CS, SPI_MISO, SPI_MOSI, SPI_CLK, 500000);
     MCP2515::ERROR result = CAN->reset();
     if ( result != MCP2515::ERROR_OK ) {
-        printf("[bms][init] WARNING resetting main CAN port : %d\n", result);
+        printf("[bms][init] WARNING problem resetting main CAN port : %d\n", result);
     }
     result = CAN->setBitrate(CAN_500KBPS, MCP_8MHZ);
     if ( result != MCP2515::ERROR_OK ) {
-        printf("[bms][init] WARNING setting bitrate on main CAN port : %d\n", result);
+        printf("[bms][init] WARNING problem setting bitrate on main CAN port : %d\n", result);
     }
     result = CAN->setNormalMode();
     if ( result != MCP2515::ERROR_OK ) {
-        printf("[bms][init] WARNING setting normal mode on main CAN port : %d\n", result);
+        printf("[bms][init] WARNING problem setting normal mode on main CAN port : %d\n", result);
     }
     printf("[bms][init] main CAN port memory address : %p\n", CAN);
 
