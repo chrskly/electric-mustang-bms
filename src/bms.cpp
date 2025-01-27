@@ -571,6 +571,8 @@ void Bms::set_state(State newState, std::string reason) {
         statusLight.set_mode(FAULT);
     } else if ( state == state_illegalStateTransitionFault ) {
         statusLight.set_mode(FAULT);
+    } else if ( state == state_criticalFault ) {
+        statusLight.set_mode(FAULT);
     } else {
         statusLight.set_mode(FAULT);
     }
