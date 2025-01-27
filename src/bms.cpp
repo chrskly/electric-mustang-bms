@@ -515,9 +515,9 @@ Bms::Bms(Battery* _battery, Io* _io, Shunt* _shunt) {
     }
     printf("[bms][init] main CAN port memory address : %p\n", CAN);
 
+    /*
     printf("[bms][init] sending 5 test messages\n");
     for ( int i = 0; i < 5; i++ ) {
-        //printf(" * [BMS] Main CAN port status : %d\n", CAN.getStatus());
         can_frame m;
         m.can_id = 0x100 + i;
         m.can_dlc = 8;
@@ -526,6 +526,7 @@ Bms::Bms(Battery* _battery, Io* _io, Shunt* _shunt) {
         }
         this->send_frame(&m, true);
     }
+    */
 
     printf("[bms][init] enabling CAN message handlers\n");
     // limits (out)
@@ -644,7 +645,6 @@ int8_t Bms::get_drive_inhibit_reason() {
 // CHARGE_INHIBIT
 
 void Bms::enable_charge_inhibit(std::string context, InhibitReason reason) {
-    //printf("    * Enabling charge inhibit\n");
     if ( !charge_is_inhibited() ) {
         set_charge_inhibit_reason(reason);
         io->enable_charge_inhibit(context);
@@ -652,7 +652,6 @@ void Bms::enable_charge_inhibit(std::string context, InhibitReason reason) {
 }
 
 void Bms::disable_charge_inhibit(std::string context) {
-    //printf("    * Disabling charge inhibit\n");
     clear_charge_inhibit_reason();
     if ( charge_is_inhibited() ) {
         io->disable_charge_inhibit(context);
