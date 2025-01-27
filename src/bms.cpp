@@ -497,6 +497,7 @@ Bms::Bms(Battery* _battery, Io* _io, Shunt* _shunt) {
     internalError = false;
     statusLight = StatusLight(this);
     chargeInhibitReason = R_NONE;
+    driveInhibitReason = R_NONE;
 
     printf("[bms][init] setting up main CAN port\n");
     CAN = new MCP2515(SPI_PORT, MAIN_CAN_CS, SPI_MISO, SPI_MOSI, SPI_CLK, 500000);
