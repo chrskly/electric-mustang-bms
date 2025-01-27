@@ -54,25 +54,25 @@ enum InhibitReason {
 
 class Bms {
     private:
-        Battery* battery;                     //
-        State state;                          //
-        Io* io;                               //
-        Shunt* shunt;                         //
-        StatusLight statusLight;              //
-        int8_t maxChargeCurrent;              // Tell the charger how much current it's allowed to push into the battery
-        int8_t maxDischargeCurrent;           //
-        uint8_t soc;                          // State of charge of the battery
-        bool internalError;                   // 
-        bool watchdogReboot;                  //
-        clock_t lastTimePackVoltagesMatched;  //
-        MCP2515* CAN;                         //
-        struct can_frame canFrame;            //
-        uint16_t invalidEventCounter;         // Count how many times the state machine has seen an invalid event
-        bool illegalStateTransition;          //
-        int8_t chargeInhibitReason;           //
-        int8_t driveInhibitReason;            //
-        bool posContactorWelded;              //
-        bool negContactorWelded;              //
+        Battery* battery;                      //
+        State state;                           //
+        Io* io;                                //
+        Shunt* shunt;                          //
+        StatusLight statusLight;               //
+        int8_t maxChargeCurrent;               // Tell the charger how much current it's allowed to push into the battery
+        int8_t maxDischargeCurrent;            //
+        uint8_t soc;                           // State of charge of the battery
+        bool internalError;                    // 
+        bool watchdogReboot;                   //
+        clock_t lastTimePackVoltagesMatched;   //
+        MCP2515* CAN;                          //
+        struct can_frame canFrame;             //
+        uint16_t invalidEventCounter;          // Count how many times the state machine has seen an invalid event
+        bool illegalStateTransition;           //
+        int8_t chargeInhibitReason;            //
+        int8_t driveInhibitReason;             //
+        bool posContactorWelded;               //
+        bool negContactorWelded;               //
         bool packContactorsWelded[NUM_PACKS];  //
 
     public:
