@@ -97,7 +97,7 @@ batt1 ---   --- batt2                        |                 |
 * Provide SoC estimate (based on shunt data)
 * Provide range estimate [TODO]
 
-### Charging
+### Charging
 * Provide max charge current value based on temperature and SoC
 * Protect cells by disallowing charging at high/low temperatures
 * Disallow charging when battery is full
