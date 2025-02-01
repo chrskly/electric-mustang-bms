@@ -94,6 +94,7 @@ batt1 ---   --- batt2                        |                 |
 ## Functionality
 
 ### General
+* Monitor voltage of every cell in the pack.
 * Provide SoC estimate (based on shunt data)
 * Provide range estimate [TODO]
 
@@ -107,6 +108,9 @@ batt1 ---   --- batt2                        |                 |
 * Disallow driving when battery is empty
 
 ### Paralleling packs
+
+I will be using two BMW PHEV packs connected in parallel. This introduces some additional complications.
+
 * Provide protection for issues relating to paralleling packs. Deny contactor
   close when pack voltages (not cell voltages) differ by more than a certain
   number of mV. Instead, when going into drive mode, only close the
