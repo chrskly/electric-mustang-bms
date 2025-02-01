@@ -781,9 +781,8 @@ uint8_t Bms::get_welding_byte() {
 void Bms::do_welding_checks() {
     posContactorWelded = io->pos_contactor_is_welded();
     negContactorWelded = io->neg_contactor_is_welded();
-    for ( int p = 0; p < 3; p++ ) {
-        packContactorsWelded[p] = battery->contactor_is_welded(p);
-    }
+    packContactorsWelded[0] = battery->contactor_is_welded(0);
+    packContactorsWelded[1] = battery->contactor_is_welded(1);
 }
 
 // Charging
