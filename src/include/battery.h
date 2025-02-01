@@ -52,6 +52,8 @@ class Battery {
       void request_data();
       void read_message();
       void send_test_message();
+      uint16_t get_can_tx_error_count_for_pack(int packId) { return packs[packId].get_can_tx_error_count(); }
+      uint16_t get_can_rx_error_count_for_pack(int packId) { return packs[packId].get_can_rx_error_count(); }
 
       // Voltage
       uint32_t get_voltage();

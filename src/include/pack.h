@@ -87,8 +87,10 @@ class BatteryPack {
       int16_t get_max_discharge_current();
       int16_t get_max_charge_current_by_temperature();
 
-      void incrementCanTxErrorCount() { canTxErrorCount++; }
-      void incrementCanRxErrorCount() { canRxErrorCount++; }
+      void increment_can_tx_error_count() { canTxErrorCount++; }
+      void increment_can_rx_error_count() { canRxErrorCount++; }
+      uint16_t get_can_tx_error_count() { return canTxErrorCount; }
+      uint16_t get_can_rx_error_count() { return canRxErrorCount; }
 
    private:
       MCP2515* CAN;                                     // CAN bus connection to this pack
@@ -145,8 +147,8 @@ class BatteryPack {
       int8_t lastTemperatureSample;
       int8_t temperatureDelta;
 
-      int32_t canTxErrorCount;
-      int32_t canRxErrorCount;
+      int16_t canTxErrorCount;
+      int16_t canRxErrorCount;
 };
 
 #endif  // BMS_SRC_INCLUDE_PACK_H_

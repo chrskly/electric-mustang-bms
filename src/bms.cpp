@@ -283,7 +283,7 @@ bool send_module_liveness_message(struct repeating_timer *t) {
 }
 
 /*
- * Can tx/rx error counters message 0x354
+ * Main CAN bus tx/rx error counters message 0x354
  *
  * Custom message format (not in SimpBMS)
  *
@@ -291,22 +291,22 @@ bool send_module_liveness_message(struct repeating_timer *t) {
  * byte 4 - 7 = can rx error counters (32bit counter)
  */
 
-struct repeating_timer canErrorCountersTimer;
+struct repeating_timer mainCanErrorCountersTimer;
 
-bool send_can_error_counters_message(struct repeating_timer *t) {
+bool send_main_can_error_counters_message(struct repeating_timer *t) {
     extern Bms bms;
-    struct can_frame canErrorCountersFrame;
-    zero_frame(&canErrorCountersFrame);
-    canErrorCountersFrame.can_id = 0x354;
-    canErrorCountersFrame.data[0] = bms.getCanTxErrorCount() && 0xFF;
-    canErrorCountersFrame.data[1] = bms.getCanTxErrorCount() >> 8 && 0xFF;
-    canErrorCountersFrame.data[2] = bms.getCanTxErrorCount() >> 16 && 0xFF;
-    canErrorCountersFrame.data[3] = bms.getCanTxErrorCount() >> 24 && 0xFF;
-    canErrorCountersFrame.data[4] = bms.getCanRxErrorCount() && 0xFF;
-    canErrorCountersFrame.data[5] = bms.getCanRxErrorCount() >> 8 && 0xFF;
-    canErrorCountersFrame.data[6] = bms.getCanRxErrorCount() >> 16 && 0xFF;
-    canErrorCountersFrame.data[7] = bms.getCanRxErrorCount() >> 24 && 0xFF;
-    bms.send_frame(&canErrorCountersFrame, false);
+    struct can_frame mainCanErrorCountersFrame;
+    zero_frame(&mainCanErrorCountersFrame);
+    mainCanErrorCountersFrame.can_id = 0x354;
+    mainCanErrorCountersFrame.data[0] = bms.get_can_tx_error_count() && 0xFF;
+    mainCanErrorCountersFrame.data[1] = bms.get_can_tx_error_count() >> 8 && 0xFF;
+    mainCanErrorCountersFrame.data[2] = bms.get_can_tx_error_count() >> 16 && 0xFF;
+    mainCanErrorCountersFrame.data[3] = bms.get_can_tx_error_count() >> 24 && 0xFF;
+    mainCanErrorCountersFrame.data[4] = bms.get_can_rx_error_count() && 0xFF;
+    mainCanErrorCountersFrame.data[5] = bms.get_can_rx_error_count() >> 8 && 0xFF;
+    mainCanErrorCountersFrame.data[6] = bms.get_can_rx_error_count() >> 16 && 0xFF;
+    mainCanErrorCountersFrame.data[7] = bms.get_can_rx_error_count() >> 24 && 0xFF;
+    bms.send_frame(&mainCanErrorCountersFrame, false);
     return true;
 }
 
@@ -378,6 +378,37 @@ bool send_status_message(struct repeating_timer *t) {
     statusFrame.data[6] = (uint8_t)( shunt.get_voltage1() * 100 ) && 0xFF;
     statusFrame.data[7] = (uint8_t)( shunt.get_voltage1() * 100 ) >> 8;
     bms.send_frame(&statusFrame, false);
+    return true;
+}
+
+/*
+ * Pack CAN bus tx/rx error counters message 0x357
+ *
+ * Custom message format (not in SimpBMS)
+ *
+ * byte 0 - 1 = pack 0 can tx error counters (16bit counter)
+ * byte 2 - 3 = pack 0 can rx error counters (16bit counter)
+ * byte 4 - 5 = pack 1 can tx error counters (16bit counter)
+ * byte 6 - 7 = pack 1 can rx error counters (16bit counter)
+ */
+
+struct repeating_timer packCanErrorCountersTimer;
+
+bool send_pack_can_error_counters_message(struct repeating_timer *t) {
+    extern Bms bms;
+    extern Battery battery;
+    struct can_frame packCanErrorCountersFrame;
+    zero_frame(&packCanErrorCountersFrame);
+    packCanErrorCountersFrame.can_id = 0x357;
+    packCanErrorCountersFrame.data[0] = battery.get_can_tx_error_count_for_pack(0) && 0xFF;
+    packCanErrorCountersFrame.data[1] = battery.get_can_tx_error_count_for_pack(0) >> 8 && 0xFF;
+    packCanErrorCountersFrame.data[2] = battery.get_can_rx_error_count_for_pack(0) && 0xFF;
+    packCanErrorCountersFrame.data[3] = battery.get_can_rx_error_count_for_pack(0) >> 8 && 0xFF;
+    packCanErrorCountersFrame.data[4] = battery.get_can_tx_error_count_for_pack(1) && 0xFF;
+    packCanErrorCountersFrame.data[5] = battery.get_can_tx_error_count_for_pack(1) >> 8 && 0xFF;
+    packCanErrorCountersFrame.data[6] = battery.get_can_rx_error_count_for_pack(1) && 0xFF;
+    packCanErrorCountersFrame.data[7] = battery.get_can_rx_error_count_for_pack(1) >> 8 && 0xFF;
+    bms.send_frame(&packCanErrorCountersFrame, false);
     return true;
 }
 
@@ -564,7 +595,7 @@ Bms::Bms(Battery* _battery, Io* _io, Shunt* _shunt) {
     // module liveness (out)
     add_repeating_timer_ms(5000, send_module_liveness_message, NULL, &moduleLivenessTimer);
     // can error counters (out)
-    add_repeating_timer_ms(1000, send_can_error_counters_message, NULL, &canErrorCountersTimer);
+    add_repeating_timer_ms(1000, send_main_can_error_counters_message, NULL, &mainCanErrorCountersTimer);
     // soc (out)
     add_repeating_timer_ms(1000, send_soc_message, NULL, &socMessageTimer);
     // status (out)
@@ -879,7 +910,7 @@ bool Bms::send_frame(can_frame* frame, bool doChecksum) {
         }
 
         if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
-            incrementCanTxErrorCount();
+            increment_can_tx_error_count();
             continue;
         }
 
@@ -890,19 +921,19 @@ bool Bms::send_frame(can_frame* frame, bool doChecksum) {
         if ( result != MCP2515::ERROR_OK ) {
             if ( result == MCP2515::ERROR_FAIL ) {
                 printf(" [send_frame %d] ERROR_FAIL, try again\n", t);
-                incrementCanTxErrorCount();
+                increment_can_tx_error_count();
             } else if ( result == MCP2515::ERROR_ALLTXBUSY ) {
                 printf(" [send_frame %d] ERROR_ALLTXBUSY, try again\n", t);
-                incrementCanTxErrorCount();
+                increment_can_tx_error_count();
             } else if ( result == MCP2515::ERROR_FAILINIT ) {
                 printf(" [send_frame %d] ERROR_FAILINIT, try again\n", t);
-                incrementCanTxErrorCount();
+                increment_can_tx_error_count();
             } else if ( result == MCP2515::ERROR_FAILTX ) {
                 printf(" [send_frame %d] ERROR_FAILTX, try again\n", t);
-                incrementCanTxErrorCount();
+                increment_can_tx_error_count();
             } else if ( result == MCP2515::ERROR_NOMSG ) {
                 printf(" [send_frame %d] ERROR_NOMSG, try again\n", t);
-                incrementCanTxErrorCount();
+                increment_can_tx_error_count();
             }
             continue;
         }
@@ -916,7 +947,7 @@ bool Bms::send_frame(can_frame* frame, bool doChecksum) {
 bool Bms::read_frame(can_frame* frame) {
     for ( int t = 0; t < READ_FRAME_RETRIES; t++ ) {    
         if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
-            incrementCanRxErrorCount();
+            increment_can_rx_error_count();
             return false;
         }
         MCP2515::ERROR result = this->CAN->readMessage(frame);
@@ -924,16 +955,16 @@ bool Bms::read_frame(can_frame* frame) {
         if ( result != MCP2515::ERROR_OK ) {
             if ( result == MCP2515::ERROR_FAIL ) {
                 printf("[bms][read_frame] %d/%d ERROR_FAIL, try again\n", t, READ_FRAME_RETRIES);
-                incrementCanRxErrorCount();
+                increment_can_rx_error_count();
             } else if ( result == MCP2515::ERROR_ALLTXBUSY ) {
                 printf("[bms][read_frame] %d/%d ERROR_ALLTXBUSY, try again\n", t, READ_FRAME_RETRIES);
-                incrementCanRxErrorCount();
+                increment_can_rx_error_count();
             } else if ( result == MCP2515::ERROR_FAILINIT ) {
                 printf("[bms][read_frame] %d/%d ERROR_FAILINIT, try again\n", t, READ_FRAME_RETRIES);
-                incrementCanRxErrorCount();
+                increment_can_rx_error_count();
             } else if ( result == MCP2515::ERROR_FAILTX ) {
                 printf("[bms][read_frame] %d/%d ERROR_FAILTX, try again\n", t, READ_FRAME_RETRIES);
-                incrementCanRxErrorCount();
+                increment_can_rx_error_count();
             } else if ( result == MCP2515::ERROR_NOMSG ) {
                 return true;
             }

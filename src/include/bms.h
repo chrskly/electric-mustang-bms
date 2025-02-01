@@ -158,10 +158,10 @@ class Bms {
         bool read_frame(can_frame* frame);
         void send_shunt_reset_message();
 
-        void incrementCanTxErrorCount() { canTxErrorCount++; }
-        void incrementCanRxErrorCount() { canRxErrorCount++; }
-        uint32_t getCanTxErrorCount() { return canTxErrorCount; }
-        uint32_t getCanRxErrorCount() { return canRxErrorCount; }
+        void increment_can_tx_error_count() { canTxErrorCount++; }
+        void increment_can_rx_error_count() { canRxErrorCount++; }
+        uint32_t get_can_tx_error_count() { return canTxErrorCount; }
+        uint32_t get_can_rx_error_count() { return canRxErrorCount; }
 };
 
 #endif  // BMS_SRC_INCLUDE_BMS_H_

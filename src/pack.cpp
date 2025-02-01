@@ -206,6 +206,7 @@ void BatteryPack::read_message() {
     // Try to get the mutex. If we can't, we'll try again next time.
     if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
         printf("[pack%d][read_message] failed to get battery pack CAN mutex\n", this->id);
+        increment_can_rx_error_count();
         return;
     }
 
@@ -215,6 +216,7 @@ void BatteryPack::read_message() {
 
     // Return if we don't have a message to process
     if ( result != MCP2515::ERROR_OK ) {
+        increment_can_rx_error_count();
         return;
     }
 
@@ -249,7 +251,7 @@ bool BatteryPack::send_frame(can_frame *frame) {
         // Try to get the mutex. If we can't, we'll try again next time.
         if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
             printf("[pack%d][send_frame] failed to get battery pack CAN mutex\n", this->id);
-            incrementCanTxErrorCount();
+            increment_can_tx_error_count();
             continue;
         }
         
@@ -259,16 +261,16 @@ bool BatteryPack::send_frame(can_frame *frame) {
         switch (result) {
             case MCP2515::ERROR_FAIL:
                 printf("[pack%d][send_frame] ERROR sending message to battery pack (ERROR_FAIL)\n", this->id);
-                incrementCanTxErrorCount();
+                increment_can_tx_error_count();
             case MCP2515::ERROR_ALLTXBUSY:
                 printf("[pack%d][send_frame] ERROR sending message to battery pack (ALLTXBUSY)\n", this->id);
-                incrementCanTxErrorCount();
+                increment_can_tx_error_count();
             case MCP2515::ERROR_FAILINIT:
                 printf("[pack%d][send_frame] ERROR sending message to battery pack (FAILINIT)\n", this->id);
-                incrementCanTxErrorCount();
+                increment_can_tx_error_count();
             case MCP2515::ERROR_FAILTX:
                 printf("[pack%d][send_frame] ERROR sending message to battery pack (FAILTX)\n", this->id);
-                incrementCanTxErrorCount();
+                increment_can_tx_error_count();
         }
 
         if ( result == MCP2515::ERROR_OK) {
