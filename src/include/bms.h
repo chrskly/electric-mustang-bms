@@ -75,6 +75,9 @@ class Bms {
         bool negContactorWelded;               //
         bool packContactorsWelded[NUM_PACKS];  //
 
+        uint32_t canTxErrorCount;              //
+        uint32_t canRxErrorCount;              //
+
     public:
         Bms() {};
         Bms(Battery* battery, Io* io, Shunt* shunt);
