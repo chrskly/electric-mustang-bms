@@ -109,6 +109,9 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _c
     inStartup = true;
     modulePollingCycle = 0;
 
+    CanTxErrorCount = 0;
+    CanRxErrorCount = 0;
+
     crc8.begin();
 
     printf("[pack%d] setup complete\n", id);
@@ -246,6 +249,7 @@ bool BatteryPack::send_frame(can_frame *frame) {
         // Try to get the mutex. If we can't, we'll try again next time.
         if ( !mutex_enter_timeout_ms(&canMutex, CAN_MUTEX_TIMEOUT_MS) ) {
             printf("[pack%d][send_frame] failed to get battery pack CAN mutex\n", this->id);
+            incrementCanTxErrorCount();
             continue;
         }
         
@@ -255,16 +259,16 @@ bool BatteryPack::send_frame(can_frame *frame) {
         switch (result) {
             case MCP2515::ERROR_FAIL:
                 printf("[pack%d][send_frame] ERROR sending message to battery pack (ERROR_FAIL)\n", this->id);
-                //sleep_ms(2);
+                incrementCanTxErrorCount();
             case MCP2515::ERROR_ALLTXBUSY:
                 printf("[pack%d][send_frame] ERROR sending message to battery pack (ALLTXBUSY)\n", this->id);
-                //sleep_ms(2);
+                incrementCanTxErrorCount();
             case MCP2515::ERROR_FAILINIT:
                 printf("[pack%d][send_frame] ERROR sending message to battery pack (FAILINIT)\n", this->id);
-                //sleep_ms(2);
+                incrementCanTxErrorCount();
             case MCP2515::ERROR_FAILTX:
                 printf("[pack%d][send_frame] ERROR sending message to battery pack (FAILTX)\n", this->id);
-                //sleep_ms(2);
+                incrementCanTxErrorCount();
         }
 
         if ( result == MCP2515::ERROR_OK) {
