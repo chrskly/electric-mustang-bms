@@ -75,8 +75,8 @@ class Bms {
         bool negContactorWelded;               //
         bool packContactorsWelded[NUM_PACKS];  //
 
-        uint32_t canTxErrorCount;              //
-        uint32_t canRxErrorCount;              //
+        uint32_t canTxErrorCount;              // Track number of times we've failed to send a CAN message on the main bus
+        uint32_t canRxErrorCount;              // Track number of times we've failed to read a CAN message on the main bus
 
     public:
         Bms() {};
@@ -157,6 +157,11 @@ class Bms {
         bool send_frame(can_frame* frame, bool doChecksum);
         bool read_frame(can_frame* frame);
         void send_shunt_reset_message();
+
+        void incrementCanTxErrorCount() { canTxErrorCount++; }
+        void incrementCanRxErrorCount() { canRxErrorCount++; }
+        uint32_t getCanTxErrorCount() { return canTxErrorCount; }
+        uint32_t getCanRxErrorCount() { return canRxErrorCount; }
 };
 
 #endif  // BMS_SRC_INCLUDE_BMS_H_

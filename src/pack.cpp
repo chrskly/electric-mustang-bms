@@ -109,8 +109,8 @@ BatteryPack::BatteryPack(int _id, int CANCSPin, int _contactorInhibitPin, int _c
     inStartup = true;
     modulePollingCycle = 0;
 
-    CanTxErrorCount = 0;
-    CanRxErrorCount = 0;
+    canTxErrorCount = 0;
+    canRxErrorCount = 0;
 
     crc8.begin();
 
