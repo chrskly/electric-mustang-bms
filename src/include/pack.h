@@ -108,11 +108,12 @@ class BatteryPack {
       int contactorInhibitPin;                         // Pin on the pico which controls contactors for this pack
       int contactorFeedbackPin;                        // Pin on the pick where feedback from the contactors is read
 
-      int balanceStatus;                               //
-      int errorStatus;
+      uint32_t balanceStatus;                          // Status of the balance of the pack
+      uint32_t errorStatus;                            //
+      bool balancingEnabled;                           //
       absolute_time_t nextBalanceTime;                 // Time that the next balance should occur.
       uint8_t pollMessageId;                           //
-      bool initialised;
+      bool initialised;                                //
       BatteryModule modules[MODULES_PER_PACK];         // The child modules that make up this BatteryPack
       CRC8 crc8;
 

@@ -150,6 +150,7 @@ bool BatteryPack::is_alive() {
 }
 
 /*
+ * Send CAN frame to each module to request voltage and temperature data.
  *
  * Contents of message
  *   byte 0 : balance data
@@ -159,25 +160,40 @@ bool BatteryPack::is_alive() {
  *   byte 4 : 
  *   byte 5 : 0x01
  *   byte 6 :
+ *     bit 0    :
+ *     bit 1    :
+ *     bit 2    :
+ *     bit 3    :
+ *     bits 4-7 : module number
  *   byte 7 : checksum
  */
-
 void BatteryPack::request_data() {
+    // Counter that cycles from 0x0 to 0xE
     if ( modulePollingCycle == 0xF ) {
         modulePollingCycle = 0;
+        balancingEnabled = pack_is_due_to_be_balanced();
     }
     for ( int m = 0; m < numModules; m++ ) {
         pollModuleFrame.can_id = 0x080 | (m);
         pollModuleFrame.can_dlc = 8;
-        pollModuleFrame.data[0] = 0xC7;
-        pollModuleFrame.data[1] = 0x10;
+        if ( balancingEnabled ) {
+            pollModuleFrame.data[0] = get_lowest_cell_voltage() && 0xFF;
+            pollModuleFrame.data[1] = get_lowest_cell_voltage() >> 8 && 0xFF;
+        } else {
+            pollModuleFrame.data[0] = 0xC7;
+            pollModuleFrame.data[1] = 0x10;
+        }
         pollModuleFrame.data[2] = 0x00;
         pollModuleFrame.data[3] = 0x00;
         if ( inStartup ) {
             pollModuleFrame.data[4] = 0x20;
             pollModuleFrame.data[5] = 0x00;
         } else {
-            pollModuleFrame.data[4] = 0x40;
+            if ( balancingEnabled ) {
+                pollModuleFrame.data[4] = 0x40;
+            } else {
+                pollModuleFrame.data[4] = 0x40;
+            }
             pollModuleFrame.data[5] = 0x01;
         }
         pollModuleFrame.data[6] = modulePollingCycle << 4;
@@ -298,12 +314,11 @@ int BatteryPack::get_pack_balance_status() {
 
 // Return true if it's time for the pack to be balanced.
 bool BatteryPack::pack_is_due_to_be_balanced() {
-    return false;
     return ( absolute_time_diff_us(get_absolute_time(), nextBalanceTime) < 0 );
 }
 
 void BatteryPack::reset_balance_timer() {
-    nextBalanceTime = delayed_by_us(get_absolute_time(), BALANCE_INTERVAL);
+    nextBalanceTime = delayed_by_us(get_absolute_time(), CELL_BALANCE_INTERVAL);
 }
 
 
@@ -389,38 +404,48 @@ void BatteryPack::decode_voltages(can_frame *frame) {
 
     switch (messageId) {
         case 0x000:
-            // error = msg.buf[0] + (msg.buf[1] << 8) + (msg.buf[2] << 16) + (msg.buf[3] << 24);
             set_pack_error_status(frame->data[0] + (frame->data[1] << 8) + (frame->data[2] << 16) + (frame->data[3] << 24));
-            // balstat = (frame.data[5] << 8) + frame.data[4];
             set_pack_balance_status((frame->data[5] << 8) + frame->data[4]);
             break;
         case 0x020:
-            modules[moduleId].set_cell_voltage(0, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
-            modules[moduleId].set_cell_voltage(1, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
-            modules[moduleId].set_cell_voltage(2, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
+            if ( get_pack_balance_status() == 0 ) {
+                modules[moduleId].set_cell_voltage(0, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
+                modules[moduleId].set_cell_voltage(1, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
+                modules[moduleId].set_cell_voltage(2, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
+            }
             break;
         case 0x030:
-            modules[moduleId].set_cell_voltage(3, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
-            modules[moduleId].set_cell_voltage(4, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
-            modules[moduleId].set_cell_voltage(5, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
+            if ( get_pack_balance_status() == 0 ) {
+                modules[moduleId].set_cell_voltage(3, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
+                modules[moduleId].set_cell_voltage(4, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
+                modules[moduleId].set_cell_voltage(5, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
+            }
             break;
         case 0x040:
-            modules[moduleId].set_cell_voltage(6, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
-            modules[moduleId].set_cell_voltage(7, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
-            modules[moduleId].set_cell_voltage(8, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
+            if ( get_pack_balance_status() == 0 ) {
+                modules[moduleId].set_cell_voltage(6, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
+                modules[moduleId].set_cell_voltage(7, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
+                modules[moduleId].set_cell_voltage(8, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
+            }
             break;
         case 0x050:
-            modules[moduleId].set_cell_voltage(9, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
-            modules[moduleId].set_cell_voltage(10, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
-            modules[moduleId].set_cell_voltage(11, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
+            if ( get_pack_balance_status() == 0 ) {
+                modules[moduleId].set_cell_voltage(9, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
+                modules[moduleId].set_cell_voltage(10, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
+                modules[moduleId].set_cell_voltage(11, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
+            }
             break;
         case 0x060:
-            modules[moduleId].set_cell_voltage(12, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
-            modules[moduleId].set_cell_voltage(13, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
-            modules[moduleId].set_cell_voltage(14, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
+            if ( get_pack_balance_status() == 0 ) {
+                modules[moduleId].set_cell_voltage(12, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
+                modules[moduleId].set_cell_voltage(13, static_cast<uint16_t>(frame->data[2] + (frame->data[3] & 0x3F) * 256));
+                modules[moduleId].set_cell_voltage(14, static_cast<uint16_t>(frame->data[4] + (frame->data[5] & 0x3F) * 256));
+            }
             break;
         case 0x070:
-            modules[moduleId].set_cell_voltage(15, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
+            if ( get_pack_balance_status() == 0 ) {
+                modules[moduleId].set_cell_voltage(15, static_cast<uint16_t>(frame->data[0] + (frame->data[1] & 0x3F) * 256));
+            }
             break;
         default:
             break;

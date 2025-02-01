@@ -90,6 +90,11 @@ const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallo
 // Official max pack voltage = 398V. 398 / 6 / 16 = 4.1458333333V
 #define CELL_FULL_VOLTAGE 4000
 
+// Cell balancing should only happen above this voltage
+#define CELL_BALANCE_VOLTAGE 3900
+// Interval between cell balancing sessions in milliseconds
+#define CELL_BALANCE_INTERVAL 60000
+
 #define WARNING_TEMPERATURE 30          // 
 #define MAXIMUM_TEMPERATURE 50          // Stop everything if the battery is above this temperature
 
@@ -97,7 +102,7 @@ const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallo
 #define CHARGE_TEMPERATURE_DERATING_MINIMUM 15     // where temperature based derating kicks in
 #define CHARGE_TEMPERATURE_DERATING_THRESHOLD 1    // Allow temperature to increase this much per minute. Above that, derate.
 
-#define BALANCE_INTERVAL 1200           // number of seconds between balancing sessions
+//#define BALANCE_INTERVAL 1200           // number of seconds between balancing sessions
 
 #define CAN_MUTEX_TIMEOUT_MS 200        // Timeout for the CAN mutex
 
