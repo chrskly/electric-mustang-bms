@@ -138,7 +138,7 @@ bool send_limits_message(struct repeating_timer *t) {
     extern Battery battery;
     struct can_frame limitsFrame;
     zero_frame(&limitsFrame);
-    limitsFrame.can_id = BMS_LIMITS_MSG_ID;
+    limitsFrame.can_id = 0x351;
     limitsFrame.data[0] = (uint8_t)( battery.get_max_voltage() * 10 ) && 0xFF;
     limitsFrame.data[1] = (uint8_t)( battery.get_max_voltage() * 10 ) >> 8;
     limitsFrame.data[2] = (uint8_t)( bms.get_max_charge_current() * 10 ) && 0xFF;
@@ -332,7 +332,7 @@ bool send_soc_message(struct repeating_timer *t) {
     extern Bms bms;
     struct can_frame socFrame;
     zero_frame(&socFrame);
-    socFrame.can_id = BMS_SOC_MSG_ID;
+    socFrame.can_id = 0x355;
     socFrame.data[0] = (uint8_t)bms.get_soc() && 0xFF;            // SoC LSB
     socFrame.data[1] = (uint8_t)bms.get_soc() >> 8;               // SoC MSB
     socFrame.data[2] = 0x00;                                      // SoH, not implemented
@@ -368,7 +368,7 @@ bool send_status_message(struct repeating_timer *t) {
     extern Shunt shunt;
     struct can_frame statusFrame;
     zero_frame(&statusFrame);
-    statusFrame.can_id = BMS_STATUS_MSG_ID;
+    statusFrame.can_id = 0x356;
     statusFrame.data[0] = (uint8_t)( battery.get_voltage() * 100 ) && 0xFF;
     statusFrame.data[1] = (uint8_t)( battery.get_voltage() * 100 ) >> 8;
     statusFrame.data[2] = (uint8_t)( shunt.get_amps() * 10 ) && 0xFF;
@@ -456,7 +456,7 @@ bool send_alarm_message(struct repeating_timer *t) {
     extern Battery battery;
     struct can_frame alarmFrame;
     zero_frame(&alarmFrame);
-    alarmFrame.can_id = BMS_ALARM_MSG_ID;
+    alarmFrame.can_id = 0x35A;
     // Set undervolt bit (3)
     if ( battery.has_empty_cell() ) {
         alarmFrame.data[0] |= 0x04;
