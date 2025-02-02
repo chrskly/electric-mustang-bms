@@ -377,8 +377,6 @@ void state_charging(Event event) {
     bms.enable_drive_inhibit("[C00] charging", R_CHARGING);
     bms.disable_charge_inhibit("[C00] charging");
     bms.disable_heater();
-    // Recalculate max charging current
-    bms.update_max_charge_current();
 
     switch (event) {
         case E_TOO_COLD_TO_CHARGE:
@@ -598,7 +596,6 @@ void state_overTempFault(Event event) {
     bms.enable_drive_inhibit("[T00] battery too hot", R_TOO_HOT);
     bms.enable_charge_inhibit("[T00] battery too hot", R_TOO_HOT);
     bms.disable_heater();
-    bms.update_max_charge_current();
 
     switch (event) {
         case E_TOO_COLD_TO_CHARGE:

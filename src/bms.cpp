@@ -26,18 +26,6 @@
 extern mutex_t canMutex;
 
 /*
- * Recalculate the SoC of the battery periodically.
- */
-
-struct repeating_timer updateSocTimer;
-
-bool update_soc(struct repeating_timer *t) {
-    extern Bms bms;
-    bms.recalculate_soc();
-    return true;
-}
-
-/*
  * Perform all health checks periodically.
  */
 
@@ -85,8 +73,25 @@ bool run_health_checks(struct repeating_timer *t) {
     } else {
         bms.send_event(E_SHUNT_RESPONSIVE);
     }
+
     return true;
 }
+
+/*
+ * Run recurring calculations
+ */
+
+struct repeating_timer calculationsTimer;
+
+bool run_calculations(struct repeating_timer *t) {
+    extern Bms bms;
+    bms.update_max_charge_current();
+    bms.update_max_discharge_current();
+    bms.recalculate_soc();
+    // TODO : range estimate
+    return true;
+}
+
 
 
 //// ----
@@ -604,14 +609,12 @@ Bms::Bms(Battery* _battery, Io* _io, Shunt* _shunt) {
     add_repeating_timer_ms(1000, send_alarm_message, NULL, &alarmMessageTimer);
     // main CAN (in)
     add_repeating_timer_ms(5, handle_main_CAN_messages, NULL, &handleMainCANMessageTimer);
-
-    // It's excessive to update the SoC every time we get a message from the ISA
-    // shunt. Just update at a regular interval.
-    printf("[bms][init] enabling SoC update timer\n");
-    add_repeating_timer_ms(500, update_soc, NULL, &updateSocTimer);
-
     // health checks
+    printf("[bms][init] enabling SoC update timer\n");
     add_repeating_timer_ms(100, run_health_checks, NULL, &healthCheckTimer);
+    // calculations
+    printf("[bms][init] enabling calculations timer\n");
+    add_repeating_timer_ms(1000, run_calculations, NULL, &calculationsTimer);
 }
 
 void Bms::set_state(State newState, std::string reason) {
