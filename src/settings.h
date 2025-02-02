@@ -57,7 +57,7 @@ const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };     // Low-side switch to disall
 #define TEMPS_PER_MODULE  4                         // The number of temperature sensors in each module
 #define MODULES_PER_PACK  6                         // The number of modules in each pack
 
-// Timouts
+// Timeouts
 #define MODULE_TTL 5                                // If we have not seen an update from a module in MODULE_TTL
                                                     // seconds, them mark the module as dead.
 
