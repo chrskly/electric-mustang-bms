@@ -25,98 +25,74 @@
 // Serial port
 #define UART_ID      uart0
 #define BAUD_RATE   115200
-#define UART_TX_PIN      0  // pin 1
-#define UART_RX_PIN      1  // pin 2
+#define UART_TX_PIN      0                          // pin 1
+#define UART_RX_PIN      1                          // pin 2
 
 // CAN bus
 #define SPI_PORT      spi0
-#define SPI_MISO        16          // pin 21
-#define SPI_CLK         18          // pin 24
-#define SPI_MOSI        19          // pin 25
-#define CAN_CLK_PIN     21          // pin 27
-#define MAIN_CAN_CS     17          // pin 22
-const int CS_PINS[2] = { 20, 15 };  // Chip select pins for the CAN controllers for each battery pack.
+#define SPI_MISO        16                          // pin 21
+#define SPI_CLK         18                          // pin 24
+#define SPI_MOSI        19                          // pin 25
+#define CAN_CLK_PIN     21                          // pin 27
+#define MAIN_CAN_CS     17                          // pin 22
+const int CS_PINS[2] = { 20, 15 };                  // Chip select pins for the CAN controllers for each battery pack.
 
 // Inputs
-#define IGNITION_ENABLE_PIN        10  //
-#define CHARGE_ENABLE_PIN           9  //
-#define POS_CONTACTOR_FEEDBACK_PIN 11  //
-#define NEG_CONTACTOR_FEEDBACK_PIN 12  //
-const int CONTACTOR_FEEDBACK_PINS[2] = { 13, 14 };  //
+#define IGNITION_ENABLE_PIN        10               // Ignition on input signal
+#define CHARGE_ENABLE_PIN           9               // Charge enabled input signal
+#define POS_CONTACTOR_FEEDBACK_PIN 11               // Feedback from the HVJB positive contactor for welding detection
+#define NEG_CONTACTOR_FEEDBACK_PIN 12               // Feedback from the HVJB negative contactor for welding detection
+const int CONTACTOR_FEEDBACK_PINS[2] = { 13, 14 };  // Feedback from the battery box contactors for welding detection
 
 // Outputs
-#define CHARGE_INHIBIT_PIN 4                       // Low-side switch to create CHARGE_INHIBIT signal. a.k.a OUT1
-#define HEATER_ENABLE_PIN 5                        // Low-side switch to turn on battery heaters. a.k.a. OUT2
-const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };    // Low-side switch to disallow closing of battery box contactors
-#define DRIVE_INHIBIT_PIN 6                        // Low-side switch to disallow driving. a.k.a OUT3
-#define OUT_4_PIN 7                                // unused
+#define CHARGE_INHIBIT_PIN 4                        // Low-side switch to create CHARGE_INHIBIT signal. a.k.a OUT1
+#define HEATER_ENABLE_PIN 5                         // Low-side switch to turn on battery heaters. a.k.a. OUT2
+const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };     // Low-side switch to disallow closing of battery box contactors
+#define DRIVE_INHIBIT_PIN 6                         // Low-side switch to disallow driving. a.k.a OUT3
+#define OUT_4_PIN 7                                 // unused
 
-//
+// Pack/module configuration
+#define NUM_PACKS         2                         // The total number of paralleled packs in this battery
+#define CELLS_PER_MODULE 16                         // The number of cells in each module
+#define TEMPS_PER_MODULE  4                         // The number of temperature sensors in each module
+#define MODULES_PER_PACK  6                         // The number of modules in each pack
 
-#define NUM_PACKS         2                        // The total number of paralleled packs in this battery
-#define CELLS_PER_MODULE 16                        // The number of cells in each module
-#define TEMPS_PER_MODULE  4                        // The number of temperature sensors in each module
-#define MODULES_PER_PACK  6                        // The number of modules in each pack
+// Timouts
+#define MODULE_TTL 5                                // If we have not seen an update from a module in MODULE_TTL
+                                                    // seconds, them mark the module as dead.
 
-#define PACK_ALIVE_TIMEOUT 5                       // If we have not seen an update from the BMS in
-                                                   // PACK_ALIVE_TIMEOUT seconds, then mark the pack
-                                                   // as dead.
+#define SHUNT_TTL 3                                 // If we have not seen an update from the ISA shunt in SHUNT_TTL
+                                                    // seconds, then mark it as dead.
 
-#define MODULE_TTL 5                               // If we have not seen an update from a module in
-                                                   // MODULE_TTL seconds, them mark the module as
-                                                   // dead.
+#define PACKS_IMBALANCED_TTL 3000                   // If the packs are imbalanced for more than PACKS_IMBALANCED_TTL
+                                                    // seconds, then actually inhibit the contactors.
 
-#define SHUNT_TTL 3                                // If we have not seen an update from the ISA
-                                                   // shunt in SHUNT_TTL seconds, then mark it as
-                                                   // dead.
+#define SAFE_VOLTAGE_DELTA_BETWEEN_PACKS 10         // When closing contactors, the voltage difference between the packs
+                                                    // shall not be greater than this voltage, in millivolts.
 
-#define SAFE_VOLTAGE_DELTA_BETWEEN_PACKS 10        // When closing contactors, the voltage difference between the packs shall not
-                                                   // be greater than this voltage, in millivolts.
+// Temperature
+#define PACK_TEMP_SAMPLE_INTERVAL 60                // How often to sample the pack temperature in seconds
+#define WARNING_TEMPERATURE 30                      // 
+#define MAXIMUM_TEMPERATURE 50                      // Stop everything if the battery is above this temperature
+#define CHARGE_TEMPERATURE_MINIMUM -10              // minimum temperature required to allow charging
+#define CHARGE_TEMPERATURE_DERATING_MINIMUM 15      // where temperature based derating kicks in
+#define CHARGE_TEMPERATURE_DERATING_THRESHOLD 1     // Allow temperature to increase this much per minute. Above that, derate.
 
-#define PACKS_IMBALANCED_TTL 3000                  // If the packs are imbalanced for more than PACKS_IMBALANCED_TTL seconds, then
-                                                   // actually inhibit the contactors.
+// Battery capacity/voltages/etc.
+#define BATTERY_CAPACITY_WH 14800                   // 7.4kWh usable per pack, x2 packs == 14.8kWh
+#define BATTERY_CAPACITY_AS 187200                  // 26Ah per pack (93,600 As), x2 packs == 187,200 As
+#define CALCULATE_SOC_FROM_AMP_SECONDS 1            // Should we calculate SoC from amp seconds (value = 1) or
+                                                    // kWh (value = 0)? 
+#define CELL_EMPTY_VOLTAGE 2900                     // Official min pack voltage = 269V. 269 / 6 / 16 = 2.8020833333V
+#define CELL_FULL_VOLTAGE 4000                      // Official max pack voltage = 398V. 398 / 6 / 16 = 4.1458333333V
 
-#define PACK_TEMP_SAMPLE_INTERVAL 60
+// Cell balancing
+#define CELL_BALANCE_VOLTAGE 3900                   // Cell balancing should only happen above this voltage
+#define CELL_BALANCE_INTERVAL 60000                 // Interval between cell balancing sessions in milliseconds
 
-// The capacity of the battery pack
-#define BATTERY_CAPACITY_WH 14800         // 7.4kWh usable per pack, x2 packs
-#define BATTERY_CAPACITY_AS 187200        // 26Ah per pack (93,600 As), x2 packs
-#define CALCULATE_SOC_FROM_AMP_SECONDS 1  // Should we calculate SoC from amp seconds (value = 1) or
-                                          // kWh (value = 0)? 
-
-// Official min pack voltage = 269V. 269 / 6 / 16 = 2.8020833333V
-#define CELL_EMPTY_VOLTAGE 2900
-
-// Official max pack voltage = 398V. 398 / 6 / 16 = 4.1458333333V
-#define CELL_FULL_VOLTAGE 4000
-
-// Cell balancing should only happen above this voltage
-#define CELL_BALANCE_VOLTAGE 3900
-// Interval between cell balancing sessions in milliseconds
-#define CELL_BALANCE_INTERVAL 60000
-
-#define WARNING_TEMPERATURE 30          // 
-#define MAXIMUM_TEMPERATURE 50          // Stop everything if the battery is above this temperature
-
-#define CHARGE_TEMPERATURE_MINIMUM -10             // minimum temperature required to allow charging
-#define CHARGE_TEMPERATURE_DERATING_MINIMUM 15     // where temperature based derating kicks in
-#define CHARGE_TEMPERATURE_DERATING_THRESHOLD 1    // Allow temperature to increase this much per minute. Above that, derate.
-
-//#define BALANCE_INTERVAL 1200           // number of seconds between balancing sessions
-
-#define CAN_MUTEX_TIMEOUT_MS 200        // Timeout for the CAN mutex
-
-#define SEND_FRAME_RETRIES 6            // Number of times to retry sending a frame before giving up
-#define READ_FRAME_RETRIES 3
-
-//// ---- CAN message IDs
-
-#define BMS_LIMITS_MSG_ID 0x351         // Charge/discharge limits message
-#define BMS_SOC_MSG_ID 0x355            // SoC status message
-#define BMS_STATUS_MSG_ID 0x356         // Status message emitted by the BMS
-#define BMS_ALARM_MSG_ID 0x35A          // Warning message emitted by the BMS
-
-#define CAN_ID_ISA_SHUNT_AH 0x527       // Message ISA shunt sends which contains Ah data.
-#define CAN_ID_ISA_SHUNT_WH 0x528       // Message ISA shunt sends which contains Wh data.
+// Communication
+#define CAN_MUTEX_TIMEOUT_MS 200                    // Timeout for the CAN mutex
+#define SEND_FRAME_RETRIES 6                        // Number of times to retry sending a frame before giving up
+#define READ_FRAME_RETRIES 3                        // Number of times to retry reading a frame before giving up
 
 #endif  // BMS_SRC_SETTINGS_H_
