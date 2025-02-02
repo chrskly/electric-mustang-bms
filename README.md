@@ -321,7 +321,7 @@ welded.
 - [x] IGNITION_ON input
 - [x] DRIVE_INHIBIT output
 - [ ] Use other core for comms?
-- [ ] Implement balancing
+- [x] Implement balancing
 - [x] Implement watchdog
 - [ ] On startup, properly detect the state we should start in and immediately switch to that state
 - [x] Emulate SimpBMS output CAN messages
@@ -330,8 +330,8 @@ welded.
 - [x] Warn/alarm flags
 - [x] Warn when modules are missing
 - [ ] Deal with scenario when one pack is full and one pack is empty
-- [ ] Communication error bit(s)
-- [ ] Counter for failed CAN messages received (checksum?), sent
+- [x] Communication error bit(s)
+- [x] Counter for failed CAN messages received (checksum?), sent
 - [x] enable/disable regen bit
 - [x] inhibit function naming confusing
 - [x] charge_inhibit_reason can msg
@@ -339,8 +339,9 @@ welded.
 - [x] transmit module liveness over can   
 - [x] welded contactor detection
 - [ ] manual battery pre-heat
-- [ ] Disallow charging when BMS cannot 'see' shunt
+- [x] Disallow charging when BMS cannot 'see' shunt
 - [ ] Provide range estimate
+- [ ] Save certain values to flash (error counters, state?, )
 
 ## Credits
 
