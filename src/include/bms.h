@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <time.h>
 #include "include/statemachine.h"
 #include "include/io.h"
 #include "include/led.h"
