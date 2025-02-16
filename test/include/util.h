@@ -20,6 +20,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <time.h>
 #include "mcp2515/mcp2515.h"
 
 clock_t get_clock();
