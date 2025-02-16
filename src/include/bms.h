@@ -60,8 +60,8 @@ class Bms {
         Io* io;                                //
         Shunt* shunt;                          //
         StatusLight statusLight;               //
-        int8_t maxChargeCurrent;               // Tell the charger how much current it's allowed to push into the battery
-        int8_t maxDischargeCurrent;            //
+        uint16_t maxChargeCurrent;             // Tell the charger how much current it's allowed to push into the battery
+        uint16_t maxDischargeCurrent;          //
         uint8_t soc;                           // State of charge of the battery
         bool internalError;                    // 
         bool watchdogReboot;                   //
@@ -142,11 +142,11 @@ class Bms {
         bool get_illegal_state_transition() { return illegalStateTransition; }
 
         // Charger
-        int8_t get_max_charge_current_by_soc();
+        uint16_t get_max_charge_current_by_soc();
         void update_max_charge_current();
-        int8_t get_max_charge_current();
+        uint16_t get_max_charge_current();
         void update_max_discharge_current();
-        int8_t get_max_discharge_current();
+        uint16_t get_max_discharge_current();
 
         // Status light
         void led_blink();

@@ -852,7 +852,7 @@ void Bms::do_welding_checks() {
 // Charging
 
 // FIXME account for inhibited packs
-int8_t Bms::get_max_charge_current_by_soc() {
+uint16_t Bms::get_max_charge_current_by_soc() {
     return 0;
 }
 
@@ -865,7 +865,7 @@ void Bms::update_max_charge_current() {
     maxChargeCurrent = std::min(battery->get_max_charge_current_by_temperature(), get_max_charge_current_by_soc());
 }
 
-int8_t Bms::get_max_charge_current() {
+uint16_t Bms::get_max_charge_current() {
     return maxChargeCurrent;
 }
 
@@ -874,7 +874,7 @@ void Bms::update_max_discharge_current() {
     maxDischargeCurrent = 100;
 }
 
-int8_t Bms::Bms::get_max_discharge_current() {
+uint16_t Bms::Bms::get_max_discharge_current() {
     return maxDischargeCurrent;
 }
 

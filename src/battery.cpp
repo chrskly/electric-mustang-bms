@@ -363,15 +363,32 @@ bool Battery::too_cold_to_charge() {
     return false;
 }
 
-// FIXME account for inhibited packs
-int8_t Battery::get_max_charge_current_by_temperature() {
-    int8_t newMaxChargeCurrent = packs[0].get_max_charge_current_by_temperature();
+/* Return the maximum charge current that the whole battery can handle based on
+ * temperature. Since we cannot control how much current each pack gets, this
+ * will be determined by what the pack with the lowest max charge current can
+ * handle. We also have to account for packs which are inhibited.
+ */
+uint16_t Battery::get_max_charge_current_by_temperature() {
+    // Safeties
+    if ( too_hot() || too_cold_to_charge() ) {
+        return 0;
+    }
+
+    // Keep track of how many packs are not inhibited
+    uint8_t activePacks = 1;
+
+    // Get the smallest max charge current of all the packs
+    uint16_t smallestMaxChargeCurrent = packs[0].get_max_charge_current_by_temperature();
     for ( int p = 1; p < numPacks; p++ ) {
-        if ( packs[p].get_max_charge_current_by_temperature() < newMaxChargeCurrent ) {
-            newMaxChargeCurrent = packs[p].get_max_charge_current_by_temperature();
+        if ( packs[p].get_max_charge_current_by_temperature() < smallestMaxChargeCurrent ) {
+            smallestMaxChargeCurrent = packs[p].get_max_charge_current_by_temperature();
+        }
+        if ( !packs[p].contactors_are_inhibited() ) {
+            activePacks += 1;
         }
     }
-    return newMaxChargeCurrent;
+
+    return smallestMaxChargeCurrent * activePacks;
 }
 
 

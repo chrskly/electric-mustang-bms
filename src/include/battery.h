@@ -83,7 +83,7 @@ class Battery {
       int8_t get_lowest_sensor_temperature();
       void process_temperature_update();
       bool too_cold_to_charge();
-      int8_t get_max_charge_current_by_temperature();
+      uint16_t get_max_charge_current_by_temperature();
 
       // Contactors
       void disable_inhibit_contactors_for_drive();
