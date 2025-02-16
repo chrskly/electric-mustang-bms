@@ -363,7 +363,8 @@ bool Battery::too_cold_to_charge() {
     return false;
 }
 
-/* Return the maximum charge current that the whole battery can handle based on
+/* 
+ * Return the maximum charge current that the whole battery can handle based on
  * temperature. Since we cannot control how much current each pack gets, this
  * will be determined by what the pack with the lowest max charge current can
  * handle. We also have to account for packs which are inhibited.
