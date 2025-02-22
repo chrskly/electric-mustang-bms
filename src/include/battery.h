@@ -73,7 +73,10 @@ class Battery {
       bool has_full_cell();
       uint32_t voltage_delta_between_packs();
       BatteryPack* get_pack_with_highest_voltage();
-      bool packs_are_imbalanced(); 
+      bool packs_are_imbalanced();
+      uint8_t get_cell_delta();
+      bool cell_delta_above_warn() { return get_cell_delta() > CELL_DELTA_WARN_THRESHOLD; }
+      bool cell_delta_above_alarm() { return get_cell_delta() > CELL_DELTA_ALARM_THRESHOLD; }
 
       // Temperature
       void update_highest_sensor_temperature();

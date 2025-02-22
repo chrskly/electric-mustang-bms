@@ -70,6 +70,9 @@ const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };     // Low-side switch to disall
 #define SAFE_VOLTAGE_DELTA_BETWEEN_PACKS 10         // When closing contactors, the voltage difference between the packs
                                                     // shall not be greater than this voltage, in millivolts.
 
+#define CELL_DELTA_WARN_THRESHOLD 20                // If the cell delta is greater than this value, then raise a warning.
+#define CELL_DELTA_ALARM_THRESHOLD 200              // If the cell delta is greater than this value, then raise an alarm.
+
 // Temperature
 #define PACK_TEMP_SAMPLE_INTERVAL 60                // How often to sample the pack temperature in seconds
 #define WARNING_TEMPERATURE 30                      // 

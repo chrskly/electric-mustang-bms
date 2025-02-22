@@ -70,6 +70,7 @@ class BatteryPack {
       void decode_voltages(can_frame *frame);
       void recalculate_cell_delta();
       void process_voltage_update();
+      uint8_t get_cell_delta() { return cellDelta; }
 
       // Temperature
       bool has_temperature_sensor_over_max();
@@ -102,7 +103,7 @@ class BatteryPack {
       int numTemperatureSensorsPerModule;              //
       Battery* battery;                                // The parent Battery that contains this BatteryPack
       float voltage;                                   // Voltage of the total pack
-      int cellDelta;                                   // Difference in voltage between high and low cell, in mV
+      uint8_t cellDelta;                               // Difference in voltage between high and low cell, in mV
 
       // contactors
       int contactorInhibitPin;                         // Pin on the pico which controls contactors for this pack

@@ -126,6 +126,7 @@ class Bms {
         // Error
         void set_internal_error();
         void clear_internal_error();
+        bool get_internal_error() { return internalError; };
 
         uint8_t get_error_byte();
         uint8_t get_status_byte();

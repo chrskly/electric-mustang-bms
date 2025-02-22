@@ -421,37 +421,45 @@ bool send_pack_can_error_counters_message(struct repeating_timer *t) {
 /*
  * Alarms message 0x35A
  *
- * Follows the SimpBMS format. Note the docs disagree with the code. So,
- * following the code.
+ * Mostly follows the SimpBMS format, with a couple of variations. Also used the
+ * victron format for some of the bits.
  *
  * First 4 bytes are alarms, second 4 bytes are warnings.
  *
  * byte 0
- *   bit 0
- *   bit 1
+ *   bit 0 = general alarm
  *   bit 2 = high cell alarm
- *   bit 3
  *   bit 4 = low cell alarm
- *   bit 5
  *   bit 6 = high temp alarm
- *   bit 7
  * byte 1
  *   bit 0 = low temp alarm
+ *   bit 2 = high temp charge alarm
+ *   bit 4 = low temp charge alarm
+ *   bit 6 = high current alarm
  * byte 2
+ *   bit 0 = high charge current alarm
+ *   bit 2 = contactor on
+ *   bit 4 = short circuit alarm
+ *   bit 6 = internal error
  * byte 3
  *   bit 0 = cell delta alarm
  * byte 4
- *   bit 0
- *   bit 1
+ *   bit 0 = general warn
  *   bit 2 = high cell warn
- *   bit 3
  *   bit 4 = low cell warn
- *   bit 5
  *   bit 6 = high temp warn
  * byte 5
  *   bit 0 = low temp warn
+ *   bit 2 = high temp charge warn
+ *   bit 4 = low temp charge warn
+ *   bit 6 = high current warn
  * byte 6
+ *   bit 0 = high charge current warn
+ *   bit 2 = contactor on
+ *   bit 4 = short circuit warn
+ *   bit 6 = internal error
  * byte 7 = checksum
+ *   bit 0 = cell delta warn
  */
 
 struct repeating_timer alarmMessageTimer;
@@ -462,26 +470,61 @@ bool send_alarm_message(struct repeating_timer *t) {
     struct can_frame alarmFrame;
     zero_frame(&alarmFrame);
     alarmFrame.can_id = 0x35A;
-    // Set undervolt bit (3)
-    if ( battery.has_empty_cell() ) {
-        alarmFrame.data[0] |= 0x04;
-    }
-    // Set overvolt bit (4)
-    if ( battery.has_full_cell() ) {
-        alarmFrame.data[0] |= 0x08;
-    }
-    alarmFrame.data[1] = 0x00;
-    // Set over temp bit (7)
-    if ( battery.too_hot() ) {
-        alarmFrame.data[1] |= 0x40;
-    }
-    alarmFrame.data[2] = 0x00;
-    alarmFrame.data[3] = 0x00;
-    alarmFrame.data[4] = 0x00;
-    alarmFrame.data[5] = 0x00;
-    alarmFrame.data[6] = 0x00;
-    alarmFrame.data[7] = 0x00;
-    bms.send_frame(&alarmFrame, true);
+
+    // byte 0, bit 0, general alarm
+    if ( bms.get_internal_error() ) { alarmFrame.data[0] |= 0x01; }
+    // byte 0, bit 2 : overvolt alarm
+    if ( battery.has_full_cell() ) { alarmFrame.data[0] |= 0x04; }
+    // byte 0, bit 4 : undervolt alarm
+    if ( battery.has_empty_cell() ) { alarmFrame.data[0] |= 0x08; }
+    // byte 0, bit 6 : high temp alarm
+    if ( battery.too_hot() ) { alarmFrame.data[0] |= 0x20; }
+
+    // byte 1, bit 0 : low temp alarm
+    if ( battery.too_cold_to_charge() ) { alarmFrame.data[1] |= 0x01; }
+    // byte 1, bit 2 : high temp charge alarm
+    if ( battery.too_hot() ) { alarmFrame.data[1] |= 0x04; }
+    // byte 1, bit 4 : low temp charge alarm
+    if ( battery.too_cold_to_charge() ) { alarmFrame.data[1] |= 0x08; }
+    // FIXME byte 1, bit 6 : high current alarm
+
+    // FIXME byte 2, bit 0 : high charge current alarm
+    // byte 2, bit 2 : contactor on alarm
+    if ( bms.charge_is_enabled() || bms.ignition_is_on() ) { alarmFrame.data[2] |= 0x04; }
+    // FIXME byte 2, bit 4 : short circuit alarm
+    // byte 2, bit 6 : internal error alarm
+    if ( bms.get_internal_error() ) { alarmFrame.data[2] |= 0x20; }
+
+    // byte 3, bit 0 : cell delta alarm
+    if ( battery.cell_delta_above_alarm() ) { alarmFrame.data[3] |= 0x01; }
+
+    // FIXME byte 4, bit 0 : general warn
+    // byte 4, bit 2 : overvolt warn
+    if ( battery.has_full_cell() ) { alarmFrame.data[4] |= 0x04; }
+    // byte 4, bit 4 : undervolt warn
+    if ( battery.has_empty_cell() ) { alarmFrame.data[4] |= 0x08; }
+    // byte 4, bit 6 : high temp warn
+    if ( battery.too_hot() ) { alarmFrame.data[4] |= 0x20; }
+
+    // byte 5, bit 0 : low temp warn
+    if ( battery.too_cold_to_charge() ) { alarmFrame.data[5] |= 0x01; }
+    // byte 5, bit 2 : high temp charge warn
+    if ( battery.too_hot() ) { alarmFrame.data[5] |= 0x04; }
+    // byte 5, bit 4 : low temp charge warn
+    if ( battery.too_cold_to_charge() ) { alarmFrame.data[5] |= 0x08; }
+    // FIXME byte 5, bit 6 : high current warn
+
+    // FIXME byte 6, bit 0 : high charge current warn
+    // byte 6, bit 2 : contactor on warn
+    if ( bms.charge_is_enabled() || bms.ignition_is_on() ) { alarmFrame.data[6] |= 0x04; }
+    // FIXME byte 6, bit 4 : short circuit warn
+    // byte 6, bit 6 : internal error warn
+    if ( bms.get_internal_error() ) { alarmFrame.data[6] != 0x40; }
+
+    // FIXME byte 7, bit 0 : cell delta warn
+    if ( battery.cell_delta_above_warn() ) { alarmFrame.data[7] |= 0x01; }
+
+    bms.send_frame(&alarmFrame, false);
     return true;
 }
 
