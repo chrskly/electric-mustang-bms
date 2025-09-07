@@ -38,7 +38,7 @@ void gpio_callback(uint gpio, uint32_t events) {
     if ( gpio == IGNITION_ENABLE_PIN ) {
         newState = gpio_get(IGNITION_ENABLE_PIN);
         newStateStr = newState == 1 ? "on" : "off";
-        printf("    * Ignition signal changed to : %s\n", newStateStr.c_str());
+        printf("[io] Ignition signal changed to : %s\n", newStateStr.c_str());
         if ( newState ) {
             bms.send_event(E_IGNITION_ON);
         } else {
@@ -48,7 +48,7 @@ void gpio_callback(uint gpio, uint32_t events) {
     if ( gpio == CHARGE_ENABLE_PIN ) {
         newState = gpio_get(CHARGE_ENABLE_PIN);
         newStateStr = newState == 1 ? "on" : "off";
-        printf("Charge signal changed to : %s\n", newStateStr.c_str());
+        printf("[io] Charge signal changed to : %s\n", newStateStr.c_str());
         if ( newState ) {
             bms.send_event(E_CHARGING_INITIATED);
         } else {
@@ -104,12 +104,12 @@ Io::Io() {
 // DRIVE_INHIBIT output
 
 void Io::enable_drive_inhibit(std::string context) {
-    printf("    * Enabling drive inhibit : %s\n", context.c_str());
+    printf("[io] Enabling drive inhibit : %s\n", context.c_str());
     gpio_put(DRIVE_INHIBIT_PIN, 1);
 }
 
 void Io::disable_drive_inhibit(std::string context) {
-    printf("    * Disabling drive inhibit : %s\n", context.c_str());
+    printf("[io] Disabling drive inhibit : %s\n", context.c_str());
     gpio_put(DRIVE_INHIBIT_PIN, 0);
 }
 
@@ -120,12 +120,12 @@ bool Io::drive_is_inhibited() {
 // CHARGE_INHIBIT output
 
 void Io::enable_charge_inhibit(std::string context) {
-    printf("    * Enabling charge inhibit : %s\n", context.c_str());
+    printf("[io] Enabling charge inhibit : %s\n", context.c_str());
     gpio_put(CHARGE_INHIBIT_PIN, 1);
 }
 
 void Io::disable_charge_inhibit(std::string context) {
-    printf("    * Disabling charge inhibit : %s\n", context.c_str());
+    printf("[io] Disabling charge inhibit : %s\n", context.c_str());
     gpio_put(CHARGE_INHIBIT_PIN, 0);
 }
 
@@ -137,14 +137,14 @@ bool Io::charge_is_inhibited() {
 
 void Io::enable_heater() {
     if ( !gpio_get(HEATER_ENABLE_PIN) ) {
-        printf("Enabling heater\n");
+        printf("[io] Enabling heater\n");
         gpio_put(HEATER_ENABLE_PIN, 1);
     }
 }
 
 void Io::disable_heater() {
     if ( gpio_get(HEATER_ENABLE_PIN) ) {
-        printf("Disabling heater\n");
+        printf("[io] Disabling heater\n");
         gpio_put(HEATER_ENABLE_PIN, 0);
     }
 }
