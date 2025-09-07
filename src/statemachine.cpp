@@ -375,7 +375,6 @@ void state_batteryHeating(Event event) {
 void state_charging(Event event) {
     // Safeties
     bms.enable_drive_inhibit("[C00] charging", R_CHARGING);
-    bms.disable_charge_inhibit("[C00] charging");
     bms.disable_heater();
 
     switch (event) {
