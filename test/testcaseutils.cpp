@@ -37,6 +37,11 @@ bool wait_for_soc(Bms* bms, int soc, int timeout) {
     return true;
 }
 
+/*
+ * Wait for drive inhibit state to change. Specify whether you're waiting for it
+ * to be active (true) or inactive (false) by setting the `state` param. Fail
+ * out if it has not changed within `timeout` ms.
+ */
 bool wait_for_drive_inhibit_state(Bms* bms, bool state, int timeout) {
     clock_t startTime = get_clock();
     while (bms->get_inhibitDrive() != state) {
@@ -64,6 +69,11 @@ bool assert_drive_inhibit_state(Bms* bms, bool state) {
     }
 }
 
+/*
+ * Wait for charge inhibit state to change. Specify whether you're waiting for
+ * it to be active (true) or inactive (false) by setting the `state` param. Fail
+ * out if it has not changed within `timeout` ms.
+ */
 bool wait_for_charge_inhibit_state(Bms* bms, bool state, int timeout) {
     clock_t startTime = get_clock();
     while (bms->get_inhibitCharge() != state) {
@@ -140,6 +150,17 @@ bool wait_for_heater_enable_state(Bms* bms, bool state, int timeout) {
         }
     }
     return true;
+}
+
+bool assert_heater_enable_state(Bms* bms, bool state) {
+    std::string desiredState = state ? "active" : "inactive";
+    if (wait_for_heater_enable_state(bms, state, 2000)) {
+        printf("    > HEATER_ENABLE transitioned to state %s\n", desiredState.c_str());
+        return true;
+    } else {
+        printf("    > HEATER_ENABLE did NOT transistion to state %s\n", desiredState.c_str());
+        return false;
+    }
 }
 
 

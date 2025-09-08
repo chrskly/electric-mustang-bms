@@ -33,6 +33,7 @@ bool assert_bms_state(Bms* bms, BmsState state);
 bool wait_for_batt_inhibit_state(Battery* battery, int packId, bool state, int timeout);
 bool wait_for_packs_imbalanced_state(Bms* bms, bool state, int timeout);
 bool wait_for_heater_enable_state(Bms* bms, bool state, int timeout);
+bool assert_heater_enable_state(Bms* bms, bool state);
 bool transition_to_standby_state(Bms* bms);
 bool transition_to_drive_state(Bms* bms);
 bool transition_to_charging_state(Bms* bms);

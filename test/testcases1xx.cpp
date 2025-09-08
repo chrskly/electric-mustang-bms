@@ -23,6 +23,32 @@
 
 /*
  * Test cases relating to contactor control
+ *
+ * 101 : When in standby state, and the pack voltages differ, the BMS should
+ *       inhibit the battery contactor close.
+ * 102 : When in drive state, and the pack voltages differ, the BMS should not
+ *       inhibit the battery contactor close. I.e., don't open the contactors
+ *       when driving.
+ * 103 : When packs are imbalanced, and we go into drive mode from standby, only
+ *       high pack should be enabled. Low pack should remain inhibited.
+ * 104 : When packs are imbalanced, and we go into standby mode from drive mode,
+ *       both packs should be inhibited.
+ * 105 : When packs are imbalanced, and we go into charging mode from standby
+ *       mode, only the low pack should be enabled. High pack should remain
+ *       inhibited.
+ * 106 : When packs are imbalanced, and we stop charging, both packs should be
+ *       inhibited.
+ * 107 : When we are charging on imbalanced packs, and the voltages equalise,
+ *       both packs should be uninhibited.
+ * 108 : When we are driving on imbalanced packs, and the voltages equalise,
+ *       both packs should be uninhibited.
+ * 109 : When we are driving on imbalanced packs, and we start charging, the BMS
+ *       should inhibit the charging and driving and go into an error state
+ *       (illegal state transition fault).
+ * 110 : When in standby state, with imabalanced packs, and the voltages
+ *       equalise, the BMS should disable the contactor inhibition.
+ * 111 : When charging, and packs go into imbalanced state, the BMS should not
+ *       inhibit contactor close. I.e., don't open the contactors when charging.
  */
 
 /*
