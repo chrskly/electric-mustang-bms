@@ -13,313 +13,59 @@
 * CHARGE_INHIBIT, output, GND when active
 * HEATER_ENABLE, output, GND when active
 
-
 --------------------------------------------------------------------------------
 
-
-## Test Cases : [0xx] : Battery empty/full
-
-
-### Test Case 001
-
-Description : Ensure car cannot be driven when battery is empty
-
-* start in overtemp
-
-Pre-conditions
-* ignition on
-* charge off
-* batt1 inhibit off
-* batt2 inhibit off
-* chg inhibit off
-* heater enable off
-
-Event : Any cell is empty
-
-Result : DRIVE_INHIBIT signal activates
-
-
-### Test Case 002
-
-Description : Ensure battery cannot be charged when battery is full
-
-Pre-conditions
-* ignition off
-* charge off
-* batt1 inhibit off
-* batt2 inhibit off
-* chg inhibit off
-* heater enable off
-
-Event : Any cell is full
-
-Result : CHARGE_INHIBIT signal activates
-
-
-### Test Case 003
-
-Description : Ensure that shunt gets reset when we complete a charge to 100%
-
-Pre-conditions
-* charge on
-* One or more cells are at Vmax
-
-Event : disable charge
-
-Result : should see the shunt reset message
-
-
---------------------------------------------------------------------------------
-
-
-## Test Cases : [1xx] : Pack-level voltage safety
-
-
-### Test Case 101
-
-Description : Inhibit battery contactor close when pack voltages differ
-
-Pre-conditions
-* ignition off
-* charge off
-* batt1 inhibit off
-* batt2 inhibit off
-* charge inhibit off
-* heater enable off
-
-Event : Voltage difference between packs is greater than SAFE_VOLTAGE_DELTA_BETWEEN_PACKS volts.
-
-Result : Both batt1 inhibit and batt2 inhibit signals activate
-
-
-### Test Case 102
-
-Description : Do not inhibit battery contactor close when pack voltage differ and ignition is on.
-
-Pre-conditions
-* ignition on
-* charge off
-* batt1 inhibit off
-* batt2 inhibit off
-* charge inhibit off
-* heater enable off
-
-Event : Voltage difference between packs is greater than SAFE_VOLTAGE_DELTA_BETWEEN_PACKS volts.
-
-Result : batt1 inhibit and batt2 inhibit remain disabled.
-
-
-### Test Case 103
-
-Description : Ignition turned on when battery contactors are inhibited.
-
-Pre-conditions
-* ignition off
-* charge off
-* batt1 inhibit on
-* batt2 inhibit on
-* charge inhibit off
-* heater enable off
-
-Event : Voltage of batt 1 higher than batt 2. Ignition turned on.
-
-Result : Batt 1 inhibit deactivates
-
-
-### Test Case 104
-
-Description : Ignition turned off when battery contactors are inhibited.
-
-Pre-conditions
-* ignition on
-* charge off
-* batt1 inhibit off
-* batt2 inhibit on
-* charge inhibit off
-* heater enable off
-
-Event : Ignition turned off.
-
-Result : Batt 1 inhibit activates.
-
-
-### Test Case 105
-
-Description : Start charging when battery contactors are inhibited.
-
-Pre-conditions
-* ignition off
-* charge off
-* batt1 inhibit on
-* batt2 inhibit on
-* charge inhibit off
-* heater enable off
-
-Event : Voltage of batt 1 higher than batt 2. Charging starts (CHARGE_ENABLE input signal activates).
-
-Result : Batt 2 inhibit deactivates.
-
-
-### Test Case 106
-
-Description : Stop charging when battery contactors are inhibited.
-
-Pre-conditions
-* ignition off
-* charge on
-* batt1 inhibit on
-* batt2 inhibit off
-* charge inhibit off
-* heater enable off
-
-Event : Voltage of batt 1 higher than batt 2. Charging ceases.
-
-Result : Batt 2 inhibit activates.
-
-
-### Test Case 107
-
-Description : Charging on one pack, voltage equalises
-
-Pre-condition
-* ignition off
-* charge on
-* batt1 inhibit off
-* batt2 inhibit on
-* charge inhibit off
-* heater enable off
-
-Event : Voltage of batt1 == voltage of batt2.
-
-Result : batt2 inhibit deactivates.
-
-
-### Test Case 108
-
-Description : Driving on one pack, voltage equalises
-
-Pre-condition
-* ignition on
-* charge off
-* batt1 inhibit off
-* batt2 inhibit on
-* charge inhibit off
-* heater enable off
-
-Event : Voltage of batt1 == voltage of batt2.
-
-Result : batt2 inhibit deactivates.
-
-
-### Test Case 109
-
-Description : Driving on one pack, begin charging while ignition still on.
-
-Pre-condition
-* ignition on
-* charge off
-* batt1 inhibit off
-* batt2 inhibit off
-* charge inhibit off
-* heater enable off
-
-Event : CHARGE_ENABLE signal activates.
-
-Result : DRIVE_INHIBIT and CHARGE_INHIBIT signals should activate. BMS should go
-into illegalStateTransitionFault.
-
-
---------------------------------------------------------------------------------
-
-
-## Test Cases : [2xx] : Temperature
-
-
-### Test Case 201
-
-Description : Battery too cold to charge.
-
-Pre-conditions
-* ignition off
-* charge off
-* batt1 inhibit off
-* batt2 inhibit off
-* charge inhibit off
-* heater enable off
-
-Event : Any battery temperature sensor drops below 0c
-
-Result : CHARGE_INHIBIT output signal activates
-
-
-### Test Case 202
-
-Description : Battery warm enough to charge again.
-
-Pre-conditions
-* igition off
-* charge off
-* batt1 inhibit off
-* batt2 inhibit off
-* chg inhibit on
-* heater enable off
-
-Event : All battery sensor temperatures above 0c
-
-Result : CHARGE_INHIBIT output signal deactivates
-
-
-### Test Case 203
-
-Description : Too cold to charge, but charge requested.
-
-Pre-condition
-* ignition off
-* charge off
-* batt1 inhibit off
-* batt2 inhibit off
-* charge inhibit on (due to low battery sensor temp)
-* heater enable off
-
-Event : CHARGE_ENABLE input signal activates
-
-Result : HEATER_ENABLE output signal activates and CHARGE_INHIBIT signal activates
-
-
-### Test Case 204
-
-Description : Battery too hot to charge.
-
-Pre-condition
-* ignition off
-* charge off
-* batt1 inhibit off
-* batt2 inhibit off
-* charge inhibit off
-* heater enable off
-
-Event : any temperature sensor is over x degrees.
-
-Result : CHARGE_INHIBIT output signal activates.
-
-
-### Test Case 205
-
-Description : Limit charging current when battery partially overheats.
-
-Pre-condition
-* ignition off
-* charge on
-* batt1 inhibit off
-* batt2 inhibit off
-* charge inhibit off
-* heater enable off
-
-Event : Set one of the battery sensors between CHARGE_THROTTLE_TEMP_LOW and CHARGE_THROTTLE_TEMP_HIGH.
-
-Result : Max charge current in 0x351 message should be scaled based on temperature.
-
-
-### Test Case xx
-
-Description : 
+# List of Test Cases
+
+* 001 : Ensure car cannot be driven when battery is empty, starting in STANDBY
+  state.
+* 002 : Ensure car cannot be driven when battery is empty, starting in DRIVE
+  state.
+* 003 : When battery is empty and overheating, but the temperature drops, the
+  car should still not be drivable as the battery is still empty.
+* 004 : When battery is empty and overheating, but the SoC rises the car should
+  still not be drivable as the battery is still too hot.
+* 005 : When battery is empty and we're charging, but the charging stops, the
+  car should still not be drivable as the battery is still empty.
+* 006 : When battery is full, the car should not be allowed to charge. Start in
+  STANDBY state.
+* 007 : When battery is full, the car should not be allowed to charge. Start in
+  DRIVE state.
+* 008 : When battery is full, the car should not be allowed to charge. Start in
+  CHARGE state.
+* 101 : When in standby state, and the pack voltages differ, the BMS should
+  inhibit the battery contactor close.
+* 102 : When in drive state, and the pack voltages differ, the BMS should not
+  inhibit the battery contactor close. I.e., don't open the contactors when
+  driving.
+* 103 : When packs are imbalanced, and we go into drive mode from standby, only
+  high pack should be enabled. Low pack should remain inhibited.
+* 104 : When packs are imbalanced, and we go into standby mode from drive mode,
+  both packs should be inhibited.
+* 105 : When packs are imbalanced, and we go into charging mode from standby
+  mode, only the low pack should be enabled. High pack should remain inhibited.
+* 106 : When packs are imbalanced, and we stop charging, both packs should be
+  inhibited.
+* 107 : When we are charging on imbalanced packs, and the voltages equalise,
+  both packs should be uninhibited.
+* 108 : When we are driving on imbalanced packs, and the voltages equalise, both
+  packs should be uninhibited.
+* 109 : When we are driving on imbalanced packs, and we start charging, the BMS
+  should inhibit the charging and driving and go into an error state (illegal
+  state transition fault).
+* 110 : When in standby state, with imabalanced packs, and the voltages
+  equalise, the BMS should disable the contactor inhibition.
+* 111 : When charging, and packs go into imbalanced state, the BMS should not
+  inhibit contactor close. I.e., don't open the contactors when charging.
+* 201 : When the battery is too cold to charge, the BMS should inhibit charging.
+  Start in STANDBY state.
+* 202 : When the battery is too cold to charge, the BMS should inhibit charging.
+  Start in DRIVE state.
+* 203 : When charge initiated, and the battery is too cold, heater should
+  activate and charging should continue to be inhibited.
+* 204 : Charging has been initiated, but battery is too cold so heater is on.
+  When temperature of battery goes over 0°C, disable battery heating.
+* 205 : If we're charging and some sensors are reading too cold to charge, but
+  some sensors are reading too hot, then heater should not be enabled.
+* 206 : When charging, and the battery gets too hot, charging should be
+  inhibited.
