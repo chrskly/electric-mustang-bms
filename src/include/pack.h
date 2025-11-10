@@ -70,6 +70,7 @@ class BatteryPack {
       void decode_voltages(can_frame *frame);
       void recalculate_cell_delta();
       void process_voltage_update();
+      bool has_dead_cell();
       uint8_t get_cell_delta() { return cellDelta; }
 
       // Temperature

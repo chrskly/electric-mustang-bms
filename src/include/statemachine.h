@@ -37,6 +37,7 @@ enum Event {
     E_MODULES_ALL_RESPONSIVE, // all battery modules are responsive
     E_SHUNT_UNRESPONSIVE,     // the shunt is unresponsive
     E_SHUNT_RESPONSIVE,       // the shunt is responsive
+    E_DEAD_CELL,              // one or more cells are dead
 };
 
 typedef void (*State)(Event);

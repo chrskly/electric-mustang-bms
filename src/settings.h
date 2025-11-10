@@ -73,6 +73,8 @@ const int INHIBIT_CONTACTOR_PINS[2] = { 2, 3 };     // Low-side switch to disall
 #define CELL_DELTA_WARN_THRESHOLD 20                // If the cell delta is greater than this value, then raise a warning.
 #define CELL_DELTA_ALARM_THRESHOLD 200              // If the cell delta is greater than this value, then raise an alarm.
 
+#define DEAD_CELL_VOLTAGE 2500                       // Min cell voltage is 2800mV, so lets consider 2500mV as dead.
+
 // Temperature
 #define PACK_TEMP_SAMPLE_INTERVAL 60                // How often to sample the pack temperature in seconds
 #define WARNING_TEMPERATURE 30                      // 

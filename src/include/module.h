@@ -48,6 +48,7 @@ class BatteryModule {
       void set_cell_voltage(int cellIndex, uint16_t newCellVoltage);
       bool has_empty_cell();
       bool has_full_cell();
+      bool has_dead_cell();
 
       // Module status
       bool all_module_data_populated();

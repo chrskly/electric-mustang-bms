@@ -6,13 +6,16 @@ This repo contains the hardware design and software for the custom BMS for my EV
 
 The BMS is always on.
 
-The battery is made up of two BMW PHEV battery packs.
+The battery is made up of one or two BMW PHEV battery packs.
 
-Each battery pack has a positive and negative contactor which are activated by either the ignition key or when charging.
+Each battery pack has a positive and negative contactor which are activated by
+either the ignition key or when charging.
 
-The BMS is able to inhibit the closing of the contactors in each battery pack individually. It only does this when the contactors are already open.
+The BMS is able to inhibit the closing of the contactors in each battery pack
+individually.
 
-The car will also have precharge and main contactors in the HVJB. These are controlled by the inverter.
+The car will also have precharge and main contactors in the HVJB. These are
+controlled by the inverter.
 
 ## Compiling/Installing
 
@@ -24,7 +27,7 @@ cmake ../
 make
 ```
 
-### Building the test framework code
+### Building the test framework code
 
 ```
 cd test/build
@@ -90,6 +93,7 @@ batt1 ---   --- batt2                        |                 |
 | E_MODULES_ALL_RESPONSIVE | All battery modules are reporting in to the BMS. |
 | E_SHUNT_UNRESPONSIVE | The ISA shunt is not transmitting updates. |
 | E_SHUNT_RESPONSIVE | The ISA shunt is transmitting updates. |
+| E_DEAD_CELL | On of the cells has failed (voltage too low) |
 
 ## Functionality
 
@@ -109,7 +113,16 @@ batt1 ---   --- batt2                        |                 |
 
 ### Paralleling packs
 
-I will be using two BMW PHEV packs connected in parallel. This introduces some additional complications.
+I will be using two BMW PHEV packs connected in parallel. This introduces some
+additional complications.
+
+#### Packs Getting Out of Sync
+
+When the car is off, the packs will be disconnected from each other as well as
+from the rest of the car. There is the possibility that the packs will drift a
+little apart from each other in terms of their voltage. For example, they'll be
+placed in different locations in the car, so will experience slightly different
+thermals.
 
 * Provide protection for issues relating to paralleling packs. Deny contactor
   close when pack voltages (not cell voltages) differ by more than a certain
@@ -122,6 +135,23 @@ I will be using two BMW PHEV packs connected in parallel. This introduces some a
   voltages get back into alignment.
 * When charging on a subset of packs, allow contactors to close when the pack
   voltages get back into alignment.
+
+#### Dead Cell Detection
+
+One of the risks associated with paralleling packs is if a cell in one of the
+packs fails in a closed state, then the voltage of that pack drops. You'll then
+get a large, uncontrolled current flow from the 'good' pack to the 'bad' pack.
+
+To attempt to guard against this, this BMS implements dead cell detection. If
+any cell is found to have a voltage reading under DEAD_CELL_VOLTAGE that pack is
+uncontitionally isolated by inhibiting contactor close (opening the contactors)
+for the pack.
+
+If we only have one pack:
+  > Warn that dead cell has been detected, but take no other action
+
+If we have multiple packs:
+  Idle
 
 ### ISA Shunt
 * Read CAN messages from shunt to track of voltage, current, kwh
@@ -342,6 +372,7 @@ welded.
 - [x] Disallow charging when BMS cannot 'see' shunt
 - [ ] Provide range estimate
 - [ ] Save certain values to flash (error counters, state?, )
+- [ ] Dead cell detection
 
 ## Credits
 

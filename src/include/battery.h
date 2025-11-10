@@ -30,15 +30,17 @@ class Io;
 class Battery {
    private:
       BatteryPack packs[NUM_PACKS];
-      int numPacks;                    // Number of battery packs in this battery
-      uint32_t voltage;                // Total voltage of whole battery
-      uint16_t lowestCellVoltage;      // Voltage of cell with lowest voltage across whole battery
-      uint16_t highestCellVoltage;     // Voltage of cell with highest voltage across whole battery
-      uint32_t minimumBatteryVoltage;  // Lowest permitted voltage of the whole battery
-      uint32_t maximumBatteryVoltage;  // Highest permitted voltage of the whole battery
-      uint8_t cellDelta;               // FIXME todo
-      float lowestSensorTemperature;   //
-      float highestSensorTemperature;  //
+      int numPacks;                            // Number of battery packs in this battery
+      uint32_t voltage;                        // Total voltage of whole battery
+      uint16_t lowestCellVoltage;              // Voltage of cell with lowest voltage across whole battery
+      uint16_t activePacks_lowestCellVoltage;  // Voltage of cell with lowest voltage across packs that are not inhibited
+      uint16_t highestCellVoltage;             // Voltage of cell with highest voltage across whole battery
+      uint16_t activePacks_highestCellVoltage; // Voltage of cell with highest voltage across packs that are not inhibited
+      uint32_t minimumBatteryVoltage;          // Lowest permitted voltage of the whole battery
+      uint32_t maximumBatteryVoltage;          // Highest permitted voltage of the whole battery
+      uint8_t cellDelta;                       // FIXME todo
+      float lowestSensorTemperature;           //
+      float highestSensorTemperature;          //
       Bms* bms;
       mutex_t* canMutex;
       Io* io;
@@ -52,6 +54,8 @@ class Battery {
       void request_data();
       void read_message();
       void send_test_message();
+      bool has_multiple_packs();
+      uint8_t number_of_active_packs();
       uint16_t get_can_tx_error_count_for_pack(int packId) { return packs[packId].get_can_tx_error_count(); }
       uint16_t get_can_rx_error_count_for_pack(int packId) { return packs[packId].get_can_rx_error_count(); }
 
@@ -75,6 +79,7 @@ class Battery {
       BatteryPack* get_pack_with_highest_voltage();
       bool packs_are_imbalanced();
       uint8_t get_cell_delta();
+      bool has_dead_cell();
       bool cell_delta_above_warn() { return get_cell_delta() > CELL_DELTA_WARN_THRESHOLD; }
       bool cell_delta_above_alarm() { return get_cell_delta() > CELL_DELTA_ALARM_THRESHOLD; }
 
@@ -95,6 +100,9 @@ class Battery {
       void disable_inhibit_contactor_close();
       bool one_or_more_contactors_inhibited();
       bool all_contactors_inhibited();
+      void reevaluate_contactor_inhibition_for_drive();
+      void reevaluate_contactor_inhibition_for_charge();
+      void inhibit_contactors_of_packs_with_dead_cells();
 
       int8_t get_module_liveness_byte(int8_t moduleId);
       bool is_alive();

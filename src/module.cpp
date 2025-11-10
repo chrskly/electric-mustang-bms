@@ -134,6 +134,18 @@ bool BatteryModule::has_full_cell() {
     return false;
 }
 
+/*
+ * Check for dead cells in the module
+ */
+bool BatteryModule::has_dead_cell() {
+    for ( int c = 0; c < numCells; c++ ) {
+        if ( cellVoltage[c] <= DEAD_CELL_VOLTAGE ) {
+            return true;
+        }
+    }
+    return false;
+}
+
 //// ----
 //
 // Status

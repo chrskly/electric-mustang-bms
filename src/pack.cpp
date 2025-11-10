@@ -472,6 +472,18 @@ void BatteryPack::process_voltage_update() {
     recalculate_cell_delta();
 }
 
+/*
+ * Check for dead cells in the pack
+ */
+bool BatteryPack::has_dead_cell() {
+    for ( int m = 0; m < numModules; m++ ) {
+        if ( modules[m].has_dead_cell() ) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 //// ----
 //

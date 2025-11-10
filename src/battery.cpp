@@ -118,6 +118,20 @@ void Battery::send_test_message() {
     }
 }
 
+bool Battery::has_multiple_packs() {
+    return numPacks > 1;
+}
+
+uint8_t Battery::number_of_active_packs() {
+    uint8_t count = 0;
+    for ( int p = 0; p < numPacks; p++ ) {
+        if ( !packs[p].contactors_are_inhibited() ) {
+            count++;
+        }
+    }
+    return count;
+}
+
 
 //// ----
 //
@@ -134,7 +148,8 @@ uint32_t Battery::get_voltage() {
 void Battery::recalculate_voltage() {
     uint32_t newVoltage = 0;
     for ( int p = 0; p < numPacks; p++ ) {
-        if ( packs[p].get_voltage() > newVoltage ) {
+        // Exclude packs with dead cells, they should be inhibited
+        if ( packs[p].get_voltage() > newVoltage && !packs[p].has_dead_cell() ) {
             newVoltage = packs[p].get_voltage();
         }
     }
@@ -158,10 +173,15 @@ uint32_t Battery::get_min_voltage() {
 
 // Return the id of the pack that has the highest voltage
 int Battery::get_index_of_high_pack() {
+    // If we only have one pack, then just return that
+    if ( !has_multiple_packs() ) {
+        return 0;
+    }
     int high_pack_index = 0;
-    float high_pack_voltage = 0.0f;
+    uint32_t high_pack_voltage = 0;
     for ( int p = 0; p < numPacks; p++ ) {
-        if ( packs[p].get_voltage() > high_pack_voltage ) {
+        // Exclude packs with dead cells, they should be inhibited
+        if ( packs[p].get_voltage() > high_pack_voltage && !packs[p].has_dead_cell() ) {
             high_pack_index = p;
             high_pack_voltage = packs[p].get_voltage();
         }
@@ -169,12 +189,20 @@ int Battery::get_index_of_high_pack() {
     return high_pack_index;
 }
 
-// Return the id of the pack that has the lowest voltage
+/*
+ * Return the id of the pack that has the lowest voltage. Exclude any packs with
+ * dead cells.
+ */
 int Battery::get_index_of_low_pack() {
+    // If we only have one pack, then just return that
+    if ( !has_multiple_packs() ) {
+        return 0;
+    }
     int low_pack_index = 0;
     uint32_t low_pack_voltage = 1000;
     for ( int p = 0; p < numPacks; p++ ) {
-        if ( packs[0].get_voltage() < low_pack_voltage ) {
+        // Exclude packs with dead cells, they should be inhibited
+        if ( packs[p].get_voltage() < low_pack_voltage && !packs[p].has_dead_cell() ) {
             low_pack_index = p;
             low_pack_voltage = packs[p].get_voltage();
         }
@@ -206,16 +234,29 @@ void Battery::process_voltage_update() {
 // Recompute the lowest cell voltage across the whole battery
 void Battery::recalculate_lowest_cell_voltage() {
     uint16_t newLowestCellVoltage = 10000;
-    for ( int p = 1; p < numPacks; p++ ) {
-        if ( packs[p].get_lowest_cell_voltage() < newLowestCellVoltage ) {
-            newLowestCellVoltage = packs[p].get_lowest_cell_voltage();
+    uint16_t activePacks_newLowestCellVoltage = 10000;
+    for ( int p = 0; p < numPacks; p++ ) {
+        uint16_t packLowestCellVoltage = packs[p].get_lowest_cell_voltage();
+        // Active packs
+        if ( !packs[p].contactors_are_inhibited() ) {
+            if ( packLowestCellVoltage < activePacks_newLowestCellVoltage ) {
+                activePacks_newLowestCellVoltage = packLowestCellVoltage;
+            }
+        }
+        // All packs
+        if ( packLowestCellVoltage < newLowestCellVoltage ) {
+            newLowestCellVoltage = packLowestCellVoltage;
         }
     }
     // Safety checks
-    if ( newLowestCellVoltage < CELL_EMPTY_VOLTAGE || newLowestCellVoltage > CELL_FULL_VOLTAGE ) {
+    if ( newLowestCellVoltage < CELL_EMPTY_VOLTAGE ||
+         newLowestCellVoltage > CELL_FULL_VOLTAGE  ||
+         activePacks_newLowestCellVoltage < CELL_EMPTY_VOLTAGE ||
+         activePacks_newLowestCellVoltage > CELL_FULL_VOLTAGE ) {
         bms->set_internal_error();
     }
     lowestCellVoltage = newLowestCellVoltage;
+    activePacks_lowestCellVoltage = activePacks_newLowestCellVoltage;
 }
 
 uint16_t Battery::get_lowest_cell_voltage() {
@@ -225,7 +266,8 @@ uint16_t Battery::get_lowest_cell_voltage() {
 // Return true if any cell in the battery is below the minimum voltage level
 bool Battery::has_empty_cell() {
     for ( int p = 0; p < numPacks; p++ ) {
-        if ( packs[p].has_empty_cell() ) {
+        // Ignore packs with inhibited contactors
+        if ( packs[p].has_empty_cell() && !packs[p].contactors_are_inhibited() ) {
             return true;
         }
     }
@@ -237,16 +279,29 @@ bool Battery::has_empty_cell() {
 // Recompute the highest cell voltage
 void Battery::recalculate_highest_cell_voltage() {
     uint16_t newHighestCellVoltage = 0;
+    uint16_t activePacks_newHighestCellVoltage = 0;
     for ( int p = 0; p < numPacks; p++ ) {
-        if ( packs[p].get_highest_cell_voltage() > newHighestCellVoltage ) {
-            newHighestCellVoltage = packs[p].get_highest_cell_voltage();
+        uint16_t packHighestCellVoltage = packs[p].get_highest_cell_voltage();
+        // Active packs
+        if ( !packs[p].contactors_are_inhibited() ) {
+            if ( packHighestCellVoltage > activePacks_newHighestCellVoltage ) {
+                activePacks_newHighestCellVoltage = packHighestCellVoltage;
+            }
+        }
+        // All packs
+        if ( packHighestCellVoltage > newHighestCellVoltage ) {
+            newHighestCellVoltage = packHighestCellVoltage;
         }
     }
     // Safety checks
-    if ( newHighestCellVoltage < CELL_EMPTY_VOLTAGE || newHighestCellVoltage > CELL_FULL_VOLTAGE ) {
+    if ( newHighestCellVoltage < CELL_EMPTY_VOLTAGE ||
+         newHighestCellVoltage > CELL_FULL_VOLTAGE ||
+         activePacks_newHighestCellVoltage < CELL_EMPTY_VOLTAGE ||
+         activePacks_newHighestCellVoltage > CELL_FULL_VOLTAGE ) {
         bms->set_internal_error();
     }
     highestCellVoltage = newHighestCellVoltage;
+    activePacks_highestCellVoltage = activePacks_newHighestCellVoltage;
 }
 
 uint16_t Battery::get_highest_cell_voltage() {
@@ -256,7 +311,8 @@ uint16_t Battery::get_highest_cell_voltage() {
 // Return true if any cell in the battery is below the minimum voltage level
 bool Battery::has_full_cell() {
     for ( int p = 0; p < numPacks; p++ ) {
-        if ( packs[p].has_full_cell() ) {
+        // Ignore packs with inhibited contactors
+        if ( packs[p].has_full_cell() && !packs[p].contactors_are_inhibited() ) {
             return true;
         }
     }
@@ -267,9 +323,21 @@ bool Battery::has_full_cell() {
  * Return the largest voltage difference between any two packs in this battery.
  */
 uint32_t Battery::voltage_delta_between_packs() {
+    // Can't be any delta if there's only one pack
+    if ( !has_multiple_packs() ) {
+        return 0;
+    }
+    // Only one active pack
+    if ( number_of_active_packs() < 2 ){
+        return 0;
+    }
     uint32_t highestPackVoltage = 0;
     uint32_t lowestPackVoltage = 1000000; // 1000V
     for ( int p = 0; p < numPacks; p++ ) {
+        // Exclude packs with dead cells, they should be inhibited
+        if ( packs[p].has_dead_cell() ) {
+            continue;
+        }
         float packVoltage = packs[p].get_voltage();
         if ( packVoltage > highestPackVoltage ) {
             highestPackVoltage = packVoltage;
@@ -281,16 +349,16 @@ uint32_t Battery::voltage_delta_between_packs() {
     return highestPackVoltage - lowestPackVoltage;
 }
 
-// return the battery pack which has the highest voltage
-BatteryPack* Battery::get_pack_with_highest_voltage() {
-    BatteryPack* pack = &packs[0];
-    for ( int p = 1; p < numPacks; p++ ) {
-        if ( packs[p].get_voltage() > pack->get_voltage() ) {
-            pack = &packs[p];
-        }
-    }
-    return pack;
-}
+// // return the battery pack which has the highest voltage
+// BatteryPack* Battery::get_pack_with_highest_voltage() {
+//     BatteryPack* pack = &packs[0];
+//     for ( int p = 1; p < numPacks; p++ ) {
+//         if ( packs[p].get_voltage() > pack->get_voltage() ) {
+//             pack = &packs[p];
+//         }
+//     }
+//     return pack;
+// }
 
 // Return true if the voltage difference between any two packs is too high and
 // therefore it's unstafe to close the contactors.
@@ -310,6 +378,18 @@ uint8_t Battery::get_cell_delta() {
         }
     }
     return cellDelta;
+}
+
+/*
+ * Return true if the battery has any dead cells
+ */
+bool Battery::has_dead_cell() {
+    for ( int p = 0; p < numPacks; p++ ) {
+        if ( packs[p].has_dead_cell() ) {
+            return true;
+        }
+    }
+    return false;
 }
 
 //// ----
@@ -424,11 +504,16 @@ void Battery::enable_inhibit_contactor_close() {
     }
 }
 
+/*
+ * Disable inhibit contactor close for all packs unless they have a dead cell
+ */
 void Battery::disable_inhibit_contactor_close() {
     if ( one_or_more_contactors_inhibited() ) {
         printf("[battery][disable_inhibit_contactor_close] Disabling inhibit contactor close for all packs\n");
         for ( int p = 0; p < numPacks; p++ ) {
-            packs[p].disable_inhibit_contactor_close();
+            if ( !packs[p].has_dead_cell() ) {
+                packs[p].disable_inhibit_contactor_close();
+            }
         }
     }
 }
@@ -452,9 +537,15 @@ bool Battery::all_contactors_inhibited() {
     return true;
 }
 
-// Allow contactors to close for the high pack and any other packs which are
-// within SAFE_VOLTAGE_DELTA_BETWEEN_PACKS volts.
-void Battery::disable_inhibit_contactors_for_drive() {
+/*
+ * Allow contactors to close for the high pack and any other packs which are
+ * within SAFE_VOLTAGE_DELTA_BETWEEN_PACKS volts. Don't allow contactors for
+ * packs with dead cells to close. Don't allow any other contactors to close.
+ */
+void Battery::reevaluate_contactor_inhibition_for_drive() {
+    if ( !has_multiple_packs() ) {
+        return;
+    }
     int highPackId = get_index_of_high_pack();
     uint32_t highPackVoltage = packs[highPackId].get_voltage();
     uint32_t targetVoltage = highPackVoltage - SAFE_VOLTAGE_DELTA_BETWEEN_PACKS;
@@ -463,15 +554,23 @@ void Battery::disable_inhibit_contactors_for_drive() {
             packs[p].disable_inhibit_contactor_close();
             continue;
         }
-        if ( packs[p].get_voltage() >= targetVoltage ) {
+        if ( packs[p].get_voltage() >= targetVoltage && !packs[p].has_dead_cell() ) {
             packs[p].disable_inhibit_contactor_close();
+        } else {
+            packs[p].enable_inhibit_contactor_close();
         }
     }
 }
 
-// Allow contactors to close for the low pack and any other packs which are
-// within SAFE_VOLTAGE_DELTA_BETWEEN_PACKS volts.
-void Battery::disable_inhibit_contactors_for_charge() {
+/*
+ * Allow contactors to close for the low pack and any other packs which are
+ * within SAFE_VOLTAGE_DELTA_BETWEEN_PACKS volts. Don't allow contactors for
+ * packs with dead cells to close. Don't allow any other contactors to close.
+ */
+void Battery::reevaluate_contactor_inhibition_for_charge() {
+    if ( !has_multiple_packs() ) {
+        return;
+    }
     int lowPackId = get_index_of_low_pack();
     uint32_t lowPackVoltage = packs[lowPackId].get_voltage();
     uint32_t targetVoltage = lowPackVoltage + SAFE_VOLTAGE_DELTA_BETWEEN_PACKS;
@@ -480,8 +579,21 @@ void Battery::disable_inhibit_contactors_for_charge() {
             packs[p].disable_inhibit_contactor_close();
             continue;
         }
-        if ( packs[p].get_voltage() <= targetVoltage ) {
+        if ( packs[p].get_voltage() <= targetVoltage && !packs[p].has_dead_cell() ) {
             packs[p].disable_inhibit_contactor_close();
+        } else {
+            packs[p].enable_inhibit_contactor_close();
+        }
+    }
+}
+
+/*
+ * Inhibit contactors of packs with dead cells
+ */
+void Battery::inhibit_contactors_of_packs_with_dead_cells() {
+    for ( int p = 0; p < numPacks; p++ ) {
+        if ( packs[p].has_dead_cell() ) {
+            packs[p].enable_inhibit_contactor_close();
         }
     }
 }

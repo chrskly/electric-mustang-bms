@@ -36,6 +36,11 @@ bool run_health_checks(struct repeating_timer *t) {
     extern Battery battery;
     extern Shunt shunt;
 
+    // Do dead cell detection (if we have more than one pack)
+    if ( battery.has_multiple_packs() && battery.has_dead_cell() ) {
+        bms.send_event(E_DEAD_CELL);
+    }
+
     // Temperature
     if ( battery.too_hot() ) {
         bms.send_event(E_TOO_HOT);
@@ -54,10 +59,13 @@ bool run_health_checks(struct repeating_timer *t) {
         bms.send_event(E_BATTERY_NOT_EMPTY);
     }
 
-    if ( bms.packs_are_imbalanced() ) {
-        bms.send_event(E_PACKS_IMBALANCED);
-    } else {
-        bms.send_event(E_PACKS_NOT_IMBALANCED);
+    // Do pack imbalance test (if we have more than one pack)
+    if ( battery.has_multiple_packs() ) {
+        if ( bms.packs_are_imbalanced() ) {
+            bms.send_event(E_PACKS_IMBALANCED);
+        } else {
+            bms.send_event(E_PACKS_NOT_IMBALANCED);
+        }
     }
 
     // Module liveness

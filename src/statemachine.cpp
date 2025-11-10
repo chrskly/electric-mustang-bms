@@ -93,22 +93,27 @@ void state_standby(Event event) {
             bms.enable_charge_inhibit("[S07] full battery", R_BATTERY_FULL);
             break;
         case E_PACKS_IMBALANCED:
-            /* The contactors are currently open. We don't want to allow the
-             * contactors to close when the packs have different voltages. So we
-             * inhibit the contactors on all packs here. When we switch into
-             * another state we'll decide which contactors to allow to close
-             * then. This will depend on which state we switch into. */
+            /* This event can only fire when we have multiple packs. The
+             * contactors are currently open (or inhibited). We don't want to
+             * allow the contactors to close when the packs have different
+             * voltages. So we inhibit the contactors on all packs here. When we
+             * switch into another state we'll decide which contactors to allow
+             * to close then. This will depend on which state we switch into. */
             battery.enable_inhibit_contactor_close();
             break;
         case E_PACKS_NOT_IMBALANCED:
+            /* This event can only fire when we have multiple packs. The packs
+             * have equalised so we can allow the contactors to close again. */
             battery.disable_inhibit_contactor_close();
             break;
         case E_IGNITION_ON:
-            /* If packs are imbalanced, decide which contactor(s) to allow to 
-             * close. Since we're going into drive mode, we want to pick the
-             * high pack(s). */
-            if ( battery.one_or_more_contactors_inhibited() ) {
-                battery.disable_inhibit_contactors_for_drive();
+            if ( battery.has_multiple_packs() ) {
+                /* If packs are imbalanced, decide which contactors to allow to
+                 * close. Since we're going into drive mode, we want to pick the
+                 * high pack(s). */
+                if ( battery.one_or_more_contactors_inhibited() ) {
+                    battery.reevaluate_contactor_inhibition_for_drive();
+                }
             }
             bms.set_state(&state_drive, "ignition turned on");
             break;
@@ -117,9 +122,11 @@ void state_standby(Event event) {
             printf("WARNING : invalid event : E_IGNITION_OFF while in standby state\n");
             break;
         case E_CHARGING_INITIATED:
-            // deal with battery contactor inhibition as we're switching on the inverter contactors
-            if ( battery.one_or_more_contactors_inhibited() ) {
-                battery.disable_inhibit_contactors_for_charge();
+            if ( battery.has_multiple_packs() ) {
+                // Deal with battery contactor inhibition
+                if ( battery.one_or_more_contactors_inhibited() ) {
+                    battery.reevaluate_contactor_inhibition_for_charge();
+                }
             }
             // Drive away protection
             bms.enable_drive_inhibit("[S08] charge requested", R_CHARGING);
@@ -151,6 +158,11 @@ void state_standby(Event event) {
             break;
         case E_SHUNT_RESPONSIVE:
             break;  // Valid event, but we don't need to do anything with it.
+        case E_DEAD_CELL:
+            if ( battery.has_multiple_packs() ) {
+                battery.inhibit_contactors_of_packs_with_dead_cells();
+            }
+            break;
         default:
             bms.increment_invalid_event_count();
             printf("WARNING : invalid event : UNKNOWN while in standby state\n");
@@ -203,12 +215,11 @@ void state_drive(Event event) {
             bms.enable_charge_inhibit("[D07] full battery", R_BATTERY_FULL);
             break;
         case E_PACKS_IMBALANCED:
-            /* FIXME Need to consider opening the contactors for the low pack
-             * only here. Guard against scenario where a single cell goes bad
-             * (fails closed or reverses)? */
+            battery.reevaluate_contactor_inhibition_for_drive();
             break;
         case E_PACKS_NOT_IMBALANCED:
-            break;  // Valid event, but we don't need to do anything with it.
+            battery.reevaluate_contactor_inhibition_for_drive();
+            break;
         case E_IGNITION_ON:
             bms.increment_invalid_event_count();
             printf("WARNING : invalid event : E_IGNITION_ON while in drive state\n");
@@ -249,6 +260,11 @@ void state_drive(Event event) {
             break;
         case E_SHUNT_RESPONSIVE:
             break;  // Valid event, but we don't need to do anything with it.
+        case E_DEAD_CELL:
+            if ( battery.has_multiple_packs() ) {
+                battery.inhibit_contactors_of_packs_with_dead_cells();
+            }
+            break;
         default:
             bms.increment_invalid_event_count();
             printf("WARNING : invalid event : UNKNOWN while in standby state\n");
@@ -298,12 +314,11 @@ void state_batteryHeating(Event event) {
             break;
         case E_PACKS_IMBALANCED:
             /* Current flow should be minimal. OK to open some contactors. */
-            battery.disable_inhibit_contactors_for_charge();
+            // FIXME is this right?
+            battery.reevaluate_contactor_inhibition_for_charge();
             break;
         case E_PACKS_NOT_IMBALANCED:
-            if ( battery.one_or_more_contactors_inhibited() ) {
-                battery.disable_inhibit_contactor_close();
-            }
+            battery.reevaluate_contactor_inhibition_for_charge();
             break;
         case E_IGNITION_ON:
             break;  // Valid event, but we don't need to do anything with it.
@@ -337,6 +352,9 @@ void state_batteryHeating(Event event) {
                 break;
             }
             // Standby mode
+            if ( battery.packs_are_imbalanced() ) {
+                battery.enable_inhibit_contactor_close();
+            }
             bms.disable_drive_inhibit("[H06] ignition off");
             bms.disable_charge_inhibit("[H07] ignition off");
             bms.set_state(&state_standby, "charging terminated");
@@ -355,6 +373,11 @@ void state_batteryHeating(Event event) {
             break;
         case E_SHUNT_RESPONSIVE:
             break;  // Valid event, but we don't need to do anything with it.
+        case E_DEAD_CELL:
+            if ( battery.has_multiple_packs() ) {
+                battery.inhibit_contactors_of_packs_with_dead_cells();
+            }
+            break;
         default:
             bms.increment_invalid_event_count();
             printf("WARNING : invalid event : UNKNOWN while in standby state\n");
@@ -364,10 +387,10 @@ void state_batteryHeating(Event event) {
 
 /*
  * State               : charging
- * Ignition            : on / off
- * Battery contactors  : closed + inhibited / not inhibited
+ * Ignition            : on || off
+ * Battery contactors  : closed && ( inhibited || not inhibited )
  * Inverter contactors : closed
- * CHARGE_INHIBIT      : on / off
+ * CHARGE_INHIBIT      : on || off
  * CHARGE_ENABLE       : on
  * HEATER_ENABLE       : off
  * DRIVE_INHIBIT       : on
@@ -399,7 +422,7 @@ void state_charging(Event event) {
             bms.enable_charge_inhibit("[C03] full battery", R_BATTERY_FULL);
             break;
         case E_PACKS_IMBALANCED:
-            battery.disable_inhibit_contactors_for_charge();
+            battery.reevaluate_contactor_inhibition_for_charge();
             break;
         case E_PACKS_NOT_IMBALANCED:
             if ( battery.one_or_more_contactors_inhibited() ) {
@@ -455,6 +478,11 @@ void state_charging(Event event) {
             break;
         case E_SHUNT_RESPONSIVE:
             break;  // Valid event, but we don't need to do anything with it.
+        case E_DEAD_CELL:
+            if ( battery.has_multiple_packs() ) {
+                battery.inhibit_contactors_of_packs_with_dead_cells();
+            }
+            break;
         default:
             bms.increment_invalid_event_count();
             printf("WARNING : invalid event : UNKNOWN while in charging state\n");
@@ -569,6 +597,11 @@ void state_batteryEmpty(Event event) {
             break;
         case E_SHUNT_RESPONSIVE:
             break;  // Valid event, but we don't need to do anything with it.
+        case E_DEAD_CELL:
+            if ( battery.has_multiple_packs() ) {
+                battery.inhibit_contactors_of_packs_with_dead_cells();
+            }
+            break;
         default:
             bms.increment_invalid_event_count();
             printf("WARNING : invalid event : UNKNOWN while in standby state\n");
@@ -689,6 +722,11 @@ void state_overTempFault(Event event) {
             break;
         case E_SHUNT_RESPONSIVE:
             break;  // Valid event, but we don't need to do anything with it.
+        case E_DEAD_CELL:
+            if ( battery.has_multiple_packs() ) {
+                battery.inhibit_contactors_of_packs_with_dead_cells();
+            }
+            break;
         default:
             bms.increment_invalid_event_count();
             printf("WARNING : invalid event : UNKNOWN while in standby state\n");
@@ -760,6 +798,11 @@ void state_illegalStateTransitionFault(Event event) {
             break;
         case E_SHUNT_RESPONSIVE:
             break;  // Valid event, but we don't need to do anything with it.
+        case E_DEAD_CELL:
+            if ( battery.has_multiple_packs() ) {
+                battery.inhibit_contactors_of_packs_with_dead_cells();
+            }
+            break;
         default:
             bms.increment_invalid_event_count();
             printf("WARNING : invalid event : UNKNOWN while in standby state\n");
@@ -777,8 +820,8 @@ void state_illegalStateTransitionFault(Event event) {
  * DRIVE_INHIBIT       : on
  * 
  * Notes:
- * - The only way to exit this state is for the shunt and all modules to be
- *   responsive again.
+ * - The only way to exit this state is for the shunt AND all modules to be
+ *   responsive again AND all cells 
  */
 //------------------------------------------------------------------------------
 void state_criticalFault(Event event) {
@@ -848,6 +891,11 @@ void state_criticalFault(Event event) {
                     battery.enable_inhibit_contactor_close();
                 }
                 bms.set_state(&state_standby, "critical fault cleared");
+            }
+            break;
+        case E_DEAD_CELL:
+            if ( battery.has_multiple_packs() ) {
+                battery.inhibit_contactors_of_packs_with_dead_cells();
             }
             break;
         default:
